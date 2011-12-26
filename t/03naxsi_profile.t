@@ -8,9 +8,7 @@
 use lib 'lib';
 use Test::Nginx::Socket;
 
-#repeat_each(3);
-
-plan tests => repeat_each(1) * 2 * blocks();
+plan tests => repeat_each(2) * blocks();
 no_root_location();
 no_long_string();
 $ENV{TEST_NGINX_SERVROOT} = server_root();
@@ -20,7 +18,7 @@ run_tests();
 __DATA__
 === TEST 1: Basic GET request
 --- http_config
-include /etc/nginx/sec-rules/core.rules;
+include /etc/nginx/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -34,17 +32,14 @@ CheckRule "$XSS >= 8" BLOCK;
          index index.html index.htm;
 }
 location /RequestDenied {
-	 echo "FORBIDDEN.#";
+	 return 412;
 }
 --- request
 GET /?a=buibui
---- response_body eval
-"<html><head><title>It works!</title></head><body>It works!</body></html>"
-
-
+--- error_code: 200
 === TEST 2: DENY : Obvious GET XSS
 --- http_config
-include /etc/nginx/sec-rules/core.rules;
+include /etc/nginx/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -58,16 +53,14 @@ CheckRule "$XSS >= 8" BLOCK;
          index index.html index.htm;
 }
 location /RequestDenied {
-	 echo "FORBIDDEN.#";
+	 return 412;
 }
 --- request
 GET /?a="><ScRiPt>alert(1)</scRiPt>
---- response_body eval
-"FORBIDDEN.#
-"
+--- error_code: 412
 === TEST 2.1: DENY : Obvious RFI
 --- http_config
-include /etc/nginx/sec-rules/core.rules;
+include /etc/nginx/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -81,16 +74,14 @@ CheckRule "$XSS >= 8" BLOCK;
          index index.html index.htm;
 }
 location /RequestDenied {
-	 echo "FORBIDDEN.#";
+	 return 412;
 }
 --- request
 GET /?a=http://evil.com/eva.txt
---- response_body eval
-"FORBIDDEN.#
-"
+--- error_code: 412
 === TEST 2.3: DENY : Obvious LFI
 --- http_config
-include /etc/nginx/sec-rules/core.rules;
+include /etc/nginx/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -104,16 +95,14 @@ CheckRule "$XSS >= 8" BLOCK;
          index index.html index.htm;
 }
 location /RequestDenied {
-	 echo "FORBIDDEN.#";
+	 return 412;
 }
 --- request
 GET /?a=../../../../../bar.txt
---- response_body eval
-"FORBIDDEN.#
-"
+--- error_code: 412
 === TEST 3: OBVIOUS GET SQL INJECTION
 --- http_config
-include /etc/nginx/sec-rules/core.rules;
+include /etc/nginx/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -127,16 +116,14 @@ location / {
          index index.html index.htm;
 }
 location /RequestDenied {
-	 echo "FORBIDDEN.#";
+	 return 412;
 }
 --- request
 GET /?a=1'+Or+'1'='1
---- response_body eval
-"FORBIDDEN.#
-"
+--- error_code: 412
 === TEST 3bis: OBVIOUS (quoteless) GET SQL INJECTION
 --- http_config
-include /etc/nginx/sec-rules/core.rules;
+include /etc/nginx/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -150,11 +137,8 @@ location / {
          index index.html index.htm;
 }
 location /RequestDenied {
-	 echo "FORBIDDEN.#";
+	 return 412;
 }
 --- request
 GET /?a=1+UnIoN+SeLeCt+1
---- response_body eval
-"FORBIDDEN.#
-"
-
+--- error_code: 412

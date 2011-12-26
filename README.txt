@@ -5,7 +5,7 @@
  |_| \_|\__,_/_/\_\___/_|
  v0.1 alpha
 
-
+[[[!!! PLEASE REFER TO THE WIKI INSTEAD !!!]]]
 
  
 |--{ Introduction }------------------------------------------------------------|
@@ -160,8 +160,7 @@ This is a crucial part of any WAF, and this is not done yet !
 But the good point is that, thanks to the principle of calling an external page
  that receives all the informations about every denied request, it is fairly 
 simple to write your custom <insert your favorite language here> webpage to 
-take
-care of the statistics / reporting.
+take care of the statistics / reporting.
 
 
 |--{  3 .. 2 .. 1 .. practice !  }---------------------------------------------|
@@ -244,12 +243,25 @@ We can now fool the OS into thinking that xxx.com is on 127.0.0.1, edit /etc/hos
 
 <roll roll>
 
-In your nginx's log file (if set as debug), you will see a lot of lines like this one appear :
+As you should be in "learningmode", NAXSI will allow all the request, even if 
+they reach a blocking score. As well as letting them pass, it will, as well, 
+"forward" the request (like nginx's post_action directive) to your DeniedUrl,
+as well as the original blocked URL (in headers) and the generated blocking 
+details. In this way, the web backend is abble to generate the white-lists, 
+and reload nginx 'on the fly' with the new generated whitelist rules ;)
+
+The 'web' part is not written yet (I suck at html), but you can yet proceed
+in a different way :
+
+
+In your nginx's log file (if set as debug), you will see a lot of lines like
+this one appear :
 -----------------------------------8<-------------------------------------------
 2011/07/11 17:12:27 [debug] 18653#0: *7 NAXSI_FMT: server=&uri=/skin/frontend/default/xxx/images/interface/fleche-grise.gif&ip=127.0.0.1&zone0=HEADERS&id0=1005&var_name0=cookie&zone1=HEADERS&id1=1008&var_name1=cookie&zone2=HEADERS&id2=1009&var_name2=cookie&zone3=HEADERS&id3=1010&var_name3=cookie&zone4=HEADERS&id4=1011&var_name4=cookie&zone5=HEADERS&id5=1308&var_name5=cookie&zone6=HEADERS&id6=1309&var_name6=cookie&zone7=HEADERS&id7=1313&var_name7=cookie
 -----------------------------------8<-------------------------------------------
 
-So, once you think you've done a reasonable crawling on your site, you can launch the "rules generator" [destination rules file] [nginx's log file]:
+So, once you think you've done a reasonable crawling on your site, you can 
+launch the "rules generator" [destination rules file] [nginx's log file]:
 -----------------------------------8<-------------------------------------------
 bui@zeroed:~$ ./rules_generator.py
 RANGE for ID=1000,ZONE=URL, range=0-4

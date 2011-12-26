@@ -8,9 +8,7 @@
 use lib 'lib';
 use Test::Nginx::Socket;
 
-#repeat_each(3);
-
-plan tests => repeat_each(1) * 2 * blocks();
+plan tests => repeat_each(2) * blocks();
 no_root_location();
 no_long_string();
 $ENV{TEST_NGINX_SERVROOT} = server_root();
@@ -20,7 +18,7 @@ run_tests();
 __DATA__
 === TEST 1: Basic GET request
 --- http_config
-include /etc/nginx/sec-rules/core.rules;
+include /etc/nginx/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -34,17 +32,14 @@ CheckRule "$XSS >= 8" BLOCK;
          index index.html index.htm;
 }
 location /RequestDenied {
-	 echo "FORBIDDEN.#";
+	 return 412;
 }
 --- request
 GET /?a=buibui
---- response_body eval
-"<html><head><title>It works!</title></head><body>It works!</body></html>"
-
-
+--- error_code: 200
 === TEST 2: DENY : XSS bypass vector 1 (basic url encode)
 --- http_config
-include /etc/nginx/sec-rules/core.rules;
+include /etc/nginx/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -58,17 +53,14 @@ location / {
          index index.html index.htm;
 }
 location /RequestDenied {
-	 echo "FORBIDDEN.#";
+	 return 412;
 }
 --- request
 GET /?a=%2f%3cSc%3E
---- response_body eval
-"FORBIDDEN.#
-"
-
+--- error_code: 412
 === TEST 2.1: DENY : XSS bypass vector 2 (\x encode)
 --- http_config
-include /etc/nginx/sec-rules/core.rules;
+include /etc/nginx/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -82,11 +74,8 @@ CheckRule "$XSS >= 8" BLOCK;
          index index.html index.htm;
 }
 location /RequestDenied {
-	 echo "FORBIDDEN.#";
+	 return 412;
 }
 --- request
 GET /?a=\x2f\x3cSc\x3E
---- response_body eval
-"FORBIDDEN.#
-"
-
+--- error_code: 412

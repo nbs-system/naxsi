@@ -1,3 +1,21 @@
+/*
+ * NAXSI, a web application firewall for NGINX
+ * Copyright (C) 2011, Thibault 'bui' Koechlin
+ *  
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef __FOO_H__
 #define __FOO_H__
 
@@ -31,12 +49,18 @@ extern ngx_module_t ngx_http_dummy_module;
 **
 */
 
+enum MATCH_TYPE {
+  URI_ONLY=0,
+  NAME_ONLY,
+  MIXED
+};
 
 enum DUMMY_MATCH_ZONE {
   HEADERS=0,
   URL,
   ARGS,
   BODY,
+  FILE_EXT,
   UNKNOWN
 };
 
@@ -97,6 +121,8 @@ typedef struct
   ngx_flag_t		args_var:1;
   /* match on a global flag : weird_request, big_body etc. */
   ngx_flag_t		flags:1;
+  /* match on file upload extension */
+  ngx_flag_t		file_ext:1;
   /* set if defined "custom" match zone (GET_VAR/POST_VAR/...)  */
   ngx_array_t		*ids;
   ngx_str_t		*name;
@@ -110,10 +136,15 @@ typedef struct
 */
 typedef struct
 {
-  ngx_array_t			*whitelist_locations; //ngx_http_whitelist_location_t
+  //ngx_http_whitelist_location_t
+  ngx_array_t			*whitelist_locations; 
+  // zone to wich the WL applies
   enum DUMMY_MATCH_ZONE		zone;
+  // if the "name" is only an url, specify it
+  int				uri_only:1;
   ngx_str_t			*name;
   ngx_int_t			hash;
+  ngx_array_t			*ids;
 } ngx_http_whitelist_rule_t;
 
 
@@ -140,6 +171,8 @@ typedef struct
   ngx_flag_t		args_var:1;
   /* match on flags (weird_uri, big_body etc. */
   ngx_flag_t		flags:1;
+  /* match on file upload extension */
+  ngx_flag_t		file_ext:1;
   /* set if defined "custom" match zone (GET_VAR/POST_VAR/...)  */
   ngx_flag_t		custom_location:1;
   ngx_int_t		custom_location_only;
@@ -237,6 +270,8 @@ typedef struct
   ngx_array_t	*check_rules;
   /* raw array of whitelisted rules */
   ngx_array_t   *whitelist_rules;
+  /* raw array of transformed whitelists */
+  ngx_array_t	*tmp_wlr;
   /* hash table of whitelisted URL rules */
   ngx_hash_t	*wlr_url_hash;
   /* hash table of whitelisted ARGS rules */
@@ -332,10 +367,15 @@ char		*strnchr(const char *s, int c, int len);
 char		*strncasechr(const char *s, int c, int len);
 ngx_int_t	ngx_http_dummy_create_hashtables(ngx_http_dummy_loc_conf_t *dlc,
 						 ngx_conf_t *cf);
+ngx_int_t	ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
+						 ngx_conf_t *cf);
 void		ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx, 
 						  ngx_http_request_t	 *r);
 ngx_int_t	ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
 					       ngx_http_request_t *r);
+void
+naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type);
+
 /* static ngx_int_t ngx_http_dummy_subrequest(ngx_http_request_t *r,  */
 /* 					   ngx_chain_t *in); */
 //ngx_int_t ngx_http_dummy_subrequest(ngx_http_request_t *r);

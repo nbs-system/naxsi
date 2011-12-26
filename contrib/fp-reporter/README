@@ -1,0 +1,17 @@
+Fp-reporter 0.1 README
+
+0) Description
+
+Fp-reporter is a raw php script which is supposed to be called on DeniedUrl call when a user request is blocked.
+Using this page allow this end user to submit a false positive request to the email address configured within the fp-reporter.
+To avoid spaming the contact, a CATPCHA using Google ReCAPTCHA API is requested to the user.
+
+1) Installation
+
+- Copy forbidden.php somewhere in your webroot
+- Get recaptchalib.php lib from ReCAPTCHA and put it in the same directory (http://code.google.com/p/recaptcha/downloads/list?q=label:phplib-Latest)
+- Configure variables according to your setup: $public_key, $private_key, MAIL_DST email address 
+
+2) Bug report
+
+Please submit bug using Naxsi GoogleCode issue tracker.

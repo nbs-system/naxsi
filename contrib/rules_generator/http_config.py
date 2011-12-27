@@ -18,6 +18,8 @@ import argparse
 import re
 import cgi    
 
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         self.do_GET()
@@ -28,7 +30,7 @@ class Handler(BaseHTTPRequestHandler):
             if params.v > 2:
                 print ("Exception catched.")
                 print ("ExUrl: "+self.headers["naxsi_sig"])
-            nx.eat_rule(self)
+            nx.eat_rule(self.headers["naxsi_sig"])
             nx.agreggate_rules()
             return
         # user wanna reload its config
@@ -55,7 +57,9 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     self.wfile.write("Not root, not reloading anything.")
             return
-        # else, show ui/report
+        if params.log is not None:
+            # else, read possible log file, show ui/report
+            self.feed_from_logs(params.log)
         message = self.ui_report()
         self.send_response(200)
         self.end_headers()
@@ -63,7 +67,24 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(bytes(message, 'utf-8'))
         else:
             self.wfile.write(message)
-        return
+    def feed_from_logs(self, logfile):
+        if nx.log_fd is None:
+            print ("Opening log file for #1 time.")
+            nx.log_fd = open(params.log)
+        else:
+            print ("log file already opened")
+        # we're at the begining of the file ...
+        if nx.log_fd.tell() == 0:
+            print ("at the beginning of file.")
+        while True:
+            tmpbuf = nx.log_fd.readline()
+            if tmpbuf == '':
+                print ("EOF")
+                return
+            if tmpbuf.find("NAXSI_FMT: ") != -1 and tmpbuf.find(", client: ") != -1:
+                sys.stdout.write("[eating rule]")
+                nx.eat_rule(tmpbuf[tmpbuf.find("NAXSI_FMT: ") + 11:tmpbuf.find(", client: ")]) 
+                nx.agreggate_rules()
     def ui_report(self):
         nbr = nx.get_written_rules_count()
         nbs = nx.get_exception_count()
@@ -234,12 +255,12 @@ class NaxsiDB:
         cur.execute("SELECT COUNT(id) FROM received_sigs")
         ra = cur.fetchone()
         return (ra[0])
-    def eat_rule(self, req):
+    def eat_rule(self, source):
         currdict = {}
         server = ""
         uri = ""
         ridx = '0'
-        tmpdict = urlparse.parse_qsl(req.headers["naxsi_sig"])
+        tmpdict = urlparse.parse_qsl(source)
         for i in range(len(tmpdict)):
             if (tmpdict[i][0][-1] >= '0' and tmpdict[i][0][-1] <= '9' and
                 tmpdict[i][0][-1] != ridx):
@@ -281,6 +302,7 @@ class NaxsiDB:
             cur.execute("""SELECT count(id) FROM received_sigs WHERE md5=?""", [dd[i]["md5"]])
             ra = cur.fetchone()
             if (ra[0] >= 1):
+                print ("Already present in db.")
                 continue
             if params.v > 2:
                 print ("Pushing to db :")
@@ -315,6 +337,7 @@ class NaxsiDB:
         self.fatdict = []
         self.static = {}
         self.dbinit()
+        self.log_fd = None
         return
 
 class Params(object):
@@ -334,7 +357,7 @@ if __name__ == '__main__':
     parser.add_argument('--cmd', type=str, default='/etc/init.d/nginx reload', help='''Command that will be 
                         called to reload nginx's config file''')
     parser.add_argument('--port', type=int, default=4242, help='''The port the HTTP server will listen to''')
-    
+    parser.add_argument('--log', type=str, default=None, help='''Pickup false positives from log file as well.(ie. /var/log/nginx_error.log)''')
     parser.add_argument('-n', action='store_true', default=False,
                         help='''Run the daemon as non-root, don't try to reload nginx.''')
     parser.add_argument('-v', type=int, default=1, help='''Verbosity level 0-3''')

@@ -230,16 +230,6 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
 }
 
 
-//(b, name, zone, r, req, type)
-/*
-  ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
-  ngx_str_t *name, 
-  enum DUMMY_MATCH_ZONE zone,
-  ngx_http_rule_t	*r,
-  ngx_http_request_t	*req,
-  int type) {
-*/
-
 int	
 ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req, 
 				     ngx_http_dummy_loc_conf_t *cf, 
@@ -247,10 +237,8 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 				     enum DUMMY_MATCH_ZONE zone) {
   ngx_int_t			k;
   ngx_http_whitelist_rule_t	*b = NULL;
-  //ngx_http_whitelist_location_t	*cl;
   unsigned int		i, z;
   ngx_http_rule_t	**dr;
-  //ngx_int_t		*tmp_ptr;
   ngx_str_t tmp_hashname;
 
 #ifdef whitelist_debug
@@ -309,26 +297,6 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   if (b)
     if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, NAME_ONLY))
       return (1);
-  /* if something was found, check the rule ID */
-  /*   if (b) { */
-  /* #ifdef whitelist_debug */
-  /*     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "Name match in zone %s", */
-  /* 		  zone == ARGS ? "ARGS" : zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : "UNKNOWN!!!!!"); */
-  /* #endif */
-  /*     for (i = 0; i < b->ids->nelts; i++) { */
-  /*       if ( ((int *)b->ids->elts)[i] == r->rule_id || */
-  /* 	   ((int *)b->ids->elts)[i] == 0) { */
-  /* #ifdef whitelist_debug */
-  /* 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, */
-  /* 		      "WhiteListing0 rule %d on var [%V] at uri [%V] (dst id:%d)", */
-  /* 		      r->rule_id, name, &(req->uri), ((int *)b->ids->elts)[i]); */
-  /* #endif */
-  /* 	return (1); */
-  /*       } */
-  /*     } */
-  /*   } */
-
-
   /* check the URL no matter what zone we're in */
   if (cf->wlr_url_hash && cf->wlr_url_hash->size > 0) {
 #ifdef whitelist_debug
@@ -413,33 +381,6 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
     if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, MIXED))
       return (1);
   
-/*   if (b) { */
-/* #ifdef whitelist_debug */
-/*     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,  */
-/* 		  "This URL has some whitelist !"); */
-/*     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,  */
-/* 		  "[MATCHED_RULE] args:%d|args_var:%d|headers:%d|headers_var:%d|body:%d|body_var:%d|URL:%d", */
-/* 		  r->br->args, r->br->args_var, r->br->headers, r->br->headers_var, r->br->body, r->br->body_var, */
-/* 		  r->br->url); */
-/* #endif */
-      
-/*     for (i = 0; i < b->ids->nelts; i++) { */
-/*       ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, */
-/* 		    "wl : %d, matched rule : %d", ((int *)b->ids->elts)[i], r->rule_id); */
-      
-/*       if (zone == b->zone &&  (((int *)b->ids->elts)[i] == r->rule_id || */
-/* 			       ((int *)b->ids->elts)[i] == 0)) { */
-/* #ifdef whitelist_debug */
-/* 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, */
-/* 		      "WhiteListing1 rule %d/ wl[%d] = %d (wl had %d wl ids) on var [%V] at uri [%V] (zone:%s)", */
-/* 		      r->rule_id, i, ((int *)b->ids->elts)[i], b->ids->nelts, name, &(req->uri),  */
-/* 		      zone == HEADERS ? "HEADERS" : zone == URL ? "URL" : zone == BODY ? "BODY" : */
-/* 		      zone == ARGS ? "ARGS" : "UNKNOWN!!!!"); */
-/* #endif */
-/* 	return (1); */
-/*       } */
-/*     } */
-/*   } */
   return (0);
 }
 
@@ -660,13 +601,11 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ngx_int_t     rc, w;
   u_int		i;
   char		*fmt;
-  const char 	*fmt_base = "server=%.*s&uri=%.*s&ip=%.*s";
+  const char 	*fmt_base = "server=%.*s&uri=%.*s&ip=%.*s&total_processed=%lld&total_blocked=%lld";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
   ngx_str_t	denied_args;
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_http_matched_rule_t	*mr;
-  
-  //ngx_http_core_loc_conf_t        *clcf;
 
   /*
     create output message
@@ -675,11 +614,10 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 #ifdef output_forbidden
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "#Forbidding page");
 #endif
-  //rc = snprintf(0, 0, fmt_base, (r->host_end - r->host_start), r->host_start, r->uri.len, r->uri.data, r->connection->addr_text.len, r->connection->addr_text.data);
   rc = snprintf(0, 0, fmt_base, r->headers_in.server.len, 
 		r->headers_in.server.data, r->uri.len, 
 		r->uri.data, r->connection->addr_text.len, 
-		r->connection->addr_text.data);
+		r->connection->addr_text.data, cf->request_processed, cf->request_blocked);
   
   if (ctx->matched) {
     mr = ctx->matched->elts;
@@ -690,18 +628,19 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 		     mr[i].name->data);
   }
   else {
-    //it's a flag match, weird + big_request, generate on the fly matched rules.
     if (ctx->weird_request || ctx->big_request)
-      rc += (strlen(fmt_rm) + 20) * 2;
+      rc += snprintf(0, 0, fmt_rm, 99, 
+		     "-----BODY|ARGS|HEADERS|URL----", 
+		     99, 99, 99, 99, 
+		     "REQUEST_LONG_LONG");
   }
   fmt = ngx_pcalloc(r->pool, rc+2);
   if (!fmt)
     return (NGX_ERROR);
-  /* w = snprintf(fmt, rc, fmt_base, (r->host_end - r->host_start), r->host_start, r->uri.len, r->uri.data,  */
-  /* 	       r->connection->addr_text.len, r->connection->addr_text.data); */
   w = snprintf(fmt, rc, fmt_base, r->headers_in.server.len, 
 	       r->headers_in.server.data, r->uri.len, r->uri.data, 
-               r->connection->addr_text.len, r->connection->addr_text.data);
+               r->connection->addr_text.len, r->connection->addr_text.data, 
+	       cf->request_processed, cf->request_blocked);
   
   char	tmp_zone[30]; //<- should be a dynamic allocation, no bof here, just mem waste, but i'm lazy :)
   if (ctx->matched) {

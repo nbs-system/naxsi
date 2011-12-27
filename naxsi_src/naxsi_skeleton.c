@@ -130,7 +130,7 @@ static ngx_http_module_t ngx_http_dummy_module_ctx = {
 };
 
 
-ngx_module_t ngx_http_dummy_module = {
+ngx_module_t ngx_http_naxsi_module = {
   NGX_MODULE_V1,
   &ngx_http_dummy_module_ctx, /* module context */
   ngx_http_dummy_commands, /* module directives */
@@ -216,7 +216,7 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   unsigned int 				i;
   
   cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
-  main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_dummy_module);
+  main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_naxsi_module);
   if (cmcf == NULL || 
       main_cf == NULL)
     return (NGX_ERROR);
@@ -269,7 +269,7 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   if (!alcf || !cf)
     return (NGX_CONF_ERROR); 
   value = cf->args->elts;
-  main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_dummy_module);
+  main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_naxsi_module);
   if (!alcf->pushed) { 
     bar = ngx_array_push(main_cf->locations);
     if (!bar)
@@ -692,8 +692,8 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   struct tms		 tmsstart, tmsend;
   clock_t		 start, end;
   
-  ctx = ngx_http_get_module_ctx(r, ngx_http_dummy_module);
-  cf = ngx_http_get_module_loc_conf(r, ngx_http_dummy_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
+  cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
 
   clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
   /* ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
@@ -739,7 +739,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       
     if (ctx == NULL)
       return NGX_ERROR;
-    ngx_http_set_ctx(r, ctx, ngx_http_dummy_module);
+    ngx_http_set_ctx(r, ctx, ngx_http_naxsi_module);
     if  ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) 
 	 && !ctx->ready) {
 #ifdef mechanics_debug

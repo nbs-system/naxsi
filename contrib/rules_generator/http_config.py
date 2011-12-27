@@ -340,4 +340,8 @@ if __name__ == '__main__':
     nx = NaxsiDB()
     nx.read_text()
     print ('Starting server, use <Ctrl-C> to stop')
-    server.serve_forever()    
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt, e:
+        server.shutdown()
+        sys.exit(1)

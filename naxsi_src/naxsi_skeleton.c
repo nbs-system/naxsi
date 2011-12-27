@@ -783,6 +783,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : Failed to get time");
     ngx_http_dummy_data_parse(ctx, r);
+    cf->request_processed++;
     if ((end = times(&tmsend)) == -1)
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : Failed to get time");
@@ -792,6 +793,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 		    start, end, (end-start));
     ctx->over = 1;
     if (ctx->block) {
+      cf->request_blocked++;
       rc = ngx_http_output_forbidden_page(ctx, r);
       //nothing:      return (NGX_OK);
       //redirect : return (NGX_HTTP_OK);

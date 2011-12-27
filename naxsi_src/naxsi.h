@@ -282,7 +282,10 @@ typedef struct
   ngx_hash_t	*wlr_headers_hash;
   /* rules that are globally disabled in one location */
   ngx_array_t	*disabled_rules;
-  
+  /* counters for both processed requests and
+     blocked requests, used in naxsi_fmt */
+  ngx_int_t	request_processed;
+  ngx_int_t	request_blocked;
   ngx_int_t	error;
   ngx_array_t	*persistant_data;
   ngx_flag_t	learning:1;

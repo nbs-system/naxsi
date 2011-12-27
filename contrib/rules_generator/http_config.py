@@ -39,11 +39,19 @@ class Handler(BaseHTTPRequestHandler):
                 nx.dump_rules(self.path[self.path.find("?servmd5=")+9:])
             else:
                 nx.dump_rules()
-            
-            os.system(params.cmd)
-            self.send_response(302)
-            self.send_header('Location', '/')
-            self.end_headers()
+            if params.n is True:
+                os.system(params.cmd)
+                self.send_response(302)
+                self.send_header('Location', '/')
+                self.end_headers()
+            else:
+                print ("Not reloading anything as user is non-root")
+                self.send_response(200)
+                self.end_headers()
+                if sys.version_info > (3, 0):
+                    self.wfile.write(bytes("Not root, not reloading anything.", 'utf-8'))
+                else:
+                    self.wfile.write("Not root, not reloading anything.")
             return
         # else, show ui/report
         message = self.ui_report()
@@ -262,12 +270,10 @@ class NaxsiDB:
         currdict["md5"] = hashlib.md5((currdict["uri"]+currdict["server"]+
                                       currdict["id"]+currdict["zone"]+
                                       currdict["var_name"]).encode('utf-8')).hexdigest()
-#        print ('#2 here:'+currdict["md5"])
         self.fatdict.append(currdict)
         self.push_to_db(self.fatdict)
     def push_to_db(self, dd):
         cur = self.con.cursor()
-#        pprint.pprint(dd)
         for i in range(len(dd)):
             cur.execute("""SELECT count(id) FROM received_sigs WHERE md5=?""", [dd[i]["md5"]])
             ra = cur.fetchone()
@@ -316,7 +322,7 @@ params = Params()
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Naxsi's learning-mode HTTP server.\n"+
                                      "Should be run as root (yes scarry), as it will need to perform /etc/init.d/nginx reload.\n"+
-                                     "Should run fine as non-root, but you'll have to manually restart nginx",
+                                     "Runs fine as non-root, but you'll have to manually restart nginx",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--dst', type=str, default='/tmp/naxsi_rules.tmp', help='''Full path to the temp rule file.
                         This file should be included in your naxsi's location configuration file.''')
@@ -326,7 +332,8 @@ if __name__ == '__main__':
                         called to reload nginx's config file''')
     parser.add_argument('--port', type=int, default=4242, help='''The port the HTTP server will listen to''')
     
-    parser.add_argument('-n', action="store_true", default=False, help='''Run the daemon as non-root, don't try to reload nginx.''')
+    parser.add_argument('-n', action='store_true', default=False,
+                        help='''Run the daemon as non-root, don't try to reload nginx.''')
     parser.add_argument('-v', type=int, default=1, help='''Verbosity level 0-3''')
     args = parser.parse_args(namespace=params)
     server = HTTPServer(('localhost', params.port), Handler)

@@ -342,6 +342,6 @@ if __name__ == '__main__':
     print ('Starting server, use <Ctrl-C> to stop')
     try:
         server.serve_forever()
-    except KeyboardInterrupt, e:
+    except KeyboardInterrupt:
         server.shutdown()
         sys.exit(1)

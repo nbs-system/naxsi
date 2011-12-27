@@ -671,7 +671,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   /*
     create output message
   */
-  cf = ngx_http_get_module_loc_conf(r, ngx_http_dummy_module);
+  cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
 #ifdef output_forbidden
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "#Forbidding page");
 #endif
@@ -806,7 +806,7 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_http_matched_rule_t	*mr;
   
-  cf = ngx_http_get_module_loc_conf(req, ngx_http_dummy_module);
+  cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
   if (!cf || !ctx )
     return ;
   if (ngx_http_dummy_is_rule_whitelisted_n(req, cf, r, name, zone) == 1)
@@ -946,7 +946,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
   unsigned char			*dst, *src;
 
   
-  cf = ngx_http_get_module_loc_conf(req, ngx_http_dummy_module);
+  cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
 #ifdef spliturl_ruleset_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		"XX-check check [%s]", str);
@@ -1077,7 +1077,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
   if (!rules) 
     return (0);
   r = rules->elts;
-  cf = ngx_http_get_module_loc_conf(req, ngx_http_dummy_module);
+  cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
 #ifdef basestr_ruleset_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		"XX-checking rules ..."); 
@@ -1167,8 +1167,8 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
   ngx_http_dummy_loc_conf_t		*cf;
   ngx_http_dummy_main_conf_t		*main_cf;
   
-  cf = ngx_http_get_module_loc_conf(r, ngx_http_dummy_module);
-  main_cf = ngx_http_get_module_main_conf(r, ngx_http_dummy_module);
+  cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
+  main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
   
 #ifdef post_heavy_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
@@ -1598,9 +1598,9 @@ ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx,
   ngx_http_dummy_main_conf_t	*main_cf;
   ngx_http_core_main_conf_t  *cmcf;
 
-  cf = ngx_http_get_module_loc_conf(r, ngx_http_dummy_module);
+  cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
-  main_cf = ngx_http_get_module_main_conf(r, ngx_http_dummy_module);
+  main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
   if (!cf || !ctx || !cmcf) {
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-UNABLE TO PARSE IN DATA PARSE !!");
@@ -1758,7 +1758,7 @@ ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx,
 void 
 ngx_http_dummy_payload_handler(ngx_http_request_t *r) {
   ngx_http_request_ctx_t  *ctx;
-  ctx = ngx_http_get_module_ctx(r, ngx_http_dummy_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
   ctx->ready = 1;
   r->count--;
 #ifdef payload_handler_debug

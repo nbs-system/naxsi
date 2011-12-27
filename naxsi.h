@@ -29,7 +29,7 @@
 #include <ctype.h>
 
 
-extern ngx_module_t ngx_http_dummy_module;
+extern ngx_module_t ngx_http_naxsi_module;
 
 /*
 ** Here is globally how the structures are organized :

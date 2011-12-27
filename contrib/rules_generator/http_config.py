@@ -36,7 +36,6 @@ class Handler(BaseHTTPRequestHandler):
             if params.v > 2:
                 print ("writting rules, reloading nginx.")
             if self.path.find("?servmd5=") != -1:
-                print ("len "+str(len(self.path.find("?servmd5=")))+" #")
                 print ("writting and reloading specific server."+self.path[self.path.find("?servmd5=")+9:])
                 nx.dump_rules(self.path[self.path.find("?servmd5=")+9:])
             else:

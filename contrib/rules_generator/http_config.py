@@ -35,9 +35,12 @@ class Handler(BaseHTTPRequestHandler):
         if (self.path.startswith("/write_and_reload")):
             if params.v > 2:
                 print ("writting rules, reloading nginx.")
-            if self.path.find("?servmd5="):
+            if self.path.find("?servmd5=") != -1:
+                print ("len "+str(len(self.path.find("?servmd5=")))+" #")
+                print ("writting and reloading specific server."+self.path[self.path.find("?servmd5=")+9:])
                 nx.dump_rules(self.path[self.path.find("?servmd5=")+9:])
             else:
+                print ("writting and reloading all servers.")
                 nx.dump_rules()
             if params.n is False:
                 os.system(params.cmd)
@@ -126,6 +129,7 @@ class NaxsiDB:
             cur.execute("SELECT id, uri, zone, var_name, "
                         "server from tmp_rules where written = 0 and server = ?", [server])
         rr = cur.fetchall()
+        print ("Writting "+str(len(rr))+" rules.")
         for i in range(len(rr)):
             tmprule = "BasicRule wl:"+str(rr[i][0])+" \"mz:"
             if len(rr[i][1]) > 0:

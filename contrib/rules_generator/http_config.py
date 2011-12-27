@@ -39,7 +39,7 @@ class Handler(BaseHTTPRequestHandler):
                 nx.dump_rules(self.path[self.path.find("?servmd5=")+9:])
             else:
                 nx.dump_rules()
-            if params.n is True:
+            if params.n is False:
                 os.system(params.cmd)
                 self.send_response(302)
                 self.send_header('Location', '/')

@@ -1091,8 +1091,8 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
   ** [XXX] : this function sucks ! I don't parse bigger-than-body-size posts that 
   **	   are partially stored in files, TODO ;)
   */
-//#define post_heavy_debug
-//#define dummy_body_parse_debug
+#define post_heavy_debug
+#define dummy_body_parse_debug
 void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx, 
 				       ngx_http_request_t	 *r,
 				       u_char			*src,
@@ -1127,13 +1127,24 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
     }
   boundary += 9; //strlen ("boundary=")
   boundary_len = strlen(boundary);
-      
+   
   /* fetch every line starting with boundary */
   idx = 0;
   while (idx < len) {
+#ifdef post_heavy_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		  "XX-POST data : (%s)", src+idx);
+#endif
+    //dummy_error_fatal(ctx, r, "POST data : (%s)", src+idx);
     /* if we've reached the last boundary '--' + boundary + '--' + '\r\n'*/
     if (idx+boundary_len+6 >= len)
-      break;
+      {
+#ifdef post_heavy_debug
+	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		      "XX-reached end, not enough len");
+#endif
+	break;
+      }
     //check if line starts with -- (pre-boundary stuff) 
     if (src[idx] != '-' || src[idx+1] != '-' || 
 	//and if it's really followed by a boundary
@@ -1313,7 +1324,12 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
     if (!ngx_strncmp(end, "\r\n", 2))
       idx += 2;
   }
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		"(multipart) : OVER");
+
 }
+
+#define dummy_body_parse_debug
 
 void	
 ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx, 

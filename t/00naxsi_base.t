@@ -632,7 +632,38 @@ Content-Length: 42
 --- request eval
 use URI::Escape;
 "POST /\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nMyName\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"married\"\r\n\r\nnot single\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"male\"\r\n\r\nyes\r\n-----------------------------103832778631715--\r\n"
---- error_code: 412
+--- error_code: 200
+=== TEST 26.1: Testing MULTIPART POSTs (BAD CONTENT LEN)
+#nginx changed his way, no data is cut to content lenght header, so this test is obsolete
+--- user_files
+>>> foobar
+eh yo
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TESTSCORE > 42" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- more_headers
+Content-Type: multipart/form-data; boundary=---------------------------103832778631715
+Content-Length: 42
+--- request eval
+use URI::Escape;
+"POST /\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nMy<aaaaa>Name\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"married\"\r\n\r\nnot single\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"male\"\r\n\r\ny<alert>es\r\n-----------------------------103832778631715--\r\n"
+--- error_code: 200
 === TEST 27: Obvious POST XSS (multipart)
 --- user_files
 >>> foobar

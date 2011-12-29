@@ -572,8 +572,10 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
   uint	i;
 
   if (!dlc->whitelist_rules || dlc->whitelist_rules->nelts < 1) {
+#ifdef whitelist_heavy_debug    
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 		       "No whitelist registred, but it's your call.");    
+#endif
     return (NGX_OK);
   }
 #ifdef whitelist_heavy_debug

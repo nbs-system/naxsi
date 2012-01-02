@@ -247,7 +247,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 		zone == ARGS ? "ARGS" : zone == HEADERS ? "HEADERS" : zone == BODY ? "BODY" : zone == URL ? "URL" : "UNKNOWN",
 		name);
 #endif
-  tmp_hashname.data = tmp_hashname.len = 0;
+  tmp_hashname.data = NULL;
   
   /* Check if the rule is part of disabled rules for this location */
   if (cf->disabled_rules) {

@@ -247,7 +247,8 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 		zone == ARGS ? "ARGS" : zone == HEADERS ? "HEADERS" : zone == BODY ? "BODY" : zone == URL ? "URL" : "UNKNOWN",
 		name);
 #endif
-
+  tmp_hasname.data = tmp_hashname.len = 0;
+  
   /* Check if the rule is part of disabled rules for this location */
   if (cf->disabled_rules) {
     dr = cf->disabled_rules->elts;
@@ -337,10 +338,10 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 						       req->uri.len); 
     
     
-    if (b)
-      if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, URI_ONLY))
-	return (1);
-	
+  if (b)
+    if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, URI_ONLY))
+      return (1);
+  
   /* maybe it was $URL+$VAR ? */
   if (!b) {
     tmp_hashname.len = req->uri.len + 1 + name->len;
@@ -381,10 +382,12 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   if (b)
     if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, MIXED))
       {
-	ngx_pfree(req->pool, tmp_hashname.data);
+	if (tmp_hashname.data)
+	  ngx_pfree(req->pool, tmp_hashname.data);
 	return (1);
       }
-  ngx_pfree(req->pool, tmp_hashname.data);
+  if (tmp_hashname.data)
+    ngx_pfree(req->pool, tmp_hashname.data);
   return (0);
 }
 

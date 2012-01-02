@@ -381,10 +381,10 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   if (b)
     if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, MIXED))
       {
-	ngx_pfree(req->pool, tmp_hashname.data)
+	ngx_pfree(req->pool, tmp_hashname.data);
 	return (1);
       }
-  ngx_pfree(req->pool, tmp_hashname.data)
+  ngx_pfree(req->pool, tmp_hashname.data);
   return (0);
 }
 

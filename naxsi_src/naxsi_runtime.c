@@ -22,7 +22,7 @@
  then, accessed by the hashtable building feature during "init" time. */
 ngx_http_dummy_loc_conf_t *dummy_lc;
 
-#define whitelist_debug
+//#define whitelist_debug
 
 
 #define dummy_error_fatal(ctx, r, ...) do {	\
@@ -389,7 +389,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 }
 
 
-#define output_forbidden
+//#define output_forbidden
 ngx_int_t  
 ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
 			       ngx_http_request_t *r)
@@ -526,7 +526,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 /*
 ** new rulematch, less arguments ^
 */
-#define whitelist_debug
+//#define whitelist_debug
 //#define whitelist_light_debug
 //#define whitelist_debug
 
@@ -663,7 +663,7 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
 **	  this couple along with valid rules to checking func.
 ** WARN/TODO : Even I tried to make my code bof proof, this should be seriously audited :)
 */
-#define spliturl_ruleset_debug
+//#define spliturl_ruleset_debug
 int 
 ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 			  char	*str,
@@ -786,7 +786,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 /*
 ** check variable + name against a set of rules, checking against 'custom' location rules too.
 */
-#define basestr_ruleset_debug
+//#define basestr_ruleset_debug
 int 
 ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 			   ngx_str_t	*name,
@@ -887,8 +887,8 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
   ** [XXX] : this function sucks ! I don't parse bigger-than-body-size posts that 
   **	   are partially stored in files, TODO ;)
   */
-#define post_heavy_debug
-#define dummy_body_parse_debug
+//#define post_heavy_debug
+//#define dummy_body_parse_debug
 void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx, 
 				       ngx_http_request_t	 *r,
 				       u_char			*src,
@@ -1125,7 +1125,7 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 
 }
 
-#define dummy_body_parse_debug
+//#define dummy_body_parse_debug
 
 void	
 ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx, 

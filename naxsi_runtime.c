@@ -344,6 +344,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   /* maybe it was $URL+$VAR ? */
   if (!b) {
     tmp_hashname.len = req->uri.len + 1 + name->len;
+    //ngx_pfree(req->pool, tmp_hashname.data)
     tmp_hashname.data = ngx_pcalloc(req->pool, req->uri.len + 2 + name->len);
     if (!tmp_hashname.data)
       return (NGX_ERROR);
@@ -379,221 +380,16 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   
   if (b)
     if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, MIXED))
-      return (1);
-  
+      {
+	ngx_pfree(req->pool, tmp_hashname.data)
+	return (1);
+      }
+  ngx_pfree(req->pool, tmp_hashname.data)
   return (0);
 }
 
 
-
-
-int	
-ngx_http_dummy_is_rule_whitelisted(ngx_http_request_t *req, 
-				   ngx_http_dummy_loc_conf_t *cf, 
-				   ngx_http_rule_t *r, ngx_str_t *name, 
-				   enum DUMMY_MATCH_ZONE zone)
-{
-  ngx_int_t			k;
-  ngx_http_whitelist_rule_t	*b = NULL;
-  ngx_http_whitelist_location_t	*cl;
-  unsigned int		i, z;
-  ngx_http_rule_t	**dr;
-  ngx_int_t		*tmp_ptr;
-
-#ifdef whitelist_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		"is rule [%d] whitelisted in zone %s for item %V", r->rule_id,
-		zone == ARGS ? "ARGS" : zone == HEADERS ? "HEADERS" : zone == BODY ? "BODY" : zone == URL ? "URL" : "UNKNOWN",
-		name);
-#endif
-
-  /* Check if the rule is part of disabled rules for this location */
-  if (cf->disabled_rules) {
-    dr = cf->disabled_rules->elts;
-      
-    for (i = 0; i < cf->disabled_rules->nelts; i++)
-      for (z = 0; dr[i]->wl_id[z] > 0; z++) {
-	/* if it's the same ID or that the WL id is 0 (which means ALL RULES), it's whitelisted ! */
-	/* TODO : test case for WL on rule_id 0 */
-	if (dr[i]->wl_id[z] == r->rule_id || dr[i]->wl_id[z] == 0) {
-	    
-	  if (dr[i]->br && (dr[i]->br->body || dr[i]->br->args || 
-			    dr[i]->br->url || dr[i]->br->headers)) {
-#ifdef whitelist_debug
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			  "is in spec zone ? [body=%d,args=%d,uri=%d,headers=%d]",
-			  dr[i]->br->body, dr[i]->br->args, dr[i]->br->url, dr[i]->br->headers);
-#endif
-	    if (zone == ARGS && dr[i]->br->args) return (1);
-	    if (zone == HEADERS && dr[i]->br->headers) return (1);
-	    if (zone == BODY && dr[i]->br->body) return (1);
-	    if (zone == URL && dr[i]->br->url) return (1);
-	  }
-	  else {
-#ifdef whitelist_debug
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			  "Rule [%d] was disabled, whitelist.", r->rule_id);
-#endif
-	    return (1);
-	  }
-	}
-      }
-  }
-#ifdef whitelist_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		"hashing [%V]", name);
-#endif
-  /* lower case the var name before checking it against hash tables */
-  /* TODO : should do the same with uri ? but it's case sensitive ... */
-  for (i = 0; i < name->len; i++)
-    name->data[i] = tolower(name->data[i]);
-  /* search if there is WL on this ARGS name */
-  k = ngx_hash_key_lc(name->data, name->len);
-  if (cf->wlr_args_hash && cf->wlr_args_hash->size > 0 && zone == ARGS)
-    b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_args_hash, k, 
-						   (u_char*) name->data, 
-						   name->len);
-  else 
-    /* search if there is WL on this BODY name */
-    if (cf->wlr_body_hash && cf->wlr_body_hash->size > 0 && zone == BODY)
-      b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_body_hash, k, 
-						     (u_char*) name->data, 
-						     name->len); 
-    else
-      /* or if there is a WL on this HEADER name */
-      if (cf->wlr_headers_hash && cf->wlr_headers_hash->size > 0 && 
-	  zone == HEADERS)
-	b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_headers_hash, k, 
-						       (u_char*) name->data, 
-						       name->len); 
-  /* if something was found, check the rule ID */
-  if (b) {
-#ifdef whitelist_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "Name match in zone ARGS");
-#endif
-    for (cl = b->whitelist_locations->elts, i = 0; 
-	 i < b->whitelist_locations->nelts; i++) {
-#ifdef whitelist_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		    "[WHITELIST] args:%d|args_var:%d|headers:%d|headers_var:%d|body:%d|body_var:%d|URL:%d, nb elems : %d",
-		    cl[i].args, cl[i].args_var, cl[i].headers, cl[i].headers_var, cl[i].body, cl[i].body_var,
-		    cl[i].url, cl[i].ids->nelts);
-#endif
-      tmp_ptr = cl[i].ids->elts;
-      for (z = 0; z < cl[i].ids->nelts; z++) {
-#ifdef whitelist_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		      "Potential : %d",
-		      tmp_ptr[z]);
-#endif
-	/* If it's 0 or rule_id, it's whitelisted */
-	if (r->rule_id == tmp_ptr[z] || tmp_ptr[z] == 0) {
-#ifdef whitelist_debug
-	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			"WhiteListing0 rule %d on var [%V] at uri [%V]",
-			r->rule_id, name, &(req->uri));
-#endif
-	  /* the rule is whitelisted ! */
-	  return (1);
-		  
-	}
-      }
-    }
-  }
-  /* check the URL no matter what zone we're in */
-  if (cf->wlr_url_hash && cf->wlr_url_hash->size > 0) {
-    k = ngx_hash_key_lc(req->uri.data, req->uri.len);
-    /* check if the rule was not whitelisted */  
-#ifdef whitelist_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		  "Check if rule [%d] is whitelist on arg [%V] from uri [%V]",
-		  r->rule_id, name, &(req->uri));
-#endif
-    b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_url_hash, k, 
-						   (u_char*) req->uri.data, 
-						   req->uri.len);
-    if (b) {
-#ifdef whitelist_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		    "This URL has some whitelist !");
-      //then verify if it is on this specific argument context, and on this rule ID
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		    "[MATCHED_RULE] args:%d|args_var:%d|headers:%d|headers_var:%d|body:%d|body_var:%d|URL:%d",
-		    r->br->args, r->br->args_var, r->br->headers, r->br->headers_var, r->br->body, r->br->body_var,
-		    r->br->url);
-#endif
-	  
-      for (cl = b->whitelist_locations->elts, i = 0; i < b->whitelist_locations->nelts; i++) {
-#ifdef whitelist_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		      "[WHITELIST] args:%d|args_var:%d|headers:%d|headers_var:%d|body:%d|body_var:%d|URL:%d",
-		      cl[i].args, cl[i].args_var, cl[i].headers, cl[i].headers_var, cl[i].body, cl[i].body_var,
-		      cl[i].url);
-#endif
-	/*
-	** Go through the list of location for the whitelist, as the URL is the same.
-	** First, check for "generic" zones, like :
-	** $URL:/bar|ARGS
-	** $URL:/bar|BODY
-	** ...
-	*/
-	if ( (cl[i].args && (r->br->args_var || r->br->args)) ||
-	     (cl[i].url && r->br->url) ||
-	     (cl[i].body && (r->br->body_var || r->br->body)) ||
-	     (cl[i].headers && (r->br->headers_var || r->br->headers)) ) {
-	  tmp_ptr = cl[i].ids->elts;
-	  for (z = 0; z < cl[i].ids->nelts; z++) {
-	    if (r->rule_id == tmp_ptr[z] || tmp_ptr[z] == 0) {
-#ifdef whitelist_debug
-	      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			    "WhiteListing0 rule %d on var [%V] at uri [%V]",
-			    r->rule_id, name, &(req->uri));
-#endif
-	      return (1);
-			  
-	    }
-	  }
-	}
-	/* 
-	** if we have a specific white list on one name, either in headers,args or body
-	** and that the rule has matched on the whole context (body,args,headers) OR 
-	** the rule was matching on a specific [name] from one of those contexts, check
-	** if the name are the sames :)
-	*/
-	if ( (cl[i].body_var && (r->br->body_var || r->br->body)) || 
-	     (cl[i].headers_var && (r->br->headers_var || r->br->headers)) || 
-	     (cl[i].args_var && (r->br->args_var || r->br->args)) ) {
-#ifdef whitelist_debug
-	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "zone-match [check names] (%V)", name);
-#endif
-	  if (cl[i].name->len == name->len &&
-	      !strncmp((const char *)name->data, 
-		       (const char *)cl[i].name->data, cl[i].name->len)) {
-#ifdef whitelist_debug
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			  "WhiteListing4 rule %d on var [%V] at uri [%V] [NameMATCH]",
-			  r->rule_id, name, &(req->uri));
-#endif
-	    tmp_ptr = cl[i].ids->elts;
-	    for (z = 0; z < cl[i].ids->nelts; z++)
-	      if (r->rule_id == tmp_ptr[z] || tmp_ptr[z] == 0) {
-#ifdef whitelist_debug
-		ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			      "WhiteListing5 rule %d on var [%V] at uri [%V]",
-			      r->rule_id, name, &(req->uri));
-#endif
-		return (1);
-			
-	      }
-	  }
-	}
-      }
-    }
-  }
-  return (0);
-}
-
-//#define output_forbidden
+#define output_forbidden
 ngx_int_t  
 ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
 			       ngx_http_request_t *r)
@@ -730,7 +526,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 /*
 ** new rulematch, less arguments ^
 */
-//#define whitelist_debug
+#define whitelist_debug
 //#define whitelist_light_debug
 //#define whitelist_debug
 
@@ -867,7 +663,7 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
 **	  this couple along with valid rules to checking func.
 ** WARN/TODO : Even I tried to make my code bof proof, this should be seriously audited :)
 */
-//#define spliturl_ruleset_debug
+#define spliturl_ruleset_debug
 int 
 ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 			  char	*str,
@@ -954,7 +750,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       /* ngx_unescape_uri(&src, &dst, */
       /* 		       val.len, NGX_UNESCAPE_URI);       */
       naxsi_unescape_uri(&src, &dst,
-		       val.len, NGX_UNESCAPE_URI);      
+			 val.len, NGX_UNESCAPE_URI);      
       val.len =  src - val.data;
       //tmp hack fix, avoid %00 & co (null byte) encoding :p
       for (i = 0; i < val.len; i++)
@@ -990,7 +786,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 /*
 ** check variable + name against a set of rules, checking against 'custom' location rules too.
 */
-//#define basestr_ruleset_debug
+#define basestr_ruleset_debug
 int 
 ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 			   ngx_str_t	*name,

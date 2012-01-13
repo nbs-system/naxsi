@@ -220,9 +220,8 @@ class NaxsiDB:
             [write&reload <b>{1}</b></a>|{2} pending rules|
             filename:{3}]</br>""".format(rr[i][0], rr[i][0], 
                                          str(self.get_written_rules_count(rr[i][0])),
-                                         params.dst+"."+hashlib.md5(rr[i][0]).hexdigest(),
+                                         params.dst+"."+hashlib.md5(rr[i][0].encode('utf-8')).hexdigest(),
                                          tmpstyle)
-            
         msg += "</br>"
         cur.execute("SELECT id,uri,zone,var_name,server"
                     " FROM tmp_rules where written = 0")

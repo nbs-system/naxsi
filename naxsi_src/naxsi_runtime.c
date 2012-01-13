@@ -253,7 +253,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   if (cf->disabled_rules) {
     dr = cf->disabled_rules->elts;
     for (i = 0; i < cf->disabled_rules->nelts; i++)
-      for (z = 0; dr[i]->wl_id[z] > 0; z++) {
+      for (z = 0; dr[i]->wl_id[z] >= 0; z++) {
 	/* if it's the same ID or that the WL id is 0 (which means ALL RULES), it's whitelisted ! */
 	/* TODO : test case for WL on rule_id 0 */
 	if (dr[i]->wl_id[z] == r->rule_id || dr[i]->wl_id[z] == 0) {

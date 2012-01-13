@@ -140,7 +140,7 @@ class NaxsiDB:
         if server is None:
             fd = open(params.dst, "a+")
         else:
-            fd = open(params.dst+"."+hashlib.md5(server).hexdigest(), "a+")
+            fd = open(params.dst+"."+hashlib.md5(server.encode('utf-8')).hexdigest(), "a+")
         cur = self.con.cursor()
         if server is None:
             cur.execute("SELECT id, uri, zone, var_name, "

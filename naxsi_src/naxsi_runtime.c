@@ -75,7 +75,15 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
   if (rl->br->rx) {
     tmp_idx = 0;
     len = str->len;
+#if defined nginx_version && (nginx_version > 1001011)
+    while (tmp_idx < len && (match = pcre_exec(rl->br->rx->regex->pcre, 0, (const char *) str->data, str->len, tmp_idx, 0, captures, 6)) >= 0) {
+#elif defined nginx_version && (nginx_version <= 1001011)
     while (tmp_idx < len && (match = pcre_exec(rl->br->rx->regex, 0, (const char *) str->data, str->len, tmp_idx, 0, captures, 6)) >= 0) {
+#elif defined nginx_version
+#error "Inconsistent nginx version."
+#else
+#error "nginx_version not defined."
+#endif
       for(i = 0; i < match; ++i)
 	*nb_match += 1;
       tmp_idx = captures[1];

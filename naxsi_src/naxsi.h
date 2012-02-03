@@ -19,6 +19,7 @@
 #ifndef __FOO_H__
 #define __FOO_H__
 
+#include <nginx.h>
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
@@ -146,6 +147,7 @@ typedef struct
   ngx_int_t			hash;
   ngx_array_t			*ids;
 } ngx_http_whitelist_rule_t;
+
 
 
 

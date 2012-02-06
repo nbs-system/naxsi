@@ -408,7 +408,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ngx_int_t     rc, w;
   u_int		i;
   char		*fmt;
-  const char 	*fmt_base = "server=%.*s&uri=%.*s&ip=%.*s&total_processed=%lld&total_blocked=%lld";
+  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&total_processed=%lld&total_blocked=%lld";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
   ngx_str_t	denied_args;
   ngx_http_dummy_loc_conf_t	*cf;
@@ -421,10 +421,12 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 #ifdef output_forbidden
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "#Forbidding page");
 #endif
-  rc = snprintf(0, 0, fmt_base, r->headers_in.server.len, 
-		r->headers_in.server.data, r->uri.len, 
-		r->uri.data, r->connection->addr_text.len, 
-		r->connection->addr_text.data, cf->request_processed, cf->request_blocked);
+  rc = snprintf(0, 0, fmt_base, r->connection->addr_text.len,
+                r->connection->addr_text.data,
+                r->headers_in.server.len, r->headers_in.server.data,
+                r->uri.len, r->uri.data,
+                cf->request_processed, cf->request_blocked);
+
   
   if (ctx->matched) {
     mr = ctx->matched->elts;
@@ -444,12 +446,15 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   fmt = ngx_pcalloc(r->pool, rc+2);
   if (!fmt)
     return (NGX_ERROR);
-  w = snprintf(fmt, rc, fmt_base, r->headers_in.server.len, 
-	       r->headers_in.server.data, r->uri.len, r->uri.data, 
-               r->connection->addr_text.len, r->connection->addr_text.data, 
+  w = snprintf(fmt, rc, fmt_base, r->connection->addr_text.len,
+	       r->connection->addr_text.data,
+	       r->headers_in.server.len, r->headers_in.server.data,
+	       r->uri.len, r->uri.data,
 	       cf->request_processed, cf->request_blocked);
   
-  char	tmp_zone[30]; //<- should be a dynamic allocation, no bof here, just mem waste, but i'm lazy :)
+  char	tmp_zone[30]; 
+  /*<- should be a dynamic allocation, no bof here, just mem waste
+    , but i'm lazy :) */
   if (ctx->matched) {
     mr = ctx->matched->elts;
     for (i = 0; i < ctx->matched->nelts; i++) {
@@ -525,10 +530,10 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     return (NGX_DECLINED);
   }
   else {
-    rc = ngx_http_internal_redirect(r, cf->denied_url,  
-				    &denied_args); 
     ngx_log_error(NGX_LOG_ERR, r->connection->log, 
 		  0, "NAXSI_FMT: %s", fmt);
+    rc = ngx_http_internal_redirect(r, cf->denied_url,  
+				    &denied_args); 
     return (NGX_HTTP_OK);
   }
   return (NGX_ERROR);

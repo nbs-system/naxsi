@@ -410,10 +410,10 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   char		*fmt;
   const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&total_processed=%lld&total_blocked=%lld";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
-  ngx_str_t	denied_args;
+  ngx_str_t	denied_args, tmp_uri;
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_http_matched_rule_t	*mr;
-
+  
   /*
     create output message
   */
@@ -421,10 +421,14 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 #ifdef output_forbidden
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "#Forbidding page");
 #endif
+  tmp_uri.len = r->uri.len + (2 * ngx_escape_uri(NULL, r->uri.data, r->uri.len,
+						 NGX_ESCAPE_ARGS));
+  tmp_uri.data = ngx_pcalloc(r->pool, tmp_uri.len+1);
+  ngx_escape_uri(tmp_uri.data, r->uri.data, r->uri.len, NGX_ESCAPE_ARGS);
   rc = snprintf(0, 0, fmt_base, r->connection->addr_text.len,
                 r->connection->addr_text.data,
                 r->headers_in.server.len, r->headers_in.server.data,
-                r->uri.len, r->uri.data,
+                tmp_uri.len, tmp_uri.data,
                 cf->request_processed, cf->request_blocked);
 
   
@@ -449,7 +453,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   w = snprintf(fmt, rc, fmt_base, r->connection->addr_text.len,
 	       r->connection->addr_text.data,
 	       r->headers_in.server.len, r->headers_in.server.data,
-	       r->uri.len, r->uri.data,
+	       tmp_uri.len, tmp_uri.data,
 	       cf->request_processed, cf->request_blocked);
   
   char	tmp_zone[30]; 
@@ -500,9 +504,9 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   h->key.len = strlen("orig_url");
   h->key.data = ngx_pcalloc(r->pool, strlen("orig_url")+1);
   memcpy(h->key.data, "orig_url", strlen("orig_url"));
-  h->value.len = r->uri.len;
-  h->value.data = ngx_pcalloc(r->pool, r->uri.len+1);
-  memcpy(h->value.data, r->uri.data, r->uri.len);
+  h->value.len = tmp_uri.len;
+  h->value.data = ngx_pcalloc(r->pool, tmp_uri.len+1);
+  memcpy(h->value.data, tmp_uri.data, tmp_uri.len);
   
   h = ngx_list_push(&(r->headers_in.headers));
   h->key.len = strlen("orig_args");

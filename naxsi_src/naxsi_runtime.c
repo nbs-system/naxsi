@@ -770,7 +770,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       /* ngx_unescape_uri(&src, &dst, */
       /* 		       val.len, NGX_UNESCAPE_URI);       */
       naxsi_unescape_uri(&src, &dst,
-			 val.len, NGX_UNESCAPE_URI);      
+			 val.len, 0);      
       val.len =  src - val.data;
       //tmp hack fix, avoid %00 & co (null byte) encoding :p
       for (i = 0; i < val.len; i++)

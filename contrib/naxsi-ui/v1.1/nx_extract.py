@@ -10,13 +10,24 @@ from twisted.internet import protocol
 from twisted.internet import reactor
 
 class rules_extractor(object):
-   def __init__(self, max_hit):
+   def __init__(self, max_hit, rules_file):
       self.db = MySQLConnector.MySQLConnector().connect()
       self.cursor = self.db.cursor(MySQLdb.cursors.DictCursor)
       self.rules_list = []
       self.final_rules = []
       self.base_rules = []
       self.max_hit = max_hit
+      self.core_msg = {}
+      try:
+         fd = open(rules_file, 'r')
+         for i in fd:
+            if i.startswith('MainRule'):
+               pos = i.find('id:')
+               pos_msg = i.find('msg:')
+               self.core_msg[i[pos + 3:i[pos + 3].find(';') - 1]] = i[pos_msg + 4:][:i[pos_msg + 4:].find('"')]
+         fd.close()
+      except:
+         pass
    
    def gen_basic_rules(self,url=None, srcip=None, dsthost=None,
                 rule_id=None, exception_md5=None,
@@ -120,12 +131,15 @@ class rules_extractor(object):
 class InterceptHandler(http.Request):
     def process(self):
        if self.path == '/get_rules':
-          ex = rules_extractor(int(self.args.get('max_hit', ['10'])[0]))
+          print(self.args)
+          ex = rules_extractor(int(self.args.get('max_hit', ['10'])[0]), self.args.get('rules_file', [None])[0])
           ex.gen_basic_rules()
           base_rules, opti_rules = ex.opti_rules()
           r = '########### Rules Before Optimisation ##################\n'
           for i in base_rules:
-             r += '#%s hits on rule %s on url %s from %s different peers\n' % (i['count'], i['id'], i['url'], i['cnt_peer'])
+             r += '#%s hits on rule %s (%s) on url %s from %s different peers\n' %\
+             (i['count'], i['id'], 
+              ex.core_msg.get(i['id'], 'Unknown id. Check the path to the core rules file and/or the content.'), i['url'], i['cnt_peer'])
              r += '#BasicRule wl:' + i['id'] + ' "mz:$URL:' + i['url'] + '|' + i['arg'] + '";\n'
           r += '########### End Of Rules Before Optimisation ###########\n'
           for i in opti_rules:

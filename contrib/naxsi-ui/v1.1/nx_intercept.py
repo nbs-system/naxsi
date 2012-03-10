@@ -1,50 +1,62 @@
 #!/usr/bin/env python
-
-
-from twisted.internet.protocol import Protocol, Factory
-from twisted.internet import reactor, threads
+from twisted.web import http
+from twisted.internet import protocol
+from twisted.internet import reactor
+import pprint
 from nx_parser import signature_parser
-import syslog
+import MySQLConnector
+import MySQLdb
+import getopt
+import sys
 
-
-
-class NaxsiHTTPInterceptor(Protocol):
-    def dataReceived(self, data):
-        sig = signature_parser("localhost", "root", "trivialpassword", "naxsi_sig")
-        sig_idx = data.find("\r\nnaxsi_sig: ")
-        if (sig_idx == -1):
-#            syslog.syslog("unable to find naxsi_sig in HTTP request.")
-            print "ERROR: request doesn't contain naxsi_sig header"
-#            self.finish()
+class InterceptHandler(http.Request):
+    def process(self):
+        print '----------------------------------------------'
+        if len(self.requestHeaders.getRawHeaders('Orig_args', [''])) and self.requestHeaders.getRawHeaders('Orig_args')[0]:
+            print 'Get Request ! : ', self.requestHeaders.getRawHeaders('Orig_args'), ' on url ', self.path
+        elif len(self.args):
+            print 'Post request : ', self.args, ' on url ', self.path
+        else:
+            print 'no args !', ' on url ', self.path
+            
+        self.db = MySQLConnector.MySQLConnector().connect()
+        if self.db is None:
+            raise ValueError("Cannot connect to db.")
+        self.cursor = self.db.cursor()
+        if self.cursor is None:
+            raise ValueError("Cannot connect to db.")
+        sig = self.getHeader("naxsi_sig")
+        if sig is None:
+            print "no naxsi_sig header."
             return
-        sig_idx = sig_idx + 2
-        sig_end = data[sig_idx:].find("\r\n")
-        if (sig_end == -1):
-#            syslog.syslog("unable to find naxsi_sig in HTTP request.")
-            print "ERROR: request doesn't contain naxsi_sig header"
-#            self.finish()
-            return
+        parser = signature_parser(self.cursor)
+        parser.sig_to_db("", sig)
+        self.db.close()
         self.finish()
-        threads.deferToThread(sig.raw_parser, 
-                              *(data, data[sig_idx:sig_idx+sig_end], False, 
-                                True))
-        return
 
-    def finish(self):
-        self.transport.write("HTTP/1.0 200 OK\r\n"
-                             "Server: nx-learn\r\n"
-                             "Content-Type: text/html\r\n"
-                             "Content-Length: 2\r\n"
-                             "Connection: close\r\n\r\n"
-                             "ok")
-        self.transport.loseConnection()
+class InterceptProtocol(http.HTTPChannel):
+    requestFactory = InterceptHandler
 
-def main():
-    f = Factory()
-    f.protocol = NaxsiHTTPInterceptor
-    reactor.listenTCP(8000, f)
-    reactor.run()
+class InterceptFactory(http.HTTPFactory):
+    protocol = InterceptProtocol
+
+def usage():
+    print 'Usage: python nx_intercept [-h,--help] [-p,--port portnumber]'
 
 if __name__ == '__main__':
-    main()
+    port = 8000
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'hp:', ['help','port'])
+    except getopt.GetoptError, err:
+        print str(err)
+        usage()
+        sys.exit(42)
 
+    for o, a in opts:
+        if o in ('-h', '--help'):
+            usage()
+            sys.exit(0)
+        if o in ('-p', '--port'):
+            port = int(a)
+    reactor.listenTCP(port, InterceptFactory())
+    reactor.run()

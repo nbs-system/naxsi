@@ -10,13 +10,14 @@ from twisted.internet import protocol
 from twisted.internet import reactor
 
 class rules_extractor(object):
-   def __init__(self, max_hit, rules_file):
+   def __init__(self, page_hit, rules_hit, rules_file):
       self.db = MySQLConnector.MySQLConnector().connect()
       self.cursor = self.db.cursor(MySQLdb.cursors.DictCursor)
       self.rules_list = []
       self.final_rules = []
       self.base_rules = []
-      self.max_hit = max_hit
+      self.page_hit = page_hit
+      self.rules_hit = rules_hit
       self.core_msg = {}
       try:
          fd = open(rules_file, 'r')
@@ -62,26 +63,27 @@ class rules_extractor(object):
       i = 0
       while i < lr:
          matching = []
+         print(self.rules_list[i]['arg'].split(':'))
          arg_type, arg_name = tuple(self.rules_list[i]['arg'].split(':'))
          id = self.rules_list[i]['id']
          url = self.rules_list[i]['url']
          matching = filter(lambda l: id == l['id'] and l['arg'] == arg_type + ':' + arg_name, self.rules_list)
-         if len(matching) >= self.max_hit:
+         if len(matching) >= self.page_hit:
             #whitelist the ids on every url with arg_name and arg_type -> BasicRule wl:id "mz:argtype:argname"
             self.final_rules.append({'url': None, 'id': id, 'arg': arg_type + ':' + arg_name})
             for bla in matching:
                self.rules_list.remove(bla)
             lr -= len(matching)
             i = -1
-         else:
-            matching = filter(lambda l: url == l['url'] and l['arg'] == arg_type + ':' + arg_name, self.rules_list)
-            if len(matching) >= self.max_hit:
+#         else:
+         matching = filter(lambda l: url == l['url'] and l['arg'] == arg_type + ':' + arg_name, self.rules_list)
+         if len(matching) >= self.rules_hit:
             #whitelist all id on url with arg_name and arg_type -> BasicRule wl:0 "mz:argtype:argname"
-               self.final_rules.append({'url': url, 'id': str(0), 'arg': arg_type + ':' + arg_name})
-               for bla in matching:
-                  self.rules_list.remove(bla)
-               lr -= len(matching)
-               i = -1
+            self.final_rules.append({'url': url, 'id': str(0), 'arg': arg_type + ':' + arg_name})
+            for bla in matching:
+               self.rules_list.remove(bla)
+            lr -= len(matching)
+            i = -1
          i += 1
       if self.rules_list == self.final_rules:
          return self.base_rules, self.final_rules
@@ -126,29 +128,98 @@ class rules_extractor(object):
          fd.write(r)
          print(r.rstrip())
       fd.close()
+      
+   def generate_stats(self):
+      stats = ""
+      self.cursor.execute("select count(distinct md5) as uniq_exception from exception")
+      uniq_ex = self.cursor.fetchall()[0]['uniq_exception']
+      self.cursor.execute("select count(distinct peer_ip) as uniq_peer from peer where peer_ip is not NULL")
+      uniq_peer = self.cursor.fetchall()[0]['uniq_peer']
+      self.cursor.execute("select count(distinct peer_ip) as uniq_peer_mon from http_monitor where peer_ip is not NULL")
+      uniq_peer_mon = self.cursor.fetchall()[0]['uniq_peer_mon']
+      self.cursor.execute("select count(distinct md5) as uniq_exception_mon from http_monitor where md5 is not NULL")
+      uniq_exception = self.cursor.fetchall()[0]['uniq_exception_mon']
+      return "<ul><li>There is currently %s unique exceptions.</li></ul><ul><li>There is currently %s different peers that triggered rules.</li></ul><ul><li>There is currently %s peers being monitored</li></ul><ul><li>There is currently %s exceptions being monitored</li></ul>" % (uniq_ex, uniq_peer, uniq_peer_mon, uniq_exception)
                
 
 class InterceptHandler(http.Request):
-    def process(self):
-       if self.path == '/get_rules':
-          print(self.args)
-          ex = rules_extractor(int(self.args.get('max_hit', ['10'])[0]), self.args.get('rules_file', [None])[0])
-          ex.gen_basic_rules()
-          base_rules, opti_rules = ex.opti_rules()
-          r = '########### Rules Before Optimisation ##################\n'
-          for i in base_rules:
-             r += '#%s hits on rule %s (%s) on url %s from %s different peers\n' %\
-             (i['count'], i['id'], 
-              ex.core_msg.get(i['id'], 'Unknown id. Check the path to the core rules file and/or the content.'), i['url'], i['cnt_peer'])
-             r += '#BasicRule wl:' + i['id'] + ' "mz:$URL:' + i['url'] + '|' + i['arg'] + '";\n'
-          r += '########### End Of Rules Before Optimisation ###########\n'
-          for i in opti_rules:
-             r += 'BasicRule wl:' + i['id'] + ' "mz:'
-             if i['url'] is not None:
-                r += '$URL:' + i['url'] + '|'
-             r += i['arg'] + '";\n'
-          self.write(r)
-       self.finish()
+   def process(self):
+      if self.path == '/get_rules':
+         self.setHeader('content-type', 'text/plain')
+         ex = rules_extractor(int(self.args.get('page_hit', ['10'])[0]), int(self.args.get('rules_hit', ['10'])[0]), self.args.get('rules_file', [None])[0])
+         ex.gen_basic_rules()
+         base_rules, opti_rules = ex.opti_rules()
+         r = '########### Rules Before Optimisation ##################\n'
+         for i in base_rules:
+            r += '#%s hits on rule %s (%s) on url %s from %s different peers\n' % (i['count'], i['id'], 
+                                                                                   ex.core_msg.get(i['id'], 
+                                                                                                   'Unknown id. Check the path to the core rules file and/or the content.'), 
+                                                                                   i['url'], i['cnt_peer'])
+            r += '#BasicRule wl:' + i['id'] + ' "mz:$URL:' + i['url'] + '|' + i['arg'] + '";\n'
+         r += '########### End Of Rules Before Optimisation ###########\n'
+         for i in opti_rules:
+            r += 'BasicRule wl:' + i['id'] + ' "mz:'
+            if i['url'] is not None:
+               r += '$URL:' + i['url'] + '|'
+            r += i['arg'] + '";\n'
+         self.write(r)
+      elif self.path == '/':
+         ex = rules_extractor(0,0, None)
+         helpmsg = """<html>
+  <head>
+    <title>Naxsi Rules Extractor</title>
+  </head>
+  <body>
+    <p style="text-align:center"><b>Naxsi Rules Extractor</b></p>
+    <h3>How to extract generated rules from the database : </h3>
+    <ul>
+      <li>
+	A GET request on /get_rules will display the generated rules. Non-optimised rules will be displayed in comment.
+      </li>
+    </ul>
+    <h3>The available args on /get_rules are : </h3>
+    <ul>
+      <li>
+	<p>
+	<b>rules_file</b> : Path to the core rules file of naxsi (typically /etc/nginx/conf/naxsi_core.rules).<br />
+	This arg is used to display the message associated with the rule (ie, will display "double quote" if the rule 1001 is whitelisted).<br />
+	If this arg is not present, an error message will be displayed.	
+	</p>
+      </li>
+      <li>
+	<p>
+	<b>page_hit</b> :  Minimum number of pages triggering the same event before proposing the optimisation (ie, if there is more than 10 urls that trigger a rule, the rule will be whitelisted on every url).<br />
+	Default to 10.
+	</p>
+      </li>
+      <li>
+	<p>
+	  <b>rules_hit</b> : Minimum number of rules hitting the same event on the same page before proposing optimisation (ie, if there is more than 10 differents rules triggered on the same url, all rules will be whitelisted on that url)<br />
+	  Default to 10.
+	</p>
+      </li>
+    </ul>
+    <h3>Example : </h3>
+<ul>
+<li>
+      Optimise the rules if more than 5 exceptions on the same arg are triggered on a page (whitelist all rules on the arg on this page) : 
+    <a href="http://__HOSTNAME__/get_rules?rules_hit=5">http://__HOSTNAME__/get_rules?rules_hit=5</a><br />
+</li>
+<li>
+      Optimise the rules if more than 5 exceptions on the same arg are triggered on a page (whitelist all rules on the arg on this page) or if more than 10 pages trigger the same rule (whitelist the rule on every page): 
+    <a href="http://__HOSTNAME__/get_rules?rules_hit=5&page_hit=10">http://__HOSTNAME__/get_rules?rules_hit=5&page_hit=10</a><br />
+</li>
+</ul>
+    <h3>Statistics : </h3>
+    __STATS__
+  </body>
+</html>
+"""
+         helpmsg = helpmsg.replace('__STATS__', ex.generate_stats())
+         helpmsg = helpmsg.replace('__HOSTNAME__', self.getHeader('Host'))
+         self.setHeader('content-type', 'text/html')
+         self.write(helpmsg)
+      self.finish()
 
 class InterceptProtocol(http.HTTPChannel):
    requestFactory = InterceptHandler

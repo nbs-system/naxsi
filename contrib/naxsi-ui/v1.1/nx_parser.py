@@ -13,6 +13,7 @@ class signature_parser:
             self.cursor.execute("SELECT COUNT(*) FROM exception")
         except:
             self.dbcreate()
+
     def dbcreate(self):
         print ("[+] drop and creating new tables")
         self.cursor.execute("DROP TABLES IF EXISTS rules")
@@ -49,10 +50,11 @@ class signature_parser:
                             "auto_increment primary key, http_request TEXT, "
                             "exception_id INTEGER);")
 
+        self.cursor.execute("DROP TABLES IF EXISTS http_monitor")
+        self.cursor.execute("CREATE TABLE http_monitor (id INTEGER auto_increment primary key, peer_ip TEXT, md5 TEXT)")
+
     def last_id(self):
-        self.cursor.execute("SELECT last_insert_id()")
-        data = self.cursor.fetchone()
-        return data[0]
+        return self.cursor.lastrowid
 
     def insert(self, fmt, *args):
         self.cursor.execute(fmt, [args])
@@ -118,9 +120,14 @@ class signature_parser:
         if self.cursor.fetchall():            
             self.cursor.execute("UPDATE exception SET url=%s,md5=%s,count = count + 1 "
                                 "where md5=%s", (d.get("uri", ""), sig_hash, sig_hash))
+            self.cursor.execute("select exception_id from exception where url='%s' and md5='%s'" % (d.get('uri', ''), sig_hash))
+            exception_id = self.cursor.fetchall()[0][0]
         else:
             self.cursor.execute('INSERT INTO exception (url, md5) VALUES ("%s", "%s")' % (d.get('uri', ''), sig_hash))
-        exception_id = self.last_id()
+            exception_id = self.last_id()
+        self.cursor.execute("SELECT 1 FROM http_monitor WHERE peer_ip = '%s' or md5 = '%s'" % (d.get("ip", ""), sig_hash))
+        if self.cursor.fetchall():    
+            add_capture = True
         capture_id = self.add_capture(exception_id, raw_request, add_capture)
         self.cursor.execute("INSERT INTO connections (src_peer_id, "
                             "dst_peer_id, exception_id, capture_id)"

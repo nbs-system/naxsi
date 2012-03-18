@@ -12,7 +12,6 @@ import sys
 
 class InterceptHandler(http.Request):
     def process(self):
-            
         if self.getHeader('Orig_args'):
             args = {'GET' : self.getHeader('Orig_args')}
             method = 'GET'

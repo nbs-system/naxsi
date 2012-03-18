@@ -186,6 +186,9 @@ class signature_extractor:
                             "auto_increment primary key, http_request TEXT, "
                             "exception_id INTEGER);")
 
+        self.cursor.execute("DROP TABLES IF EXISTS http_monitor")
+        self.cursor.execute("CREATE TABLE http_monitor (id INTEGER auto_increment primary key, peer_ip TEXT, md5 TEXT)")
+
     def count_per_exception(self, exception_id):
         self.cursor.execute("select count(DISTINCT srcpeer.peer_ip) as count from "
                        "peer "

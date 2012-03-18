@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from twisted.web import http
 from twisted.internet import protocol
-from twisted.internet import reactor
+from twisted.internet import reactor, threads
 import pprint
 import socket
 from nx_parser import signature_parser
@@ -9,6 +9,8 @@ import MySQLConnector
 import MySQLdb
 import getopt
 import sys
+
+quiet=False
 
 class InterceptHandler(http.Request):
     def process(self):
@@ -21,24 +23,27 @@ class InterceptHandler(http.Request):
         else:
             method = 'GET'
             args = {}
+        args['Cookie'] = self.getHeader('Cookie')
+        args['Referer'] = self.getHeader('Referer')
+        sig = self.getHeader("naxsi_sig")
+        if sig is None:
+            print "no naxsi_sig header."
+            return
+        url = sig.split('&uri=')[1].split('&')[0]
+        fullstr = method + ' ' + url + ' ' + ','.join([x + ' : ' + str(args.get(x, 'No Value !')) for x in args.keys()])
+        threads.deferToThread(self.background, fullstr, sig)
+        self.finish()
+        return
+    def background(self, fullstr, sig):
         self.db = MySQLConnector.MySQLConnector().connect()
         if self.db is None:
             raise ValueError("Cannot connect to db.")
         self.cursor = self.db.cursor()
         if self.cursor is None:
             raise ValueError("Cannot connect to db.")
-        sig = self.getHeader("naxsi_sig")
-        if sig is None:
-            print "no naxsi_sig header."
-            self.finish()
-            return
         parser = signature_parser(self.cursor)
-        args['Cookie'] = self.getHeader('Cookie')
-        args['Referer'] = self.getHeader('Referer')
-        url = sig.split('&uri=')[1].split('&')[0]
-        parser.sig_to_db(method + ' ' + url + ' ' + ','.join([x + ' : ' + str(args.get(x, 'No Value !')) for x in args.keys()]), sig)
+        parser.sig_to_db(fullstr, sig)
         self.db.close()
-        self.finish()
 
 class InterceptProtocol(http.HTTPChannel):
     requestFactory = InterceptHandler
@@ -80,9 +85,10 @@ def add_monitoring(arg):
         return
 
 if __name__ == '__main__':
+#    global quiet
     port = 8000
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hp:a:', ['help', 'port', 'add-monitoring'])
+        opts, args = getopt.getopt(sys.argv[1:], 'qhp:a:', ['help', 'port', 'add-monitoring', 'quiet'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -94,6 +100,8 @@ if __name__ == '__main__':
             sys.exit(0)
         if o in ('-p', '--port'):
             port = int(a)
+        if o in ('-q', '--quiet'):
+            quiet = True
         if o in ('-a', '--add-monitoring'):
             add_monitoring(a)
             exit(42)

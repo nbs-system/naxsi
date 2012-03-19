@@ -94,7 +94,6 @@ class signature_parser:
 
     def add_capture(self, exception_id, raw_request, add_capture):
         if add_capture is False:
-            print "discard capture."
             return 0
         self.cursor.execute("INSERT INTO capture (http_request, exception_id)"
                             "VALUES (%s, %s)", (str(raw_request), 
@@ -108,7 +107,7 @@ class signature_parser:
         associated connection_id.
         """
         d = dict(urlparse.parse_qsl(sig))
-        pprint.pprint(d)
+#        pprint.pprint(d)
         sig_hash = self.create_exception_hash(d)
         self.cursor.execute("INSERT INTO peer (peer_ip) "
                             "VALUES (%s)", (d.get("ip", "")))

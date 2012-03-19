@@ -9,6 +9,9 @@ from twisted.web import http
 from twisted.internet import protocol
 from twisted.internet import reactor
 
+glob_allow=False
+glob_rules_file="/etc/nginx/naxsi_core.rules"
+
 class rules_extractor(object):
    def __init__(self, page_hit, rules_hit, rules_file):
       self.db = MySQLConnector.MySQLConnector().connect()
@@ -19,6 +22,13 @@ class rules_extractor(object):
       self.page_hit = page_hit
       self.rules_hit = rules_hit
       self.core_msg = {}
+      if glob_allow is True and rules_file is not None:
+         print("glob allow from"+rules_file)
+         self.extract_core(rules_file)
+      else:
+         if glob_rules_file is not None:
+            self.extract_core(glob_rules_file)
+   def extract_core(self, rules_file):
       try:
          fd = open(rules_file, 'r')
          for i in fd:
@@ -51,6 +61,8 @@ class rules_extractor(object):
             da_dict = {}
             da_dict['url'] = i['url']
             da_dict['arg'] = ':'.join(j.split(':')[2:])
+            # fix exception of URL
+            da_dict['arg'] = da_dict['arg'].replace("$URL_VAR:", "URL")
             da_dict['id'] = j.split(':')[1]
             da_dict['count'] = i['count']
             da_dict['cnt_peer'] = i['cnt_peer']
@@ -58,13 +70,74 @@ class rules_extractor(object):
                self.rules_list.append(da_dict)
       self.base_rules = self.rules_list[:]
 
+   def opti_rules_back(self):
+      lr = len(self.rules_list)
+      i = 0
+      while i < lr:
+         matching = []
+         if (len(self.rules_list[i]['arg'].split(':')) > 1):
+            arg_type, arg_name = tuple(self.rules_list[i]['arg'].split(':'))
+         else:
+            # Rules targeting URL zone
+            if self.rules_list[i]['arg'] == "URL":
+               arg_name = ""
+               arg_type = "URL"
+            # Internal rules have small IDs
+            elif self.rules_list[i]['id'] < 10:
+               arg_name = ""
+               arg_type = ""
+         id = self.rules_list[i]['id']
+         url = self.rules_list[i]['url']
+         matching = filter(lambda l: (l['arg'] == arg_type + ':' + arg_name) and id == l['id'] , self.rules_list)
+         if len(matching) >= self.page_hit:
+            #whitelist the ids on every url with arg_name and arg_type -> BasicRule wl:id "mz:argtype:argname"
+            self.final_rules.append({'url': None, 'id': id, 'arg': arg_type + ':' + arg_name})
+            for bla in matching:
+               self.rules_list.remove(bla)
+            lr -= len(matching)
+            i = 0
+            print("*) "+str(len(matching))+" hits for same mz:"+arg_type+':'+arg_name+" and id:"+str(id))
+            print("removed "+str(len(matching))+" items from biglist, now :"+str(len(self.rules_list)))
+            continue
+         matching = filter(lambda l: url == l['url'] and l['arg'] == arg_type + ':' + arg_name, self.rules_list)
+         if len(matching) >= self.rules_hit:
+            #whitelist all id on url with arg_name and arg_type -> BasicRule wl:0 "mz:$url:xxx|argtype:argname"
+            self.final_rules.append({'url': url, 'id': str(0), 'arg': arg_type + ':' + arg_name})
+            print("about to del "+str(len(matching))+" items from biglist, now :"+str(len(self.rules_list)))
+            for bla in matching:
+               self.rules_list.remove(bla)
+            lr -= len(matching)
+            i = 0
+            print("*) "+str(len(matching))+" hits for same mz:"+str(url)+'|'+str(arg_type)+':'+str(arg_name)+" and id:"+str(id))
+            print("removed "+str(len(matching))+" items from biglist, now :"+str(len(self.rules_list)))
+            print(" current LR:"+str(lr))
+            continue
+         i += 1
+      if self.rules_list == self.final_rules:
+         return self.base_rules, self.final_rules
+      #append rules that cant be optimized
+      self.final_rules += self.rules_list
+      #remove duplicate
+      tmp_list = []
+      for i in self.final_rules:
+         if i not in tmp_list:
+            tmp_list.append(i)
+      self.final_rules = tmp_list
+     #try to reoptimize
+      self.rules_list = self.final_rules
+      self.opti_rules_back()
+      return self.base_rules, self.final_rules
+      
    def opti_rules(self):
       lr = len(self.rules_list)
       i = 0
       while i < lr:
          matching = []
-         print(self.rules_list[i]['arg'].split(':'))
-         arg_type, arg_name = tuple(self.rules_list[i]['arg'].split(':'))
+         if (self.rules_list[i]['arg'].split(':')[0] != "URL"):
+            arg_type, arg_name = tuple(self.rules_list[i]['arg'].split(':'))
+         else:
+            arg_name = ""
+            arg_type = "URL"
          id = self.rules_list[i]['id']
          url = self.rules_list[i]['url']
          matching = filter(lambda l: id == l['id'] and l['arg'] == arg_type + ':' + arg_name, self.rules_list)
@@ -146,22 +219,34 @@ class InterceptHandler(http.Request):
    def process(self):
       if self.path == '/get_rules':
          self.setHeader('content-type', 'text/plain')
-         ex = rules_extractor(int(self.args.get('page_hit', ['10'])[0]), int(self.args.get('rules_hit', ['10'])[0]), self.args.get('rules_file', [None])[0])
+         
+         ex = rules_extractor(int(self.args.get('page_hit', ['10'])[0]), 
+                              int(self.args.get('rules_hit', ['10'])[0]), 
+                              self.args.get('rules_file', [None])[0])
          ex.gen_basic_rules()
-         base_rules, opti_rules = ex.opti_rules()
+         base_rules, opti_rules = ex.opti_rules_back()
          r = '########### Rules Before Optimisation ##################\n'
          for i in base_rules:
             r += '#%s hits on rule %s (%s) on url %s from %s different peers\n' % (i['count'], i['id'], 
                                                                                    ex.core_msg.get(i['id'], 
                                                                                                    'Unknown id. Check the path to the core rules file and/or the content.'), 
                                                                                    i['url'], i['cnt_peer'])
-            r += '#BasicRule wl:' + i['id'] + ' "mz:$URL:' + i['url'] + '|' + i['arg'] + '";\n'
+            r += '#BasicRule wl:' + i['id'] + ' "mz:$URL:' + i['url'] 
+            if i['arg'] is not None and len(i['arg']) > 0:
+               r += '|' + i['arg']
+            r +=  '";\n'
          r += '########### End Of Rules Before Optimisation ###########\n'
          for i in opti_rules:
+            
             r += 'BasicRule wl:' + i['id'] + ' "mz:'
-            if i['url'] is not None:
-               r += '$URL:' + i['url'] + '|'
-            r += i['arg'] + '";\n'
+            if i['url'] is not None and len(i['url']) > 0:
+               r += '$URL:' + i['url']
+            if i['arg'] is not None and len(i['arg']) > 0:
+               if i['url'] is not None and len(i['url']):
+                  r += '|'+i['arg'] 
+               else:
+                  r += i['arg'] 
+            r += '";\n'
          self.write(r)
       elif self.path == '/':
          ex = rules_extractor(0,0, None)
@@ -202,12 +287,12 @@ class InterceptHandler(http.Request):
     <h3>Example : </h3>
 <ul>
 <li>
-      Optimise the rules if more than 5 exceptions on the same arg are triggered on a page (whitelist all rules on the arg on this page) : 
-    <a href="http://__HOSTNAME__/get_rules?rules_hit=5">http://__HOSTNAME__/get_rules?rules_hit=5</a><br />
+      Optimise the rules if more than 7 exceptions on the same arg are triggered on a page (whitelist all rules on the arg on this page) : 
+    <a href="http://__HOSTNAME__/get_rules?rules_hit=7">http://__HOSTNAME__/get_rules?rules_hit=7</a><br />
 </li>
 <li>
-      Optimise the rules if more than 5 exceptions on the same arg are triggered on a page (whitelist all rules on the arg on this page) or if more than 10 pages trigger the same rule (whitelist the rule on every page): 
-    <a href="http://__HOSTNAME__/get_rules?rules_hit=5&page_hit=10">http://__HOSTNAME__/get_rules?rules_hit=5&page_hit=10</a><br />
+      Optimise the rules if more than 7 exceptions on the same arg are triggered on a page (whitelist all rules on the arg on this page) or if more than 10 pages trigger the same rule (whitelist the rule on every page): 
+    <a href="http://__HOSTNAME__/get_rules?rules_hit=7&page_hit=10">http://__HOSTNAME__/get_rules?rules_hit=7&page_hit=10</a><br />
 </li>
 </ul>
     <h3>Statistics : </h3>
@@ -228,23 +313,29 @@ class InterceptFactory(http.HTTPFactory):
    protocol = InterceptProtocol
       
 def usage():
-   print('Usage : python nx_extract [-h,--help] [-p|--port portnumber]')
+   print('Usage : python nx_extract [-h,--help] [-p|--port portnumber] '
+         '[-r|--rules /path/to/naxsi_core.rules] [-a|--allow allow user to specify rules path]')
 
 if __name__  == '__main__':
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hp:', ['help','port'])
+       opts, args = getopt.getopt(sys.argv[1:], 'hp:r:a', ['help','port', 'rules', 'allow'])
     except getopt.GetoptError, err:
-        print(str(err))
-        usage()
-        sys.exit(42)    
-
-    port = 80
+       print(str(err))
+       usage()
+       sys.exit(42)    
+    port = 8081
     for o, a in opts:
        if o in ('-h', '--help'):
           usage()
           sys.exit(0)
        if o in ('-p', '--port'):
-           port = int(a)
-
+          port = int(a)
+       if o in ('-r', '--rules'):
+          global glob_rules_file
+          glob_rules_file = a
+       if o in ('-a', '--allow'):
+          global glob_allow
+          glob_allow = True
+       
     reactor.listenTCP(port, InterceptFactory())
     reactor.run()

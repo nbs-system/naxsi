@@ -94,7 +94,6 @@ class signature_parser:
 
     def add_capture(self, exception_id, raw_request, add_capture):
         if add_capture is False:
-            print "discard capture."
             return 0
         self.cursor.execute("INSERT INTO capture (http_request, exception_id)"
                             "VALUES (%s, %s)", (str(raw_request), 
@@ -108,7 +107,7 @@ class signature_parser:
         associated connection_id.
         """
         d = dict(urlparse.parse_qsl(sig))
-        pprint.pprint(d)
+#        pprint.pprint(d)
         sig_hash = self.create_exception_hash(d)
         self.cursor.execute("INSERT INTO peer (peer_ip) "
                             "VALUES (%s)", (d.get("ip", "")))
@@ -185,6 +184,9 @@ class signature_extractor:
         self.cursor.execute("CREATE TABLE capture (capture_id INTEGER "
                             "auto_increment primary key, http_request TEXT, "
                             "exception_id INTEGER);")
+
+        self.cursor.execute("DROP TABLES IF EXISTS http_monitor")
+        self.cursor.execute("CREATE TABLE http_monitor (id INTEGER auto_increment primary key, peer_ip TEXT, md5 TEXT)")
 
     def count_per_exception(self, exception_id):
         self.cursor.execute("select count(DISTINCT srcpeer.peer_ip) as count from "

@@ -980,3 +980,57 @@ location /RequestDenied {
 --- request
 GET /?a=yesoneyestwo
 --- error_code: 412
+
+=== WL TEST 18 : Whitelisting rule id 1
+--- user_files
+>>> foobar
+eh yo
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+POST /
+
+--- error_code: 412
+=== WL TEST 18.1 : Whitelisting rule id 1
+--- user_files
+>>> foobar
+eh yo
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 BasicRule wl:1 "mz:$URL:/|BODY";
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+POST /
+
+--- error_code: 200

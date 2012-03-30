@@ -75,13 +75,13 @@ def add_monitoring(arg):
     db = MySQLConnector.MySQLConnector().connect()
     cursor = db.cursor()
     if md5 is not None and ip is not None:
-        cursor.execute("INSERT INTO http_monitor (peer_ip, md5) VALUES ('%s', '%s')" % (ip, md5))
+        cursor.execute("INSERT INTO http_monitor (peer_ip, md5) VALUES (%s, %s)", (ip, md5))
         return
     if md5 is not None:
-        cursor.execute("INSERT INTO http_monitor (md5) VALUES ('%s')" % (md5))
+        cursor.execute("INSERT INTO http_monitor (md5) VALUES (%s)", (md5))
         return
     if ip is not None:
-        cursor.execute("INSERT INTO http_monitor (peer_ip) VALUES ('%s')" % (ip))
+        cursor.execute("INSERT INTO http_monitor (peer_ip) VALUES (%s)", (ip))
         return
 
 if __name__ == '__main__':

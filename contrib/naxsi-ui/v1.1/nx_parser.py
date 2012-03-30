@@ -115,16 +115,16 @@ class signature_parser:
         self.cursor.execute("INSERT INTO peer (peer_host) "
                             "VALUES (%s)", (d.get("server", "")))
         host_id = self.last_id()
-        self.cursor.execute('SELECT 1 FROM exception where md5="%s"' % sig_hash)
+        self.cursor.execute('SELECT 1 FROM exception where md5=%s', (sig_hash))
         if self.cursor.fetchall():            
             self.cursor.execute("UPDATE exception SET url=%s,md5=%s,count = count + 1 "
                                 "where md5=%s", (d.get("uri", ""), sig_hash, sig_hash))
-            self.cursor.execute("select exception_id from exception where url='%s' and md5='%s'" % (d.get('uri', ''), sig_hash))
+            self.cursor.execute("select exception_id from exception where url=%s and md5=%s", (d.get('uri', ''), sig_hash))
             exception_id = self.cursor.fetchall()[0][0]
         else:
-            self.cursor.execute('INSERT INTO exception (url, md5) VALUES ("%s", "%s")' % (d.get('uri', ''), sig_hash))
+            self.cursor.execute('INSERT INTO exception (url, md5) VALUES (%s, %s)', (d.get('uri', ''), sig_hash))
             exception_id = self.last_id()
-        self.cursor.execute("SELECT 1 FROM http_monitor WHERE peer_ip = '%s' or md5 = '%s'" % (d.get("ip", ""), sig_hash))
+        self.cursor.execute("SELECT 1 FROM http_monitor WHERE peer_ip = %s or md5 = %s", (d.get("ip", ""), sig_hash))
         if self.cursor.fetchall():    
             add_capture = True
         capture_id = self.add_capture(exception_id, raw_request, add_capture)

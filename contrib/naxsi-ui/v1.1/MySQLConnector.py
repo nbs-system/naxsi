@@ -2,7 +2,7 @@ import MySQLdb
 
 from ConfigParser import ConfigParser
 
-class MySQLConnectorException(Exception)
+class MySQLConnectorException(Exception):
     pass
 
 class MySQLConnector(object):

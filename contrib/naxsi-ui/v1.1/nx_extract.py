@@ -331,10 +331,8 @@ if __name__  == '__main__':
        if o in ('-p', '--port'):
           port = int(a)
        if o in ('-r', '--rules'):
-          global glob_rules_file
           glob_rules_file = a
        if o in ('-a', '--allow'):
-          global glob_allow
           glob_allow = True
        
     reactor.listenTCP(port, InterceptFactory())

@@ -19,6 +19,8 @@
 #ifndef __FOO_H__
 #define __FOO_H__
 
+#define NAXSI_VERSION "0.45"
+
 #include <nginx.h>
 #include <ngx_config.h>
 #include <ngx_core.h>

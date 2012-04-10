@@ -1,5 +1,4 @@
 VERS	:=	$(shell grep NAXSI_VERSION naxsi.h | cut -d '"' -f 2)
-#VERS	=	$(VCMD)
 
 unit_test:
 	export PERL5LIB=/usr/local/share/perl/5.12.4/ ; \

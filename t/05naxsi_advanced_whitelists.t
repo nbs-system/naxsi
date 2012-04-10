@@ -145,14 +145,14 @@ location / {
 	 CheckRule "$XSS >= 8" BLOCK;
   	 root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-	 BasicRule wl:1999 "mz:$ARGS_VAR:b[]la|$URL:/buixor";
+	 BasicRule wl:1999 "mz:$ARGS_VAR:b_@_la|$URL:/buixor";
 	 BasicRule wl:1998 "mz:$ARGS_VAR:blu|$URL:/buixor";
 }
 location /RequestDenied {
 	 return 412;
 }
 --- request
-GET /buixor?b[]la=1999
+GET /buixor?b_@_la=1999
 --- error_code: 200
 
 === WL TEST 5.5: Whitelists on ARGS/URLs that are URLencoded

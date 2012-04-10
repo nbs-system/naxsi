@@ -345,8 +345,12 @@ ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 		       "whitelist has uri + name");
 #endif
+    /* allocate one extra byte in case curr->br->target_name is set. */
     *fullname = ngx_pcalloc(cf->pool, custloc_array(curr->br->custom_locations->elts)[name_idx].target.len +
-			    custloc_array(curr->br->custom_locations->elts)[uri_idx].target.len + 2);
+			    custloc_array(curr->br->custom_locations->elts)[uri_idx].target.len + 3);
+    /* if WL targets variable name instead of content, prefix hash with '#' */
+    if (curr->br->target_name)
+      strncat(*fullname, (const char *) "#", 1);
     strncat(*fullname, (const char *) custloc_array(curr->br->custom_locations->elts)[uri_idx].target.data, 
 	    custloc_array(curr->br->custom_locations->elts)[uri_idx].target.len);
     strncat(*fullname, (const char *) "#", 1);
@@ -370,7 +374,9 @@ ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 		       "whitelist has name");
 #endif
-    *fullname = ngx_pcalloc(cf->pool, custloc_array(curr->br->custom_locations->elts)[name_idx].target.len + 1);
+    *fullname = ngx_pcalloc(cf->pool, custloc_array(curr->br->custom_locations->elts)[name_idx].target.len + 2);
+    if (curr->br->target_name)
+      strncat(*fullname, (const char *) "#", 1);
     strncat(*fullname, (const char *) custloc_array(curr->br->custom_locations->elts)[name_idx].target.data, 
 	    custloc_array(curr->br->custom_locations->elts)[name_idx].target.len);
   }
@@ -561,6 +567,7 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
 ** as well as rules targetting the same argument name / zone.
 */
 
+//#define whitelist_heavy_debug
 ngx_int_t
 ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc, 
 				   ngx_conf_t *cf)
@@ -630,11 +637,13 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
       father_wlr->name->len = strlen((const char *) fullname);
       father_wlr->name->data = fullname;
       father_wlr->zone = zone;
-      /*change: If there is URI and no name idx, specify it,
-       so that WL system won't get fooled by an argname like an URL */
-      if (uri_idx != -1 && name_idx == -1) {
+      /* If there is URI and no name idx, specify it,
+	 so that WL system won't get fooled by an argname like an URL */
+      if (uri_idx != -1 && name_idx == -1)
 	father_wlr->uri_only = 1;
-      }
+      /* If target_name is present in son, report it. */
+      if (curr_r->br && curr_r->br->target_name)
+        father_wlr->target_name = curr_r->br->target_name; 
     }
     /*merges the two whitelist rules together, including custom_locations. */
     if (ngx_http_wlr_merge(cf, father_wlr, curr_r) != NGX_OK)

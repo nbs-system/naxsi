@@ -184,8 +184,8 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
 ** returns (1) if rule is whitelisted, else (0)
 */
 
-//#define whitelist_debug
-//#define whitelist_heavy_debug
+/* #define whitelist_debug */
+/* #define whitelist_heavy_debug */
 
 int
 ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
@@ -193,20 +193,38 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
 				    enum DUMMY_MATCH_ZONE zone,
 				    ngx_http_rule_t	*r,
 				    ngx_http_request_t	*req,
-				    enum MATCH_TYPE type) {
+				    enum MATCH_TYPE type,
+				    ngx_int_t target_name) {
   unsigned int i;
   
   /* if something was found, check the rule ID */
   if (!b) return (0);
+
+  /* if whitelist targets arg name, but the rules hit content*/
+  if (b->target_name && !target_name)
+    {
+#ifdef whitelist_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "whitelist targets name, but rule matched content.");
+#endif
+      return (0);
+    }
+  /* if if the whitelist target contents, but the rule hit arg name*/
+  if (!b->target_name && target_name)
+    {
+#ifdef whitelist_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "whitelist targets content, but rule matched name.");
+#endif
+      return (0);
+    }
+
   
   if (type == NAME_ONLY) {
 #ifdef whitelist_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "Name match in zone %s",
 		  zone == ARGS ? "ARGS" : zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : "UNKNOWN!!!!!");
 #endif
-
-    //false positive, there was a whitelist that matches the argument name,
-    // but it was actually matching an existing URI name.
+    //False Positive, there was a whitelist that matches the argument name,
+    // But is was actually matching an existing URI name.
     if (zone != b->zone || b->uri_only) {
 #ifdef whitelist_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "bad whitelist, name match, but WL was only on URL.");
@@ -230,16 +248,6 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
   
   if (type == URI_ONLY ||
       type == MIXED) {
-#ifdef whitelist_debug
-    /* ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,  */
-    /* 		  "This URL has some whitelist !"); */
-    /* ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,  */
-    /* 		  "[MATCHED_RULE] args:%d|args_var:%d|headers:%d|headers_var:%d|body:%d|body_var:%d|URL:%d", */
-    /* 		  r->br->args, r->br->args_var, r->br->headers, r->br->headers_var, r->br->body, r->br->body_var, */
-    /* 		  r->br->url); */
-#endif
-    /* check if whitelist context really matches the blocked request */
-    
     /* zone must match */
     if (zone != b->zone ||
 	/* if the whitelist matched on an URI, check
@@ -281,7 +289,8 @@ int
 ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req, 
 				     ngx_http_dummy_loc_conf_t *cf, 
 				     ngx_http_rule_t *r, ngx_str_t *name, 
-				     enum DUMMY_MATCH_ZONE zone) {
+				     enum DUMMY_MATCH_ZONE zone,
+				     ngx_int_t target_name) {
   ngx_int_t			k;
   ngx_http_whitelist_rule_t	*b = NULL;
   unsigned int		i, z;
@@ -312,10 +321,25 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 	/* TODO : test case for WL on rule_id 0 */
 	if (dr[i]->wl_id[z] == r->rule_id || dr[i]->wl_id[z] == 0) {
 	  /* matched in args zone and whitelisted in full args zone */
-	  if (zone == ARGS && dr[i]->br && dr[i]->br->args) return (1);
+	  if (zone == ARGS && dr[i]->br && dr[i]->br->args) {
+	    if (dr[i]->br->target_name && target_name)
+	      return (1);
+	    if (!dr[i]->br->target_name && !target_name)
+	      return (1);
+	  }
 	  /* matched in headers zone and whitelisted in full headers zone */
-	  else if (zone == HEADERS && dr[i]->br && dr[i]->br->headers) return (1);
-	  else if (zone == BODY && dr[i]->br && dr[i]->br->body) return (1);
+	  else if (zone == HEADERS && dr[i]->br && dr[i]->br->headers) {
+	    if (dr[i]->br->target_name && target_name)
+	      return (1);
+	    if (!dr[i]->br->target_name && !target_name)
+	      return (1);
+	  }
+	  else if (zone == BODY && dr[i]->br && dr[i]->br->body) {
+	    if (dr[i]->br->target_name && target_name)
+	      return (1);
+	    if (!dr[i]->br->target_name && !target_name)
+	      return (1);
+	  }
 	  else if (zone == URL && dr[i]->br && dr[i]->br->url) return (1);
 	  /* this one, with no match zone at all, means the rule is purely disabled */
 	  else if (dr[i]->br && !(dr[i]->br->args ||  dr[i]->br->headers ||
@@ -353,7 +377,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 							 name->len); 
   }
   if (b)
-    if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, NAME_ONLY))
+    if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, NAME_ONLY, target_name))
       return (1);
 #ifdef whitelist_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
@@ -373,7 +397,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 						   (u_char*) req->uri.data, 
 						   req->uri.len);
     if (b)
-      if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, URI_ONLY))
+      if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, URI_ONLY, target_name))
 	return (1);
   }
   /* check URL against every hashlist, as $URL:bla|ARGS will be put in the ARGS 
@@ -397,17 +421,23 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
     
     
   if (b)
-    if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, URI_ONLY))
+    if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, URI_ONLY, target_name))
       return (1);
   
   /* maybe it was $URL+$VAR ? */
   if (!b) {
     tmp_hashname.len = req->uri.len + 1 + name->len;
-    tmp_hashname.data = ngx_pcalloc(req->pool, tmp_hashname.len+1);
+    /* one extra byte for target_name '#' */
+    tmp_hashname.data = ngx_pcalloc(req->pool, tmp_hashname.len+2);
     if (!tmp_hashname.data)
       return (NGX_ERROR);
-    
-    ngx_memset(tmp_hashname.data, 0, tmp_hashname.len+1);
+    if (target_name) {
+      tmp_hashname.len++;
+      ngx_memset(tmp_hashname.data, 0, tmp_hashname.len+1);
+      strncat((char*)tmp_hashname.data, "#", 1);
+    }
+    else
+      ngx_memset(tmp_hashname.data, 0, tmp_hashname.len+1);
     strncat((char*) tmp_hashname.data, (char*)req->uri.data, req->uri.len);
     strncat((char*)tmp_hashname.data, "#", 1);
     strncat((char*)tmp_hashname.data, (char*)name->data, name->len);
@@ -437,7 +467,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   }
   
   if (b)
-    if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, MIXED))
+    if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, MIXED, target_name))
       {
 	if (tmp_hashname.data)
 	  ngx_pfree(req->pool, tmp_hashname.data);
@@ -595,15 +625,15 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 /*
 ** new rulematch, less arguments ^
 */
-//#define whitelist_debug
-//#define whitelist_light_debug
-//#define whitelist_debug
+/* #define whitelist_debug */
+/* #define whitelist_light_debug */
+/* #define whitelist_heavy_debug */
 
 void	
 ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx, 
 			     ngx_http_request_t *req, ngx_str_t *name, 
 			     ngx_str_t *value, enum DUMMY_MATCH_ZONE zone, 
-			     ngx_int_t nb_match)
+			     ngx_int_t nb_match, ngx_int_t target_name)
 {
   unsigned int		found = 0, i;
   ngx_http_special_score_t	*sc;
@@ -613,7 +643,7 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
   cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
   if (!cf || !ctx )
     return ;
-  if (ngx_http_dummy_is_rule_whitelisted_n(req, cf, r, name, zone) == 1)
+  if (ngx_http_dummy_is_rule_whitelisted_n(req, cf, r, name, zone, target_name) == 1)
     return ;
   if (nb_match == 0)
     nb_match = 1;
@@ -621,7 +651,9 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
 #ifdef whitelist_light_debug
   if (req->uri.len > 0) {
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		  "[%V][%V] rule(%d) matched %d times on (%V)=(%V) [zones(%s,%s,%s,%s]", r->log_msg, &(req->uri), r->rule_id, nb_match, name, value,
+		  "[%V][%V] rule(%d) matched %d times on %s(%V)=(%V) [zones(%s,%s,%s,%s)]", 
+		  r->log_msg, &(req->uri), r->rule_id, nb_match, 
+		  target_name ? "[var name] " : "", name, value,
 		  zone == HEADERS ? "HEADERS" : "",
 		  zone == URL ? "URL" : "",
 		  zone == BODY ? "BODY" : "",
@@ -629,11 +661,13 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
   }
   else {
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		  "[xx][XXX] rule(%d) matched %d times on (%V)=(%V) [zones(%s,%s,%s,%s]", r->rule_id, nb_match, name, value,
+		  "[xx][XXX] rule(%d) matched %d times on %s(%V)=(%V) [zones(%s,%s,%s,%s)]", r->rule_id, nb_match, 
+		  target_name ? "[var name] " : "", name, value,
 		  zone == HEADERS ? "HEADERS" : "",
 		  zone == URL ? "URL" : "",
 		  zone == BODY ? "BODY" : "",
 		  zone == ARGS ? "ARGS" : "");
+
   }
 #endif
   if (!ctx->matched)
@@ -751,9 +785,10 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 
   
   cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
+    
 #ifdef spliturl_ruleset_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		"XX-check check [%s]", str);
+		"XX-check url-like [%s]", str);
 #endif
 
   orig = str;
@@ -781,7 +816,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
     }
     /* ?&&val | ?var&& | ?val& | ?&val | ?val&var */
     else if (!eq && ev) {
-      if (ngx_http_dummy_is_rule_whitelisted_n(req, cf, &nx_int__weird_request, NULL, zone) == 0)
+      if (ngx_http_dummy_is_rule_whitelisted_n(req, cf, &nx_int__weird_request, NULL, zone, 0) == 0)
 	ctx->weird_request = 1;
       if (ev > str) /* ?var& | ?var&val */ {
 	val.data = (unsigned char *) str;
@@ -829,22 +864,24 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       //end
 #ifdef spliturl_ruleset_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		    "XX-check check [%V]=[%V]", &(name), &(val));
+		    "XX-extract  [%V]=[%V]", &(name), &(val));
 #endif
       if (rules)
 	ngx_http_basestr_ruleset_n(pool, &name, &val, rules, req,  ctx, zone);
 #ifdef spliturl_ruleset_debug
       else
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		      "XX-no rules ?");
-#endif			  
+		      "XX-no arg rules ?");
+#endif	  
+
+	
       if (main_rules)
 	ngx_http_basestr_ruleset_n(pool, &name, &val, main_rules, req,  ctx, 
 				   zone);
 #ifdef spliturl_ruleset_debug
       else
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		      "XX-no rules ?");
+		      "XX-no main rules ?");
 #endif	  
     }
     str += len; 
@@ -856,7 +893,8 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 /*
 ** check variable + name against a set of rules, checking against 'custom' location rules too.
 */
-//#define basestr_ruleset_debug
+#define basestr_ruleset_debug
+
 int 
 ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 			   ngx_str_t	*name,
@@ -878,29 +916,41 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 		zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : zone == URL ? "URL" :
 		zone == ARGS ? "ARGS" : "UNKNOWN"); 
 #endif
-
-  if (!rules) 
+  
+  if (!rules) {
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		  "XX-no rules, wtf ?!"); 
     return (0);
+  }
   r = rules->elts;
   cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
-#ifdef basestr_ruleset_debug
+#ifdef basestr_ruleset_debug 
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		"XX-checking rules ..."); 
 #endif
   
   for (i = 0; i < rules->nelts && (!ctx->block || cf->learning) ; i++) {
+#ifdef basestr_ruleset_debug 
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		  "XX-rule %d (%V=%V)", r[i].rule_id, name, value); 
+#endif
+      
     /* does the rule have a custom location ? custom location means checking only on a specific argument */
-    if (r[i].br->custom_location && name && name->len > 0) {
+    if (name && name->len > 0 && r[i].br->custom_location) {
       location = r[i].br->custom_locations->elts;
       /* for each custom location */
       for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
 	/* if the name are the same, check */
 	if (name->len == location[z].target.len &&
-	    !strncasecmp((const char *)name->data, (const char *) location[z].target.data, location[z].target.len)) {
+	    !strncasecmp((const char *)name->data, 
+			 (const char *) location[z].target.data, 
+			 location[z].target.len)) {
+	    
 #ifdef basestr_ruleset_debug
 	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 			"XX-[SPECIFIC] check one rule [%d] iteration %d * %d", r[i].rule_id, i, z);
 #endif
+	  /* match rule against var content, */
 	  ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
 	  //if our rule matched, apply effects (score etc.)
 	  if (ret == 1) {
@@ -908,11 +958,29 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 			  "XX-apply rulematch!! [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
 #endif
-	    ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match);
+	    ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);	    
 	  }
+	  
+	  if (!r[i].br->negative) {  
+	    /* match rule against var name, */
+	    ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);
+	    //if our rule matched, apply effects (score etc.)
+	    if (ret == 1) {
+#ifdef basestr_ruleset_debug
+	      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+			    "XX-apply rulematch[in name] [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
+#endif
+	      ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, name, zone, nb_match, 1);
+	    }
+	  }
+	  
 	}
       }
+      
     }
+    
+    
+    
     /*
     ** check against the rule if the current zone is matching 
     ** the zone the rule is meant to be check against
@@ -922,17 +990,17 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	 (zone == ARGS && r[i].br->args) ||
 	 (zone == BODY && r[i].br->body && !r[i].br->file_ext) ||
 	 (zone == FILE_EXT && r[i].br->file_ext) ) {
+
+      /* #ifdef basestr_ruleset_debug */
+      /* 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,  */
+      /* 		      "XX-check [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match);  */
+      /* #endif */
+
 #ifdef basestr_ruleset_debug
-      /* ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, */
-      /* 		    "XX-[GENERIC] CURR ZONE [%s]", zone == HEADERS ? "HEADERS": zone == URL ? "URL" :  */
-      /* 		    zone == ARGS ? "ARGS" : zone == BODY ? "BODY" : "UNKNOWN!"); */
-      /* ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,  */
-      /* 		    "[WHITELIST] args:%d|args_var:%d|headers:%d|headers_var:%d|body:%d|body_var:%d|URL:%d", */
-      /* 		    r[i].br->args, r[i].br->args_var, r[i].br->headers, r[i].br->headers_var, r[i].br->body, r[i].br->body_var, */
-      /* 		    r[i].br->url); */
-      /* ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, */
-      /* 		    "XX-[GENERIC] check one rule [%d]", r[i].rule_id); */
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		    "XX-test rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 #endif
+    
       /* check the rule against the value*/
       ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
       /*if our rule matched, apply effects (score etc.)*/
@@ -941,24 +1009,42 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		      "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 #endif
-	ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match);
+	ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);
+      }
+    
+      if (!r[i].br->negative) {
+#ifdef basestr_ruleset_debug
+	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		      "XX-test rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+#endif
+	/* check the rule against the name*/
+	ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);
+	/*if our rule matched, apply effects (score etc.)*/
+	if (ret == 1) {
+#ifdef basestr_ruleset_debug
+	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+			"XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+#endif
+	  ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 1);
+	}
       }
     }
   }
   return (0);
 }
+  
 
 
 
-/*
-** does : parse body data, a.k.a POST/PUT datas. identifies content-type,
-**	  and, if appropriate, boundary. then parse the stuff if multipart/for..
-**	  or rely on spliturl if application/x-w..
-** [XXX] : this function sucks ! I don't parse bigger-than-body-size posts that 
-**	   are partially stored in files, TODO ;)
-*/
-//#define post_heavy_debug
-//#define dummy_body_parse_debug
+  /*
+  ** does : parse body data, a.k.a POST/PUT datas. identifies content-type,
+  **	  and, if appropriate, boundary. then parse the stuff if multipart/for..
+  **	  or rely on spliturl if application/x-w..
+  ** [XXX] : this function sucks ! I don't parse bigger-than-body-size posts that 
+  **	   are partially stored in files, TODO ;)
+  */
+  //#define post_heavy_debug
+  //#define dummy_body_parse_debug
 void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx, 
 				       ngx_http_request_t	 *r,
 				       u_char			*src,
@@ -1195,7 +1281,7 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 
 }
 
-#define dummy_body_parse_debug
+  //#define dummy_body_parse_debug
 
 void	
 ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx, 
@@ -1219,7 +1305,7 @@ ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		  "XX-No content type ..");
 #endif
-    if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY) == 0)
+    if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY, 0) == 0)
       ctx->weird_request = 1;
     return ;
   }
@@ -1227,7 +1313,7 @@ ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
   if (r->request_body->temp_file) {
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		  "naxsi: POST REQUEST to temp_file, partially parsed.");
-    if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__big_request, NULL, BODY) == 0)
+    if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__big_request, NULL, BODY, 0) == 0)
       ctx->big_request = 1;
     return ;
   }
@@ -1272,7 +1358,7 @@ ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
 #endif
   /* File probably got buffered. */
   if (r->headers_in.content_length_n != full_body_len) {
-    if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY) == 0)
+    if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY, 0) == 0)
       ctx->weird_request = 1;
     return ;
   }
@@ -1297,7 +1383,7 @@ ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
 #ifdef post_heavy_debug
       dummy_error_fatal(ctx, r, "spliturl failed, someone is trying to trick us");
 #endif
-      if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY) == 0)
+      if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY, 0) == 0)
 	ctx->weird_request = 1;
       return ;
     }
@@ -1310,21 +1396,21 @@ ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
   else {
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		  "[POST] Unknown content-type, gtfo");
-    if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY) == 0)
+    if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY, 0) == 0)
       ctx->weird_request = 1;
   }
 }
 
 
 
-/*
-** does : bui ! this is a 'main' function, all the stuff goes from here.
-**	  to make it short, it does the following :
-** - if we got header rules, apply header_rules on each.
-** - apply generic_rules on url decoded URI.
-** - if we got get_rules and get args, apply get_rules varname/value couple.
-** - if we are in a POST/PUT request and we got body_rules, apply rules :)
-*/
+  /*
+  ** does : bui ! this is a 'main' function, all the stuff goes from here.
+  **	  to make it short, it does the following :
+  ** - if we got header rules, apply header_rules on each.
+  ** - apply generic_rules on url decoded URI.
+  ** - if we got get_rules and get args, apply get_rules varname/value couple.
+  ** - if we are in a POST/PUT request and we got body_rules, apply rules :)
+  */
 void	
 ngx_http_dummy_uri_parse(ngx_http_dummy_main_conf_t *main_cf, 
 			 ngx_http_dummy_loc_conf_t *cf, 
@@ -1458,153 +1544,153 @@ ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx,
 
 
 
-//#define custom_score_debug
-void	
-ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx, 
-					 ngx_http_dummy_loc_conf_t	*cf, 
-					 ngx_http_request_t *r)
-{
-  unsigned int	i, z, matched;
-  ngx_http_check_rule_t		*cr;
-  ngx_http_special_score_t	*sc;
-  /* ngx_http_whitelist_rule_t	*b; */
-  /* //ngx_http_whitelist_location_t	*cl; */
-  /* ngx_int_t			k; */
-  //ngx_int_t			*tmp_ptr;
+  //#define custom_score_debug
+  void	
+    ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx, 
+					     ngx_http_dummy_loc_conf_t	*cf, 
+					     ngx_http_request_t *r)
+  {
+    unsigned int	i, z, matched;
+    ngx_http_check_rule_t		*cr;
+    ngx_http_special_score_t	*sc;
+    /* ngx_http_whitelist_rule_t	*b; */
+    /* //ngx_http_whitelist_location_t	*cl; */
+    /* ngx_int_t			k; */
+    //ngx_int_t			*tmp_ptr;
 
 #ifdef custom_score_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		"XX-custom check rules");
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-custom check rules");
 #endif
-/*   /\* check flags : as current_ctx_status updates status regarding flags (weird_request, big_body etc.) we need  */
-/*      to check first if those flags are whitelisted for this URL. *\/ */
-/*   if (cf->wlr_url_hash && cf->wlr_url_hash->size) { */
-/*     /\* check if the rule was not whitelisted *\/   */
-/*     k = ngx_hash_key_lc(r->uri.data, r->uri.len); */
-/*     b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_url_hash, k,  */
-/* 						   (u_char*) r->uri.data,  */
-/* 						   r->uri.len); */
-/*     if (b) { */
-/* #ifdef custom_score_debug */
-/*       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
-/* 		    "XX-URL has whitelist, %d items", b->whitelist_locations->nelts); */
-/* #endif */
-/*       for (i = 0; i < b->ids->nelts; i++) { */
+    /*   /\* check flags : as current_ctx_status updates status regarding flags (weird_request, big_body etc.) we need  */
+    /*      to check first if those flags are whitelisted for this URL. *\/ */
+    /*   if (cf->wlr_url_hash && cf->wlr_url_hash->size) { */
+    /*     /\* check if the rule was not whitelisted *\/   */
+    /*     k = ngx_hash_key_lc(r->uri.data, r->uri.len); */
+    /*     b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_url_hash, k,  */
+    /* 						   (u_char*) r->uri.data,  */
+    /* 						   r->uri.len); */
+    /*     if (b) { */
+    /* #ifdef custom_score_debug */
+    /*       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
+    /* 		    "XX-URL has whitelist, %d items", b->whitelist_locations->nelts); */
+    /* #endif */
+    /*       for (i = 0; i < b->ids->nelts; i++) { */
 	
-/* 	if (ctx->weird_request && */
-/* 	    ((int *)b->ids->elts)[i] == WEIRD_REQUEST_INTERNAL_RULE_ID) { */
-/* #ifdef custom_score_debug */
-/* 	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
-/* 			"XX-MATCH WHITELIST !"); */
-/* #endif */
-/* 	  ctx->weird_request = 0; */
-/* 	} */
-/* 	if (ctx->big_request && */
-/* 	    ((int *)b->ids->elts)[i] == BIG_BODY_INTERNAL_RULE_ID) { */
-/* #ifdef custom_score_debug */
-/* 	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
-/* 			"XX-MATCH WHITELIST !"); */
-/* #endif */
-/* 	  ctx->big_request = 0; */
-/* 	} */
-/*       } */
-/*     } */
-/*   } */
-  if (ctx->weird_request) {
+    /* 	if (ctx->weird_request && */
+    /* 	    ((int *)b->ids->elts)[i] == WEIRD_REQUEST_INTERNAL_RULE_ID) { */
+    /* #ifdef custom_score_debug */
+    /* 	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
+    /* 			"XX-MATCH WHITELIST !"); */
+    /* #endif */
+    /* 	  ctx->weird_request = 0; */
+    /* 	} */
+    /* 	if (ctx->big_request && */
+    /* 	    ((int *)b->ids->elts)[i] == BIG_BODY_INTERNAL_RULE_ID) { */
+    /* #ifdef custom_score_debug */
+    /* 	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
+    /* 			"XX-MATCH WHITELIST !"); */
+    /* #endif */
+    /* 	  ctx->big_request = 0; */
+    /* 	} */
+    /*       } */
+    /*     } */
+    /*   } */
+    if (ctx->weird_request) {
 #ifdef custom_score_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		  "XX-blocking, weird_request flag set");
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "XX-blocking, weird_request flag set");
 #endif
-    ctx->block = 1;
-  }
-  if (ctx->big_request) {
+      ctx->block = 1;
+    }
+    if (ctx->big_request) {
 #ifdef custom_score_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		  "XX-blocking unexpected big request");
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "XX-blocking unexpected big request");
 #endif
-    ctx->block = 1;
-  }
-  /*cr, sc, cf, ctx*/
-  if (cf->check_rules && ctx->special_scores) {
+      ctx->block = 1;
+    }
+    /*cr, sc, cf, ctx*/
+    if (cf->check_rules && ctx->special_scores) {
 #ifdef custom_score_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		  "XX-we have custom check rules and CTX got special score :)");
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "XX-we have custom check rules and CTX got special score :)");
 #endif
-    cr = cf->check_rules->elts;
-    sc = ctx->special_scores->elts;
-    for (z = 0; z < ctx->special_scores->nelts; z++)
-      for (i = 0; i < cf->check_rules->nelts; i++) {
-#ifdef custom_score_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		      "XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
-		      cr[i].sc_tag.data, cr[i].sc_score,
-		      sc[z].sc_tag->data, sc[z].sc_score, cr[i].cmp);
-#endif
-	if (!ngx_strcmp(sc[z].sc_tag->data, cr[i].sc_tag.data)) {
+      cr = cf->check_rules->elts;
+      sc = ctx->special_scores->elts;
+      for (z = 0; z < ctx->special_scores->nelts; z++)
+	for (i = 0; i < cf->check_rules->nelts; i++) {
 #ifdef custom_score_debug
 	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 			"XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
 			cr[i].sc_tag.data, cr[i].sc_score,
 			sc[z].sc_tag->data, sc[z].sc_score, cr[i].cmp);
 #endif
-	  matched=0;
-	  // huglier than your mom :)
-	  switch (cr[i].cmp) {
-	  case SUP:
-	    matched = sc[z].sc_score > cr[i].sc_score ? 1 : 0;
-	    break;
-	  case SUP_OR_EQUAL:
-	    matched = sc[z].sc_score >= cr[i].sc_score ? 1 : 0;
-	    break;
-	  case INF:
-	    matched = sc[z].sc_score < cr[i].sc_score ? 1 : 0;
-	    break;
-	  case INF_OR_EQUAL:
-	    matched = sc[z].sc_score <= cr[i].sc_score ? 1 : 0;
-	    break;
-	  }
-	  if (matched) {
+	  if (!ngx_strcmp(sc[z].sc_tag->data, cr[i].sc_tag.data)) {
 #ifdef custom_score_debug
 	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-			  "XX- custom score rule triggered ..");
+			  "XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
+			  cr[i].sc_tag.data, cr[i].sc_score,
+			  sc[z].sc_tag->data, sc[z].sc_score, cr[i].cmp);
+#endif
+	    matched=0;
+	    // huglier than your mom :)
+	    switch (cr[i].cmp) {
+	    case SUP:
+	      matched = sc[z].sc_score > cr[i].sc_score ? 1 : 0;
+	      break;
+	    case SUP_OR_EQUAL:
+	      matched = sc[z].sc_score >= cr[i].sc_score ? 1 : 0;
+	      break;
+	    case INF:
+	      matched = sc[z].sc_score < cr[i].sc_score ? 1 : 0;
+	      break;
+	    case INF_OR_EQUAL:
+	      matched = sc[z].sc_score <= cr[i].sc_score ? 1 : 0;
+	      break;
+	    }
+	    if (matched) {
+#ifdef custom_score_debug
+	      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+			    "XX- custom score rule triggered ..");
 #endif
 
-	    if (cr[i].block)
-	      ctx->block = 1;
-	    if (cr[i].allow)
-	      ctx->allow = 1;
+	      if (cr[i].block)
+		ctx->block = 1;
+	      if (cr[i].allow)
+		ctx->allow = 1;
+	    }
 	  }
 	}
-      }
+    }
   }
-}
 
 
-/*
-** This function is called when the body is read.
-** Will set-up flags to tell that parsing can be done,
-** and then run the core phases again
-** (WARNING: check backward compatibility of count--
-** with older version of nginx 0.7.x)
-*/
+  /*
+  ** This function is called when the body is read.
+  ** Will set-up flags to tell that parsing can be done,
+  ** and then run the core phases again
+  ** (WARNING: check backward compatibility of count--
+  ** with older version of nginx 0.7.x)
+  */
 //#define payload_handler_debug
-void 
-ngx_http_dummy_payload_handler(ngx_http_request_t *r) {
-  ngx_http_request_ctx_t  *ctx;
-  ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
-  ctx->ready = 1;
-  r->count--;
-#ifdef payload_handler_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		"XX-dummy PAYLOAD HANDLER !");
-#endif
-  if (ctx->wait_for_body) {
+  void 
+    ngx_http_dummy_payload_handler(ngx_http_request_t *r) {
+    ngx_http_request_ctx_t  *ctx;
+    ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
+    ctx->ready = 1;
+    r->count--;
 #ifdef payload_handler_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		  "XX-dummy : AFTER NGX_AGAIN");
+		  "XX-dummy PAYLOAD HANDLER !");
 #endif
-    ctx->wait_for_body = 0;
-    ngx_http_core_run_phases(r);
+    if (ctx->wait_for_body) {
+#ifdef payload_handler_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "XX-dummy : AFTER NGX_AGAIN");
+#endif
+      ctx->wait_for_body = 0;
+      ngx_http_core_run_phases(r);
+    }
   }
-}
 

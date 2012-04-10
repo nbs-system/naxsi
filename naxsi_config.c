@@ -146,13 +146,20 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   ngx_http_custom_rule_location_t	*custom_rule;
   char *tmp_ptr, *tmp_end;
 
-  
+
   if (!rule->br)
     return (NGX_CONF_ERROR);
+/* #ifdef dummy_zone_debug */
+/*   ngx_conf_log_error(NGX_LOG_EMERG, r, 0, "FEU:%V", tmp); */
+/* #endif   */
+
   
   tmp_ptr = (char *) tmp->data+strlen(MATCH_ZONE_T);
   while (*tmp_ptr) {
-
+/* #ifdef dummy_zone_debug  */
+/*     ngx_conf_log_error(NGX_LOG_EMERG, r, 0, "FEU:%s", tmp_ptr);  */
+/* #endif  */
+    
     if (tmp_ptr[0] == '|')
       tmp_ptr++;
     /* match global zones */
@@ -180,16 +187,17 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 	    continue;
 	  }
 	  else
-	    if (!strncmp(tmp_ptr, "FLAGS", strlen("FLAGS"))) {
-	      rule->br->flags = 1;
-	      tmp_ptr += strlen("FLAGS");
+	    /* match against variable name*/
+	    if (!strncmp(tmp_ptr, "NAME", strlen("NAME"))) {
+	      rule->br->target_name = 1;
+	      tmp_ptr += strlen("NAME");
 	      continue;
 	    }
 	    else
 	      /* for file_ext, just push'em in the body rules.
-	       when multipart parsing comes in, it'll tag the zone as
-	      FILE_EXT as the rule will be pushed in body rules it'll be 
-	      checked !*/
+		 when multipart parsing comes in, it'll tag the zone as
+		 FILE_EXT as the rule will be pushed in body rules it'll be 
+		 checked !*/
 	      if (!strncmp(tmp_ptr, "FILE_EXT", strlen("FILE_EXT"))) {
 		rule->br->file_ext = 1;
 		rule->br->body = 1;
@@ -423,7 +431,14 @@ ngx_http_dummy_cfg_parse_one_rule(ngx_conf_t *cf,
       return (NGX_CONF_ERROR);
   }
   else 
-    return (NGX_CONF_ERROR);
+    {
+#ifdef dummy_cfg_parse_one_rule_debug
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
+			 "XX-crit in rule %V", &(value[1]));  
+#endif
+      return (NGX_CONF_ERROR);
+    }
+  
   // check each word of config line against each rule
   for(i = 1; i < nb_elem && value[i].len > 0; i++) {
     valid = 0;

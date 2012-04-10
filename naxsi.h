@@ -143,6 +143,10 @@ typedef struct
   enum DUMMY_MATCH_ZONE		zone;
   // if the "name" is only an url, specify it
   int				uri_only:1;
+  /* does the rule targets the name 
+     instead of the content ?*/
+  int				target_name;
+  
   ngx_str_t			*name;
   ngx_int_t			hash;
   ngx_array_t			*ids;
@@ -178,6 +182,9 @@ typedef struct
   /* set if defined "custom" match zone (GET_VAR/POST_VAR/...)  */
   ngx_flag_t		custom_location:1;
   ngx_int_t		custom_location_only;
+  /* does the rule targets variable name instead ? */
+  ngx_int_t		target_name;
+  
   /* custom location match zones list (GET_VAR/POST_VAR ...) */
   ngx_array_t		*custom_locations;
   /* ~~~~~~~ specific flags ~~~~~~~~~ */

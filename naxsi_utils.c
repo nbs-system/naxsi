@@ -189,8 +189,9 @@ naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
 
                 break;
             }
-
+	    
             /* the invalid quoted character */
+	    *d++ = ch;
 
             break;
         }

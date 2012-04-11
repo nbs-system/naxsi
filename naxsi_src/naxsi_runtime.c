@@ -579,29 +579,34 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ngx_table_elt_t	    *h;
   
   
-  h = ngx_list_push(&(r->headers_in.headers));
-  h->key.len = strlen("orig_url");
-  h->key.data = ngx_pcalloc(r->pool, strlen("orig_url")+1);
-  memcpy(h->key.data, "orig_url", strlen("orig_url"));
-  h->value.len = tmp_uri.len;
-  h->value.data = ngx_pcalloc(r->pool, tmp_uri.len+1);
-  memcpy(h->value.data, tmp_uri.data, tmp_uri.len);
-  
-  h = ngx_list_push(&(r->headers_in.headers));
-  h->key.len = strlen("orig_args");
-  h->key.data = ngx_pcalloc(r->pool, strlen("orig_args")+1);
-  memcpy(h->key.data, "orig_args", strlen("orig_args"));
-  h->value.len = r->args.len;
-  h->value.data = ngx_pcalloc(r->pool, r->args.len+1);
-  memcpy(h->value.data, r->args.data, r->args.len);
-  
-  h = ngx_list_push(&(r->headers_in.headers));
-  h->key.len = strlen("naxsi_sig");
-  h->key.data = ngx_pcalloc(r->pool, strlen("naxsi_sig")+1);
-  memcpy(h->key.data, "naxsi_sig", strlen("naxsi_sig"));
-  h->value.len = denied_args.len;
-  h->value.data = denied_args.data;
-
+  if(r->headers_in.headers.last)  {
+    
+    h = ngx_list_push(&(r->headers_in.headers));
+    h->key.len = strlen("orig_url");
+    h->key.data = ngx_pcalloc(r->pool, strlen("orig_url")+1);
+    memcpy(h->key.data, "orig_url", strlen("orig_url"));
+    h->value.len = tmp_uri.len;
+    h->value.data = ngx_pcalloc(r->pool, tmp_uri.len+1);
+    memcpy(h->value.data, tmp_uri.data, tmp_uri.len);
+    
+    h = ngx_list_push(&(r->headers_in.headers));
+    h->key.len = strlen("orig_args");
+    h->key.data = ngx_pcalloc(r->pool, strlen("orig_args")+1);
+    memcpy(h->key.data, "orig_args", strlen("orig_args"));
+    h->value.len = r->args.len;
+    h->value.data = ngx_pcalloc(r->pool, r->args.len+1);
+    memcpy(h->value.data, r->args.data, r->args.len);
+    
+    h = ngx_list_push(&(r->headers_in.headers));
+    h->key.len = strlen("naxsi_sig");
+    h->key.data = ngx_pcalloc(r->pool, strlen("naxsi_sig")+1);
+    memcpy(h->key.data, "naxsi_sig", strlen("naxsi_sig"));
+    h->value.len = denied_args.len;
+    h->value.data = denied_args.data;
+  }
+  else if (cf->learning)
+    ngx_log_error(NGX_LOG_ERR, r->connection->log, 
+		  0, "[naxsi] no headers_in, not forwarded to learning mode.");
   
   if (cf->learning) {
     ngx_http_core_loc_conf_t  *clcf;

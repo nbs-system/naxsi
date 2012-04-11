@@ -4,7 +4,7 @@ unit_test:
 	export PERL5LIB=/usr/local/share/perl/5.12.4/ ; \
 	export PATH=$(PATH):/usr/sbin/ ; \
 	cd .. ; \
-	prove -r t/01*.t
+	prove -r t/*.t
 
 package: 
 	mkdir ../../naxsi-$(VERS)

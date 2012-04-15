@@ -7,19 +7,6 @@
  * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  * 
- * In addition, as a special exception, the copyright holders give
- * permission to link the code of portions of this program with the
- * OpenSSL library under certain conditions as described in each
- * individual source file, and distribute linked combinations
- * including the two.
- * You must obey the GNU General Public License in all respects
- * for all of the code used other than OpenSSL.  If you modify
- * file(s) with this exception, you may extend this exception to your
- * version of the file(s), but you are not obligated to do so.  If you
- * do not wish to do so, delete this exception statement from your
- * version.  If you delete this exception statement from all source
- * files in the program, then also delete it here.
- * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -72,10 +59,6 @@ static ngx_http_dummy_parser_t rule_parser[] = {
 void	*
 dummy_negative(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 {
-#ifdef NASXI_HEAVY_CONFPARSE_DEBUG
-  ngx_conf_log_error(NGX_LOG_EMERG, r, 0, 
-	 "XX-(debug) NEGATIVE RULE -------------------------------------!");
-#endif
   rule->br->negative = 1;
   return (NGX_CONF_OK);
 }
@@ -84,71 +67,158 @@ dummy_negative(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 void	*
 dummy_score(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 {
-  int	score, len;
-  char  *tmp_ptr, *tmp_end;
+  int				score, len;
+  char				*tmp_ptr, *tmp_end;
+  ngx_http_special_score_t	*sc;
   
   rule->score = 0;
   rule->block = 0;
   rule->allow = 0;
-  rule->sc_score = 0;
-  rule->sc_allow = 0;
   tmp_ptr = (char *) (tmp->data + strlen(SCORE_T));
-  while (*tmp_ptr) {
-#ifdef score_debug
-    ngx_conf_log_error(NGX_LOG_EMERG, r, 0, 
-		       "XX-(debug) scoring rule, remains '%s'",
-		       tmp_ptr);
+#ifdef score_debug 
+  ngx_conf_log_error(NGX_LOG_EMERG, r, 0,
+		     "XX-(debug) dummy score (%V)",
+		     tmp);
 #endif
+  
+  /*allocate scores array*/
+  if (!rule->sscores) {
+    rule->sscores = ngx_array_create(r->pool, 1, sizeof(ngx_http_special_score_t));
+  }
+
+  while (*tmp_ptr) { 
     if (tmp_ptr[0] == '$') {
+#ifdef score_debug 
+      ngx_conf_log_error(NGX_LOG_EMERG, r, 0,
+			 "XX-(debug) special scoring rule (%s)",
+			 tmp_ptr);
+#endif
       tmp_end = strchr(tmp_ptr, ':');
       if (!tmp_end)
 	return (NGX_CONF_ERROR);
       len = tmp_end - tmp_ptr;
       if (len <= 0)
 	return (NGX_CONF_ERROR);
-      rule->sc_tag = ngx_pcalloc(r->pool, sizeof(ngx_str_t));
-      if (!rule->sc_tag)
+      sc = ngx_array_push(rule->sscores);
+      sc->sc_tag = ngx_pcalloc(r->pool, sizeof(ngx_str_t));
+      if (!sc->sc_tag)
 	return (NGX_CONF_ERROR);
-      rule->sc_tag->data = ngx_pcalloc(r->pool, len+1);
-      if (!rule->sc_tag->data)
+      sc->sc_tag->data = ngx_pcalloc(r->pool, len+1);
+      if (!sc->sc_tag->data)
 	return (NGX_CONF_ERROR);
-      memset(rule->sc_tag->data, 0, len+1);
-      memcpy(rule->sc_tag->data, tmp_ptr, len);
-      rule->sc_tag->len = len;
-      rule->sc_score = atoi(tmp_end+1);
-      //don't check on sc_score as it can be negative :p
-#ifdef score_debug
-      ngx_conf_log_error(NGX_LOG_EMERG, r, 0, 
-			 "XX-(debug) special scoring rule (%s:%d)",
-			 rule->sc_tag->data, rule->sc_score);
+      //memset(rule->sc_tag->data, 0, len+1);
+      memcpy(sc->sc_tag->data, tmp_ptr, len);
+      sc->sc_tag->len = len;
+      sc->sc_score = atoi(tmp_end+1);
+#ifdef score_debug 
+      ngx_conf_log_error(NGX_LOG_EMERG, r, 0,
+			 "XX-(debug) special scoring (%V) => (%d)",
+			 sc->sc_tag, sc->sc_score);
 #endif
-      tmp_ptr = tmp_end+1;
-      return (NGX_CONF_OK);
+      
+      /* move to end of score. */
+      while ( /*don't overflow*/((unsigned int)((unsigned char *)tmp_ptr - tmp->data)) < tmp->len &&
+	      /*and seek for next score */ *tmp_ptr != ',')
+	++tmp_ptr;
     }
+    else if (tmp_ptr[0] == ',')
+      ++tmp_ptr;
     else if (!strcasecmp(tmp_ptr, "BLOCK")) {
       rule->block = 1;
       tmp_ptr += 5;
-      return (NGX_CONF_OK);
     }
     else if (!strcasecmp(tmp_ptr, "ALLOW")) {
       rule->allow = 1;
       tmp_ptr += 5;
-      return (NGX_CONF_OK);
     }
     //or maybe you just want to assign a score
     else if ( (tmp_ptr[0] >= '0' && tmp_ptr[0] <= '9') || tmp_ptr[0] == '-') {
       score = atoi((const char *)tmp->data+2);
-      // I think score should be able to be negative, so remove this check.
-      /* if (score <= 0) */
-      /*   return (NGX_CONF_ERROR); */
       rule->score = score;
-      return (NGX_CONF_OK);
     }
     else
       return (NGX_CONF_ERROR);
   }
-  return (NGX_CONF_ERROR);
+#ifdef score_debug
+  unsigned int z;
+  ngx_http_special_score_t	*scr;
+  scr = rule->sscores->elts;
+  if (rule->sscores) {
+    for (z = 0; z < rule->sscores->nelts; z++) {
+      ngx_conf_log_error(NGX_LOG_EMERG, r, 0,
+			 "XX-score n°%d special scoring (%V) => (%d)",
+			 z, scr[z].sc_tag, scr[z].sc_score);
+      
+    }
+  }
+  else
+    ngx_conf_log_error(NGX_LOG_EMERG, r, 0,
+		       "XX-no custom scores for this rule.");
+#endif
+  return (NGX_CONF_OK);
 }
+  
+  
+  
+  /*rule->sc_score = 0;
+    rule->sc_allow = 0;*/
+/*   tmp_ptr = (char *) (tmp->data + strlen(SCORE_T)); */
+/*   while (*tmp_ptr) { */
+/* #ifdef score_debug */
+/*     ngx_conf_log_error(NGX_LOG_EMERG, r, 0,  */
+/* 		       "XX-(debug) scoring rule, remains '%s'", */
+/* 		       tmp_ptr); */
+/* #endif */
+/*     if (tmp_ptr[0] == '$') { */
+/*       tmp_end = strchr(tmp_ptr, ':'); */
+/*       if (!tmp_end) */
+/* 	return (NGX_CONF_ERROR); */
+/*       len = tmp_end - tmp_ptr; */
+/*       if (len <= 0) */
+/* 	return (NGX_CONF_ERROR); */
+/*       rule->sc_tag = ngx_pcalloc(r->pool, sizeof(ngx_str_t)); */
+/*       if (!rule->sc_tag) */
+/* 	return (NGX_CONF_ERROR); */
+/*       rule->sc_tag->data = ngx_pcalloc(r->pool, len+1); */
+/*       if (!rule->sc_tag->data) */
+/* 	return (NGX_CONF_ERROR); */
+/*       //memset(rule->sc_tag->data, 0, len+1); */
+/*       memcpy(rule->sc_tag->data, tmp_ptr, len); */
+/*       rule->sc_tag->len = len; */
+/*       rule->sc_score = atoi(tmp_end+1); */
+/*       //don't check on sc_score as it can be negative :p */
+/* #ifdef score_debug */
+/*       ngx_conf_log_error(NGX_LOG_EMERG, r, 0,  */
+/* 			 "XX-(debug) special scoring rule (%s:%d)", */
+/* 			 rule->sc_tag->data, rule->sc_score); */
+/* #endif */
+/*       tmp_ptr = tmp_end+1; */
+/*       return (NGX_CONF_OK); */
+/*     } */
+/*     else if (!strcasecmp(tmp_ptr, "BLOCK")) { */
+/*       rule->block = 1; */
+/*       tmp_ptr += 5; */
+/*       return (NGX_CONF_OK); */
+/*     } */
+/*     else if (!strcasecmp(tmp_ptr, "ALLOW")) { */
+/*       rule->allow = 1; */
+/*       tmp_ptr += 5; */
+/*       return (NGX_CONF_OK); */
+/*     } */
+/*     //or maybe you just want to assign a score */
+/*     else if ( (tmp_ptr[0] >= '0' && tmp_ptr[0] <= '9') || tmp_ptr[0] == '-') { */
+/*       score = atoi((const char *)tmp->data+2); */
+/*       // I think score should be able to be negative, so remove this check. */
+/*       /\* if (score <= 0) *\/ */
+/*       /\*   return (NGX_CONF_ERROR); *\/ */
+/*       rule->score = score; */
+/*       return (NGX_CONF_OK); */
+/*     } */
+/*     else */
+/*       return (NGX_CONF_ERROR); */
+/*   } */
+/* return (NGX_CONF_ERROR); */
+/* } */
 
 
 //#define dummy_zone_debug

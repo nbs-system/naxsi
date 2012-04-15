@@ -6,20 +6,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *
- * In addition, as a special exception, the copyright holders give
- * permission to link the code of portions of this program with the
- * OpenSSL library under certain conditions as described in each
- * individual source file, and distribute linked combinations
- * including the two.
- * You must obey the GNU General Public License in all respects
- * for all of the code used other than OpenSSL.  If you modify
- * file(s) with this exception, you may extend this exception to your
- * version of the file(s), but you are not obligated to do so.  If you
- * do not wish to do so, delete this exception statement from your
- * version.  If you delete this exception statement from all source
- * files in the program, then also delete it here. 
- *
+ * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -80,13 +67,6 @@ enum DUMMY_MATCH_ZONE {
   UNKNOWN
 };
 
-
-/* internal FLAG rule */
-typedef struct
-{
-  ngx_flag_t	weird_request:1;
-  ngx_flag_t	big_body:1;
-} ngx_http_flag_rule_t;
 
 /*
 ** struct used to store a specific match zone
@@ -228,6 +208,8 @@ typedef struct
 {
   ngx_str_t	*sc_tag;
   ngx_int_t	sc_score;
+  ngx_flag_t	block:1;
+  ngx_flag_t	allow:1;
 } ngx_http_special_score_t;
 
 /*
@@ -257,9 +239,11 @@ typedef struct
   ngx_int_t			rule_id;
   ngx_str_t			*log_msg; // a specific log message
   ngx_int_t			score; //also handles DENY and ALLOW
-  // bellow, specific score tag stuff
-  ngx_str_t			*sc_tag; //specific score tag
-  ngx_int_t			sc_score;  //specific score value
+  
+  /* List of scores increased on rule match. */
+  ngx_array_t			*sscores;
+  /*ngx_str_t			*sc_tag; //specific score tag
+    ngx_int_t			sc_score;  //specific score value*/
   ngx_flag_t			sc_block:1; //
   ngx_flag_t			sc_allow:1; //
   // end of specific score tag stuff
@@ -269,7 +253,6 @@ typedef struct
   ngx_flag_t			lnk_to:1;
   ngx_flag_t			lnk_from:1;
   /* pointers on specific rule stuff */
-  ngx_http_flag_rule_t		*fr;
   ngx_http_basic_rule_t		*br;
 } ngx_http_rule_t;
 
@@ -333,6 +316,9 @@ typedef struct
   ngx_flag_t		args_var:1;
   /* matched on URL */
   ngx_flag_t		url:1;
+  /* matched within the 'NAME' */
+  ngx_flag_t		target_name:1;
+
   ngx_str_t		*name;
   ngx_http_rule_t	*rule;
 } ngx_http_matched_rule_t;
@@ -354,6 +340,7 @@ typedef struct
   // flag request
   ngx_flag_t	weird_request:1;
   ngx_flag_t	big_request:1;
+  //
   // matched rules
   ngx_array_t	*matched;
 } ngx_http_request_ctx_t;

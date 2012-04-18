@@ -2,6 +2,7 @@
 from twisted.web import http
 from twisted.internet import protocol
 from twisted.internet import reactor, threads
+import urllib
 import pprint
 import socket
 from nx_parser import signature_parser
@@ -84,11 +85,41 @@ def add_monitoring(arg):
         cursor.execute("INSERT INTO http_monitor (peer_ip) VALUES (%s)", (ip))
         return
 
+def fill_db(filename):
+    fd = open(filename, 'r')
+    db = MySQLConnector.MySQLConnector().connect()
+    sig = ''
+
+    if db is None:
+        raise ValueError('Cannot connect to db')
+    cursor = db.cursor()
+    if cursor is None:
+        raise ValueError('Cannot connect to db')
+    for line in fd:
+        fullstr = ''
+        if 'NAXSI_FMT' in line:
+            l = line.split(", ")
+            sig = l[0].split('NAXSI_FMT:')[1][1:]
+            l = l[1:]
+            request_args = {}
+            for i in l:
+                s = i.split(':')
+                request_args[s[0]] = urllib.unquote(''.join(s[1:]))
+#            print 'args are ', request_args
+            if request_args:
+                fullstr = request_args['request'][2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
+        if sig != ''  and fullstr != '':
+            print "adding %s (%s) " % (sig, fullstr)
+            parser = signature_parser(cursor)
+            parser.sig_to_db(fullstr, sig)
+    db.close()
+
+
 if __name__ == '__main__':
 #    global quiet
     port = 8000
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'qhp:a:', ['help', 'port', 'add-monitoring', 'quiet'])
+        opts, args = getopt.getopt(sys.argv[1:], 'qhp:a:l:', ['quiet','help', 'port', 'add-monitoring', 'log-file', ])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -104,6 +135,9 @@ if __name__ == '__main__':
             quiet = True
         if o in ('-a', '--add-monitoring'):
             add_monitoring(a)
+            exit(42)
+        if o in ('-l', '--log-file'):
+            fill_db(a)
             exit(42)
 
     reactor.listenTCP(port, InterceptFactory())

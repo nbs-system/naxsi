@@ -44,7 +44,7 @@ class rules_extractor(object):
                 rule_id=None, exception_md5=None,
                 exception_id=None):
       tmp_rules = []
-      self.cursor.execute("""select exception.exception_id as id, exception.md5 as md5, exception.url as url, exception.count as count, srcpeer.peer_ip as src, count(distinct srcpeer.peer_ip) as cnt_peer, dstpeer.peer_host as dst, GROUP_CONCAT("mz:", match_zone.rule_id, ":", "$", match_zone.zone, "_VAR:", match_zone.arg_name)  as match_zones from exception LEFT JOIN  (peer as srcpeer, peer as dstpeer, connections, match_zone)  on (connections.src_peer_id = srcpeer.peer_id and  connections.dst_peer_id = dstpeer.peer_id and  connections.exception_id = exception.exception_id and  match_zone.exception_id = exception.exception_id) GROUP BY id;""")
+      self.cursor.execute("""select exception.exception_id as id, exception.md5 as md5, exception.url as url, exception.count as count, srcpeer.peer_ip as src, count(distinct srcpeer.peer_ip) as cnt_peer, dstpeer.peer_host as dst, GROUP_CONCAT(distinct "mz:", match_zone.rule_id, ":", "$", match_zone.zone, "_VAR:", match_zone.arg_name)  as match_zones from exception LEFT JOIN  (peer as srcpeer, peer as dstpeer, connections, match_zone)  on (connections.src_peer_id = srcpeer.peer_id and  connections.dst_peer_id = dstpeer.peer_id and  connections.exception_id = exception.exception_id and  match_zone.exception_id = exception.exception_id) GROUP BY id;""")
       data = self.cursor.fetchall()
       for row in data:
          if (url is not None and not re.search(url, row.get("url", ""))):
@@ -57,10 +57,14 @@ class rules_extractor(object):
             continue
          tmp_rules.append(row)
       for i in tmp_rules:
+         if i['match_zones'] is None:
+            continue
          for j in i['match_zones'].split(','):
+            if len(j.split(':')) < 2:
+               continue
             da_dict = {}
             da_dict['url'] = i['url']
-            da_dict['arg'] = ':'.join(j.split(':')[2:])
+            da_dict['arg'] = ':'.join(j.split(':')[2:])            
             # fix exception of URL
             da_dict['arg'] = da_dict['arg'].replace("$URL_VAR:", "URL")
             da_dict['id'] = j.split(':')[1]
@@ -218,8 +222,7 @@ class rules_extractor(object):
 class InterceptHandler(http.Request):
    def process(self):
       if self.path == '/get_rules':
-         self.setHeader('content-type', 'text/plain')
-         
+         self.setHeader('content-type', 'text/plain')         
          ex = rules_extractor(int(self.args.get('page_hit', ['10'])[0]), 
                               int(self.args.get('rules_hit', ['10'])[0]), 
                               self.args.get('rules_file', [None])[0])
@@ -232,20 +235,25 @@ class InterceptHandler(http.Request):
                                                                                                    'Unknown id. Check the path to the core rules file and/or the content.'), 
                                                                                    i['url'], i['cnt_peer'])
             r += '#BasicRule wl:' + i['id'] + ' "mz:$URL:' + i['url'] 
+            #ugly hack :D
+            if '|NAME' in i['arg']:
+               i['arg'] = i['arg'].split('|')[0] + '_VAR|NAME'
             if i['arg'] is not None and len(i['arg']) > 0:
                r += '|' + i['arg']
             r +=  '";\n'
          r += '########### End Of Rules Before Optimisation ###########\n'
          for i in opti_rules:
-            
+            #ugly hack :D
+#            if '|NAME' in i['arg']:
+#               i['arg'] = i['arg'].split('|')[0] + '_VAR|NAME'
             r += 'BasicRule wl:' + i['id'] + ' "mz:'
             if i['url'] is not None and len(i['url']) > 0:
                r += '$URL:' + i['url']
             if i['arg'] is not None and len(i['arg']) > 0:
                if i['url'] is not None and len(i['url']):
-                  r += '|'+i['arg'] 
+                  r += '|'+i['arg']
                else:
-                  r += i['arg'] 
+                  r += i['arg']
             r += '";\n'
          self.write(r)
       elif self.path == '/':
@@ -304,6 +312,19 @@ class InterceptHandler(http.Request):
          helpmsg = helpmsg.replace('__HOSTNAME__', self.getHeader('Host'))
          self.setHeader('content-type', 'text/html')
          self.write(helpmsg)
+      elif self.path == '/graphs':
+         self.write('Coming Soon :)')
+      else:
+         #yeah that's ugly :(
+         try:
+            if self.path.endswith('.js'):
+               self.setHeader('content-type', 'text/javascript')
+            fd = open(self.path[1:], 'rb')
+            for i in fd:
+               self.write(i)
+            fd.close()
+         except IOError, e:
+            pass
       self.finish()
 
 class InterceptProtocol(http.HTTPChannel):

@@ -8,6 +8,8 @@ import sys
 from twisted.web import http
 from twisted.internet import protocol
 from twisted.internet import reactor
+import datetime
+import time
 
 glob_allow=False
 glob_rules_file="/etc/nginx/naxsi_core.rules"
@@ -217,10 +219,20 @@ class rules_extractor(object):
       self.cursor.execute("select count(distinct md5) as uniq_exception_mon from http_monitor where md5 is not NULL")
       uniq_exception = self.cursor.fetchall()[0]['uniq_exception_mon']
       return "<ul><li>There is currently %s unique exceptions.</li></ul><ul><li>There is currently %s different peers that triggered rules.</li></ul><ul><li>There is currently %s peers being monitored</li></ul><ul><li>There is currently %s exceptions being monitored</li></ul>" % (uniq_ex, uniq_peer, uniq_peer_mon, uniq_exception)
+
+   def get_oldest_hit(self, limit = 60):
+      self.cursor.execute("select date from connections order by date ASC LIMIT 1")
+      return self.cursor.fetchall()[0]['date']
+
+   def get_excep_per_day(self):
+      self.cursor.execute('select DATE(date) as d,count(distinct exception_id) as c from connections group by DATE(date);')
+      return self.cursor.fetchall()
                
 
 class InterceptHandler(http.Request):
    def process(self):
+      ex = rules_extractor(0,0, None)
+
       if self.path == '/get_rules':
          self.setHeader('content-type', 'text/plain')         
          ex = rules_extractor(int(self.args.get('page_hit', ['10'])[0]), 
@@ -229,13 +241,13 @@ class InterceptHandler(http.Request):
          ex.gen_basic_rules()
          base_rules, opti_rules = ex.opti_rules_back()
          r = '########### Rules Before Optimisation ##################\n'
+
          for i in base_rules:
             r += '#%s hits on rule %s (%s) on url %s from %s different peers\n' % (i['count'], i['id'], 
                                                                                    ex.core_msg.get(i['id'], 
                                                                                                    'Unknown id. Check the path to the core rules file and/or the content.'), 
                                                                                    i['url'], i['cnt_peer'])
             r += '#BasicRule wl:' + i['id'] + ' "mz:$URL:' + i['url'] 
-            #ugly hack :D
             if '|NAME' in i['arg']:
                i['arg'] = i['arg'].split('|')[0] + '_VAR|NAME'
             if i['arg'] is not None and len(i['arg']) > 0:
@@ -243,9 +255,7 @@ class InterceptHandler(http.Request):
             r +=  '";\n'
          r += '########### End Of Rules Before Optimisation ###########\n'
          for i in opti_rules:
-            #ugly hack :D
-#            if '|NAME' in i['arg']:
-#               i['arg'] = i['arg'].split('|')[0] + '_VAR|NAME'
+
             r += 'BasicRule wl:' + i['id'] + ' "mz:'
             if i['url'] is not None and len(i['url']) > 0:
                r += '$URL:' + i['url']
@@ -256,66 +266,51 @@ class InterceptHandler(http.Request):
                   r += i['arg']
             r += '";\n'
          self.write(r)
+
       elif self.path == '/':
-         ex = rules_extractor(0,0, None)
-         helpmsg = """<html>
-  <head>
-    <title>Naxsi Rules Extractor</title>
-  </head>
-  <body>
-    <p style="text-align:center"><b>Naxsi Rules Extractor</b></p>
-    <h3>How to extract generated rules from the database : </h3>
-    <ul>
-      <li>
-	A GET request on /get_rules will display the generated rules. Non-optimised rules will be displayed in comment.
-      </li>
-    </ul>
-    <h3>The available args on /get_rules are : </h3>
-    <ul>
-      <li>
-	<p>
-	<b>rules_file</b> : Path to the core rules file of naxsi (typically /etc/nginx/conf/naxsi_core.rules).<br />
-	This arg is used to display the message associated with the rule (ie, will display "double quote" if the rule 1001 is whitelisted).<br />
-	If this arg is not present, an error message will be displayed.	
-	</p>
-      </li>
-      <li>
-	<p>
-	<b>page_hit</b> :  Minimum number of pages triggering the same event before proposing the optimisation (ie, if there is more than 10 urls that trigger a rule, the rule will be whitelisted on every url).<br />
-	Default to 10.
-	</p>
-      </li>
-      <li>
-	<p>
-	  <b>rules_hit</b> : Minimum number of rules hitting the same event on the same page before proposing optimisation (ie, if there is more than 10 differents rules triggered on the same url, all rules will be whitelisted on that url)<br />
-	  Default to 10.
-	</p>
-      </li>
-    </ul>
-    <h3>Example : </h3>
-<ul>
-<li>
-      Optimise the rules if more than 7 exceptions on the same arg are triggered on a page (whitelist all rules on the arg on this page) : 
-    <a href="http://__HOSTNAME__/get_rules?rules_hit=7">http://__HOSTNAME__/get_rules?rules_hit=7</a><br />
-</li>
-<li>
-      Optimise the rules if more than 7 exceptions on the same arg are triggered on a page (whitelist all rules on the arg on this page) or if more than 10 pages trigger the same rule (whitelist the rule on every page): 
-    <a href="http://__HOSTNAME__/get_rules?rules_hit=7&page_hit=10">http://__HOSTNAME__/get_rules?rules_hit=7&page_hit=10</a><br />
-</li>
-</ul>
-    <h3>Statistics : </h3>
-    __STATS__
-  </body>
-</html>
-"""
+         fd = open('help.tpl', 'r')
+         helpmsg = ''
+         for i in fd:
+            helpmsg += i
+         fd.close()
          helpmsg = helpmsg.replace('__STATS__', ex.generate_stats())
          helpmsg = helpmsg.replace('__HOSTNAME__', self.getHeader('Host'))
          self.setHeader('content-type', 'text/html')
          self.write(helpmsg)
+
       elif self.path == '/graphs':
-         self.write('Coming Soon :)')
+         fd = open('graphs.tpl')
+         html = ''
+         for i in fd:
+            html += i
+         fd.close()
+         excep = ex.get_excep_per_day()
+         array_excep = '['
+         for i in excep:
+            date_begin = str(i['d']).split('-')
+            date_begin[1] = str(int(date_begin[1]) - 1)
+            date_begin = ','.join(date_begin)
+            array_excep += '[Date.UTC(' + date_begin  + '),' + str(i['c']) + '],'
+         array_excep = array_excep[:-1] + ']'
+         ex.cursor.execute('select (select count(distinct rule_id) as c from match_zone where rule_id >= 1000 and rule_id <= 1099) as sql_count, (select count(distinct rule_id) as c from match_zone where rule_id >= 1300 and rule_id <= 1399) as xss_count, (select count(distinct rule_id) as c from match_zone where rule_id >= 1100 and rule_id <= 1199) as rfi_count, (select count(distinct rule_id) as c from match_zone where rule_id >= 1200 and rule_id <= 1299) as dt_count, (select count(distinct rule_id) as c from match_zone where rule_id >= 1400 and rule_id <= 1499) as evade_count, (select count(distinct rule_id) as c from match_zone where rule_id >= 1500 and rule_id <= 1599) as upload_count, (select count(distinct rule_id) as c from match_zone where rule_id >= 0 and rule_id <= 10) as intern_count;')
+         count_dict = ex.cursor.fetchall()[0]
+         ex.cursor.execute('select p.peer_ip as ip, count(distinct exception_id) as c from connections join peer as p on (src_peer_id = p.peer_id) group by p.peer_ip order by count(distinct exception_id) DESC limit 10;')
+         top_ten = ex.cursor.fetchall()
+         top_ten_html = '<table border="1" ><tr><td>IP</td><td>Rules Hits</td></tr>'
+         for i in top_ten:
+            top_ten_html += '<tr><td>' + i['ip'] + ' </td><td> ' + str(i['c']) + '</td></tr>'
+         top_ten_html += '</table>'
+         ex.cursor.execute('select distinct url, count(exception_id) as c from exception  group by url order by count(exception_id) DESC limit 10;')
+         top_ten_page = ex.cursor.fetchall()
+         top_ten_page_html = '<table border="1" ><tr><td>URI</td><td>Exceptions count</td></tr>'
+         for i in top_ten_page:
+            top_ten_page_html += '<tr><td>' + i['url'] + ' </td><td> ' + str(i['c']) + '</td></tr>'
+         top_ten_page_html += '</table>'
+         dict_replace = {'__TOPTEN__': top_ten_html, '__TOPTENPAGE__': top_ten_page_html, '__ARRAYEXCEP__': array_excep, '__SQLCOUNT__': str(count_dict['sql_count']),  '__XSSCOUNT__': str(count_dict['xss_count']), '__DTCOUNT__': str(count_dict['dt_count']), '__RFICOUNT__': str(count_dict['rfi_count']), '__EVCOUNT__': str(count_dict['evade_count']), '__UPCOUNT__': str(count_dict['upload_count']), '__INTCOUNT__': str(count_dict['intern_count'])}
+         html = reduce(lambda html,(b, c): html.replace(b, c), dict_replace.items(), html)
+         self.write(html)
+
       else:
-         #yeah that's ugly :(
          try:
             if self.path.endswith('.js'):
                self.setHeader('content-type', 'text/javascript')

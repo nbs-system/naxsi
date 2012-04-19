@@ -99,6 +99,7 @@ def fill_db(filename):
         fullstr = ''
         if 'NAXSI_FMT' in line:
             l = line.split(", ")
+            date = ' '.join(l[0].split()[:2])
             sig = l[0].split('NAXSI_FMT:')[1][1:]
             l = l[1:]
             request_args = {}
@@ -109,9 +110,9 @@ def fill_db(filename):
             if request_args:
                 fullstr = request_args['request'][2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
         if sig != ''  and fullstr != '':
-            print "adding %s (%s) " % (sig, fullstr)
+#            print "adding %s (%s) " % (sig, fullstr)
             parser = signature_parser(cursor)
-            parser.sig_to_db(fullstr, sig)
+            parser.sig_to_db(fullstr, sig, date=date)
     db.close()
 
 

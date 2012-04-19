@@ -1,3 +1,4 @@
+from datetime import datetime
 import urlparse
 import pprint
 import MySQLdb
@@ -101,7 +102,7 @@ class signature_parser:
         capture_id = self.last_id()
         return capture_id
 
-    def sig_to_db(self, raw_request, sig, add_capture=False):
+    def sig_to_db(self, raw_request, sig, add_capture=False, date = None):
         """
         Insert signature into database. returns 
         associated connection_id.
@@ -128,12 +129,13 @@ class signature_parser:
         if self.cursor.fetchall():    
             add_capture = True
         capture_id = self.add_capture(exception_id, raw_request, add_capture)
+        print date
         self.cursor.execute("INSERT INTO connections (src_peer_id, "
-                            "dst_peer_id, exception_id, capture_id)"
-                            "VALUES (%s, %s, %s, %s)", (str(ip_id), 
+                            "dst_peer_id, exception_id, capture_id, date)"
+                            "VALUES (%s, %s, %s, %s, %s)", (str(ip_id), 
                                                         str(host_id), 
                                                         str(exception_id), 
-                                                        str(capture_id)))
+                                                        str(capture_id), datetime.now() if date is None else date))
         connection_id = self.last_id()
         self.add_matchzones(exception_id, d)
 #        self.cursor.execute("UPDATE exception SET md5=%s where "

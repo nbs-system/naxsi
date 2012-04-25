@@ -53,7 +53,7 @@ class InterceptFactory(http.HTTPFactory):
     protocol = InterceptProtocol
 
 def usage():
-    print 'Usage: python nx_intercept [-h,--help] [-p,--port portnumber] [-a,--add-monitoring ip:1.2.3.4|md5:af794f5e532d7a4fa59c49845af7947e]'
+    print 'Usage: python nx_intercept [-h,--help] [-p,--port portnumber] [-a,--add-monitoring ip:1.2.3.4|md5:af794f5e532d7a4fa59c49845af7947e] [--log-file /path/to/nginx_error.log]'
 
 def add_monitoring(arg):
     l = arg.split('|')

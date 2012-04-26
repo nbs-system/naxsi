@@ -6,12 +6,13 @@
  v0.1 alpha
 
 [[[!!! PLEASE REFER TO THE WIKI INSTEAD !!!]]]
+Yes, this readme is for v0.1 alpha, now is 0.45
 
  
 |--{ Introduction }------------------------------------------------------------|
 
 
-NAXSI is a module for nginx, the infamous webserver/reverse-proxy/...
+NAXSI is a module for nginx, the famous webserver/reverse-proxy/...
 Its goal is to help people to secure their web application against attacks 
 such as SQL Injection, Cross Site Scripting, Cross Site Request Forgery, 
 Local & Remote file inclusions and such. 

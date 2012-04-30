@@ -791,12 +791,12 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       ctx->ready = 1;
   }
   if (ctx && ctx->ready && !ctx->over) {
-    if ((start = times(&tmsstart)) == -1)
+    if ((start = times(&tmsstart)) == (clock_t)-1)
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : Failed to get time");
     ngx_http_dummy_data_parse(ctx, r);
     cf->request_processed++;
-    if ((end = times(&tmsend)) == -1)
+    if ((end = times(&tmsend)) == (clock_t)-1)
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : Failed to get time");
     if (end - start > 0)

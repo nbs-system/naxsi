@@ -2,16 +2,18 @@
 from twisted.web import http
 from twisted.internet import protocol
 from twisted.internet import reactor, threads
+from ConfigParser import ConfigParser
+from nx_parser import signature_parser
+
 import urllib
 import pprint
 import socket
-from nx_parser import signature_parser
 import MySQLConnector
 import MySQLdb
 import getopt
 import sys
+import re
 
-quiet=False
 
 class InterceptHandler(http.Request):
     def process(self):
@@ -35,6 +37,7 @@ class InterceptHandler(http.Request):
         threads.deferToThread(self.background, fullstr, sig)
         self.finish()
         return
+
     def background(self, fullstr, sig):
         self.db = MySQLConnector.MySQLConnector().connect()
         if self.db is None:
@@ -52,10 +55,11 @@ class InterceptProtocol(http.HTTPChannel):
 class InterceptFactory(http.HTTPFactory):
     protocol = InterceptProtocol
 
-def usage():
-    print 'Usage: python nx_intercept [-h,--help] [-p,--port portnumber] [-a,--add-monitoring ip:1.2.3.4|md5:af794f5e532d7a4fa59c49845af7947e] [--log-file /path/to/nginx_error.log]'
 
-def add_monitoring(arg):
+def usage():
+    print 'Usage: python nx_intercept [-h,--help]  [-a,--add-monitoring ip:1.2.3.4|md5:af794f5e532d7a4fa59c49845af7947e] [-q,--quiet] [-l,--log-file /path/to/logfile]'
+
+def add_monitoring(arg, conf_path):
     l = arg.split('|')
     ip = None
     md5 = None
@@ -73,7 +77,7 @@ def add_monitoring(arg):
         except socket.error:
             print 'ip is not valid ! Nothing will be inserted in db !'
             return
-    db = MySQLConnector.MySQLConnector().connect()
+    db = MySQLConnector.MySQLConnector(conf_path).connect()
     cursor = db.cursor()
     if md5 is not None and ip is not None:
         cursor.execute("INSERT INTO http_monitor (peer_ip, md5) VALUES (%s, %s)", (ip, md5))
@@ -85,9 +89,10 @@ def add_monitoring(arg):
         cursor.execute("INSERT INTO http_monitor (peer_ip) VALUES (%s)", (ip))
         return
 
-def fill_db(filename):
+def fill_db(filename, conf_path):
     fd = open(filename, 'r')
-    db = MySQLConnector.MySQLConnector().connect()
+    mysqlh = MySQLConnector.MySQLConnector(conf_path)
+    db = mysqlh.connect()
     sig = ''
 
     if db is None:
@@ -95,6 +100,15 @@ def fill_db(filename):
     cursor = db.cursor()
     if cursor is None:
         raise ValueError('Cannot connect to db')
+
+    if re.match("[a-z0-9]+$", mysqlh.dbname) == False:        
+        print 'bad db name :)'
+        exit(-2)
+    
+    cursor.execute("DROP DATABASE IF EXISTS %s;" % mysqlh.dbname)
+    cursor.execute("CREATE DATABASE %s;" %  mysqlh.dbname)
+    db.select_db(mysqlh.dbname)
+
     for line in fd:
         fullstr = ''
         if 'NAXSI_FMT' in line:
@@ -113,33 +127,55 @@ def fill_db(filename):
 #            print "adding %s (%s) " % (sig, fullstr)
             parser = signature_parser(cursor)
             parser.sig_to_db(fullstr, sig, date=date)
+    fd.close()
     db.close()
 
 
 if __name__ == '__main__':
-#    global quiet
-    port = 8000
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'qhp:a:l:', ['quiet','help', 'port', 'add-monitoring', 'log-file', ])
+        opts, args = getopt.getopt(sys.argv[1:], 'c:ha:l:', ['conf-file', 'help', 'add-monitoring', 'log-file'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
         sys.exit(42)
 
+    has_conf = False
+    conf_path = ''
+
     for o, a in opts:
         if o in ('-h', '--help'):
             usage()
             sys.exit(0)
-        if o in ('-p', '--port'):
-            port = int(a)
-        if o in ('-q', '--quiet'):
-            quiet = True
         if o in ('-a', '--add-monitoring'):
-            add_monitoring(a)
+            if has_conf is False:
+                print "Conf File must be specified first !"
+                exit(42)
+            add_monitoring(a, conf_path)
             exit(42)
         if o in ('-l', '--log-file'):
-            fill_db(a)
+            if has_conf is False:
+                print "Conf File must be specified first !"
+                exit(42)
+            print "Filling database with %s. ALL PREVIOUS CONTENT WILL BE DROPPED !!!!!"
+            fill_db(a, conf_path)
+            print "Done."
             exit(42)
+        if o in ('-c', '--conf-file'):
+            has_conf = True
+            conf_path = a
+
+    if has_conf is False:
+        print 'Conf file is mandatory !'
+        exit(-42)
+    fd = open(conf_path, 'r')     
+    conf = ConfigParser()
+    conf.readfp(fd)
+    try:
+       port = int(conf.get('nx_intercept', 'port'))
+    except:
+       print "No port in conf file ! Using default port (8080)"
+       port = 8080
+    fd.close()            
 
     reactor.listenTCP(port, InterceptFactory())
     reactor.run()

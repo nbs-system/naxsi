@@ -1,4 +1,5 @@
 from datetime import datetime
+
 import urlparse
 import pprint
 import MySQLdb
@@ -22,29 +23,29 @@ class signature_parser:
                             "auto_increment primary key "
                             ", action TEXT, msg TEXT, rx TEXT, "
                             "rx_type INT, url TEXT, "
-                            "zone TEXT, arg_name TEXT);")
+                            "zone TEXT, arg_name TEXT, INDEX id (rule_id));")
         
         self.cursor.execute("DROP TABLES IF EXISTS connections")
         self.cursor.execute("CREATE TABLE connections (connection_id INTEGER "
                             "auto_increment primary key, "
                             "src_peer_id INT, dst_peer_id INT, exception_id "
                             "INT, capture_id INT, date TIMESTAMP default "
-                            "CURRENT_TIMESTAMP);")
+                            "CURRENT_TIMESTAMP, match_id INT, INDEX id (connection_id, exception_id));")
         
         self.cursor.execute("DROP TABLES IF EXISTS peer")
         self.cursor.execute("CREATE TABLE peer (peer_id INTEGER "
                             "auto_increment primary key, "
-                            "peer_ip TEXT, peer_host TEXT, peer_tags TEXT);")
+                            "peer_ip TEXT, peer_host TEXT, peer_tags TEXT, INDEX id (peer_id));")
                 
         self.cursor.execute("DROP TABLES IF EXISTS exception")
         self.cursor.execute("CREATE TABLE exception (exception_id integer "
                             "auto_increment primary key "
-                            ",url TEXT, md5 TEXT, count INT default 1);")
+                            ",url TEXT, md5 TEXT, count INT default 1, INDEX id (exception_id));")
         
         self.cursor.execute("DROP TABLES IF EXISTS match_zone")
         self.cursor.execute("CREATE TABLE match_zone (match_id INTEGER "
                             "auto_increment primary key, exception_id INTEGER, "
-                            "zone TEXT, arg_name TEXT, rule_id INTEGER);")
+                            "zone TEXT, arg_name TEXT, rule_id INTEGER, INDEX id (match_id, exception_id, rule_id));")
 
         self.cursor.execute("DROP TABLES IF EXISTS capture")
         self.cursor.execute("CREATE TABLE capture (capture_id INTEGER "
@@ -117,7 +118,7 @@ class signature_parser:
                             "VALUES (%s)", (d.get("server", "")))
         host_id = self.last_id()
         self.cursor.execute('SELECT 1 FROM exception where md5=%s', (sig_hash))
-        if self.cursor.fetchall():            
+        if self.cursor.fetchall():
             self.cursor.execute("UPDATE exception SET url=%s,md5=%s,count = count + 1 "
                                 "where md5=%s", (d.get("uri", ""), sig_hash, sig_hash))
             self.cursor.execute("select exception_id from exception where url=%s and md5=%s", (d.get('uri', ''), sig_hash))
@@ -129,15 +130,16 @@ class signature_parser:
         if self.cursor.fetchall():    
             add_capture = True
         capture_id = self.add_capture(exception_id, raw_request, add_capture)
-        print date
-        self.cursor.execute("INSERT INTO connections (src_peer_id, "
-                            "dst_peer_id, exception_id, capture_id, date)"
-                            "VALUES (%s, %s, %s, %s, %s)", (str(ip_id), 
-                                                        str(host_id), 
-                                                        str(exception_id), 
-                                                        str(capture_id), datetime.now() if date is None else date))
+
         connection_id = self.last_id()
         self.add_matchzones(exception_id, d)
+        match_id = self.last_id()
+        self.cursor.execute("INSERT INTO connections (src_peer_id, "
+                            "dst_peer_id, exception_id, capture_id, date, match_id)"
+                            "VALUES (%s, %s, %s, %s, %s, %s)", (str(ip_id),
+                                                        str(host_id), 
+                                                        str(exception_id), 
+                                                        str(capture_id), datetime.now() if date is None else date, str(match_id)))
 #        self.cursor.execute("UPDATE exception SET md5=%s where "
 #                            "exception_id=%s", (sig_hash, str(exception_id)))
         return (connection_id)
@@ -260,8 +262,4 @@ GROUP BY id;""")
         return data
 
 if __name__ == '__main__':
-    db = MySQLConnector.MySQLConnector().connect()
-    cursor = db.cursor(MySQLdb.cursors.DictCursor)
-    bla = signature_extractor(cursor)
-#    bla.extract_exceptions()
-#    bla.extract_whitelists()
+    print 'nope :)'

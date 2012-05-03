@@ -280,20 +280,20 @@ class InterceptHandler(http.Request):
          evade_array, evade_count = self.build_js_array(1400, 1499)
          intern_array, intern_count = self.build_js_array(0, 10)
 
-         self.ex.cursor.execute('select p.peer_ip as ip, count(distinct exception_id) as c from connections join peer as p on (src_peer_id = p.peer_id) group by p.peer_ip order by count(distinct exception_id) DESC limit 10;')
+         self.ex.cursor.execute('select p.peer_ip as ip, count(exception_id) as c from connections join peer as p on (src_peer_id = p.peer_id) group by p.peer_ip order by count(distinct exception_id) DESC limit 10;')
          top_ten = self.ex.cursor.fetchall()
-         top_ten_html = '<table border="1" ><tr><td>IP</td><td>Rules Hits</td></tr>'
+         top_ten_html = '<table class="table table-bordered" border="1" ><thead><tr><th>IP</th><th>Rule Hits</th></tr></thead><tbody>'
          for i in top_ten:
             top_ten_html += '<tr><td>' + cgi.escape(i['ip']) + ' </td><td> ' + str(i['c']) + '</td></tr>'
-         top_ten_html += '</table>'
+         top_ten_html += '</tbody></table>'
 
          self.ex.cursor.execute('select distinct url, count(exception_id) as c from exception  group by url order by count(exception_id) DESC limit 10;')
          top_ten_page = self.ex.cursor.fetchall()
-         top_ten_page_html = '<table border="1" ><tr><td>URI</td><td>Exceptions count</td></tr>'
+         top_ten_page_html = '<table class="table table-bordered" border="1" ><thead><tr><th>URI</th><th>Exceptions Count</th></tr></thead><tbody>'
 
          for i in top_ten_page:
             top_ten_page_html += '<tr><td>' + cgi.escape(i['url']) + ' </td><td> ' + str(i['c']) + '</td></tr>'
-         top_ten_page_html += '</table>'
+         top_ten_page_html += '</tbody></table>'
 
          dict_replace = {'__TOPTEN__': top_ten_html, '__TOPTENPAGE__': top_ten_page_html, '__TOTALEXCEP__': array_excep, '__SQLCOUNT__': str(sql_count),  '__XSSCOUNT__': str(xss_count), '__DTCOUNT__': str(dt_count), '__RFICOUNT__': str(rfi_count), '__EVCOUNT__': str(evade_count), '__UPCOUNT__': str(upload_count), '__INTCOUNT__': str(intern_count), '__SQLIEXCEP__': sqli_array, '__XSSEXCEP__': xss_array, '__RFIEXCEP__': rfi_array, '__DTEXCEP__': dt_array, '__UPLOADEXCEP__': upload_array, '__EVADEEXCEP__': evade_array, '__INTERNEXCEP__': intern_array}
 

@@ -13,6 +13,7 @@ import sys
 import datetime
 import time
 import cgi
+import os
 
 
 glob_allow=True
@@ -20,7 +21,7 @@ glob_rules_file="/etc/nginx/naxsi_core.rules"
 glob_conf_file = ''
 glob_username = ''
 glob_pass = ''
-
+glob_fileList = []
 
 class rules_extractor(object):
    def __init__(self, page_hit, rules_hit, rules_file, conf_file='naxsi-ui.conf'):
@@ -201,7 +202,7 @@ class InterceptHandler(http.Request):
       return 42
 
    def handle_request(self):
-      
+
       if self.check_auth() == -1:
          return
 
@@ -296,6 +297,12 @@ class InterceptHandler(http.Request):
          try:
             if self.path.endswith('.js'):
                self.setHeader('content-type', 'text/javascript')
+            
+            if '.' + self.path not in glob_fileList:
+               self.setResponseCode(403)
+               self.finish()
+               return
+
             fd = open(self.path[1:], 'rb')
             for i in fd:
                self.write(i)
@@ -315,7 +322,14 @@ class InterceptFactory(http.HTTPFactory):
       
 def usage():
    print 'Usage : python nx_extract /path/to/conf/file'
-   
+
+def build_file_list(path):
+   rootdir = path
+   for root, subFolders, files in os.walk(rootdir):
+      for file in files:
+         glob_fileList.append(os.path.join(root,file))
+
+
 if __name__  == '__main__':
    if len(sys.argv) != 2:
       usage()
@@ -345,8 +359,11 @@ if __name__  == '__main__':
    except:
       print 'No password for web access ! Nx_extract will exit.'
       exit(-1)
-   
    fd.close()
-         
+
+
+
+   build_file_list('.')
+
    reactor.listenTCP(port, InterceptFactory())
    reactor.run()

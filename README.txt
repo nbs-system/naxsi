@@ -6,7 +6,7 @@
  v0.1 alpha
 
 [[[!!! PLEASE REFER TO THE WIKI INSTEAD !!!]]]
-Yes, this readme is for v0.1 alpha, now is 0.45
+Yes, this readme is for v0.1 alpha, now is 0.46-1
 
  
 |--{ Introduction }------------------------------------------------------------|

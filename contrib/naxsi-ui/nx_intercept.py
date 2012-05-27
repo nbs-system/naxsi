@@ -57,7 +57,7 @@ class InterceptFactory(http.HTTPFactory):
 
 
 def usage():
-    print 'Usage: python nx_intercept [-h,--help]  [-a,--add-monitoring ip:1.2.3.4|md5:af794f5e532d7a4fa59c49845af7947e] [-q,--quiet] [-l,--log-file /path/to/logfile]'
+    print 'Usage: python nx_intercept [-h,--help]  [-a,--add-monitoring ip:1.2.3.4|md5:af794f5e532d7a4fa59c49845af7947e] [-q,--quiet] [-l,--log-file /path/to/logfile] [-c, --conf-file naxsi-ui-learning.conf] '
 
 def add_monitoring(arg, conf_path):
     l = arg.split('|')

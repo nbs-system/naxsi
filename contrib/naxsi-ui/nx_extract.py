@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from ConfigParser import ConfigParser
 from twisted.web import http
 from twisted.internet import protocol

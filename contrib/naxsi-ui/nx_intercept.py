@@ -89,8 +89,8 @@ def add_monitoring(arg, conf_path):
         cursor.execute("INSERT INTO http_monitor (peer_ip) VALUES (%s)", (ip))
         return
 
-def fill_db(filename, conf_path):
-    fd = open(filename, 'r')
+def fill_db(files, conf_path):
+
     mysqlh = MySQLConnector.MySQLConnector(conf_path)
     db = mysqlh.connect()
     sig = ''
@@ -108,26 +108,29 @@ def fill_db(filename, conf_path):
     cursor.execute("DROP DATABASE IF EXISTS %s;" % mysqlh.dbname)
     cursor.execute("CREATE DATABASE %s;" %  mysqlh.dbname)
     db.select_db(mysqlh.dbname)
+    
+    print "Filling db with %s (TABLES WILL BE DROPPED !)" %  ' '.join(files)
 
-    for line in fd:
-        fullstr = ''
-        if 'NAXSI_FMT' in line:
-            l = line.split(", ")
-            date = ' '.join(l[0].split()[:2])
-            sig = l[0].split('NAXSI_FMT:')[1][1:]
-            l = l[1:]
-            request_args = {}
-            for i in l:
-                s = i.split(':')
-                request_args[s[0]] = urllib.unquote(''.join(s[1:]))
-#            print 'args are ', request_args
-            if request_args:
-                fullstr = request_args['request'][2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
-        if sig != ''  and fullstr != '':
-#            print "adding %s (%s) " % (sig, fullstr)
-            parser = signature_parser(cursor)
-            parser.sig_to_db(fullstr, sig, date=date)
-    fd.close()
+    for filename in files:
+        with open(filename, 'r') as fd:
+            for line in fd:
+                fullstr = ''
+                if 'NAXSI_FMT' in line:
+                    l = line.split(", ")
+                    date = ' '.join(l[0].split()[:2])
+                    sig = l[0].split('NAXSI_FMT:')[1][1:]
+                    l = l[1:]
+                    request_args = {}
+                    for i in l:
+                        s = i.split(':')
+                        request_args[s[0]] = urllib.unquote(''.join(s[1:]))
+        #            print 'args are ', request_args
+                    if request_args:
+                        fullstr = request_args['request'][2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
+                if sig != ''  and fullstr != '':
+        #            print "adding %s (%s) " % (sig, fullstr)
+                    parser = signature_parser(cursor)
+                    parser.sig_to_db(fullstr, sig, date=date)
     db.close()
 
 
@@ -140,6 +143,7 @@ if __name__ == '__main__':
         sys.exit(42)
 
     has_conf = False
+    logs_path = []
     conf_path = ''
 
     for o, a in opts:
@@ -156,10 +160,7 @@ if __name__ == '__main__':
             if has_conf is False:
                 print "Conf File must be specified first !"
                 exit(42)
-            print "Filling database with %s. ALL PREVIOUS CONTENT WILL BE DROPPED !!!!!"
-            fill_db(a, conf_path)
-            print "Done."
-            exit(42)
+            logs_path.append(a)
         if o in ('-c', '--conf-file'):
             has_conf = True
             conf_path = a
@@ -167,6 +168,11 @@ if __name__ == '__main__':
     if has_conf is False:
         print 'Conf file is mandatory !'
         exit(-42)
+
+    if len(logs_path) > 0:
+        fill_db(logs_path, conf_path)
+        exit(0)
+
     fd = open(conf_path, 'r')     
     conf = ConfigParser()
     conf.readfp(fd)

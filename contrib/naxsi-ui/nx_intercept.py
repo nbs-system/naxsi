@@ -14,6 +14,7 @@ import getopt
 import sys
 import re
 
+conf_path = ''
 
 class InterceptHandler(http.Request):
     def process(self):
@@ -39,7 +40,7 @@ class InterceptHandler(http.Request):
         return
 
     def background(self, fullstr, sig):
-        self.db = MySQLConnector.MySQLConnector().connect()
+        self.db = MySQLConnector.MySQLConnector(filename = conf_path).connect()
         if self.db is None:
             raise ValueError("Cannot connect to db.")
         self.cursor = self.db.cursor()
@@ -144,7 +145,6 @@ if __name__ == '__main__':
 
     has_conf = False
     logs_path = []
-    conf_path = ''
 
     for o, a in opts:
         if o in ('-h', '--help'):

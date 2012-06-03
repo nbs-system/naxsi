@@ -5,12 +5,18 @@
 #big_body : 2
 #no_content_type : 3
 
-#MainRule "str:123FREETEXT" "msg:learning test pattern"  "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:BLOCK" id:0;
+#@MainRule "msg:weird/incorrect request" id:1;
+#@MainRule "msg:big request, unparsed" id:2;
+#@MainRule "msg:uncommon hex encoding (%00 etc.)" id:10;
+#@MainRule "msg:uncommon/empty content-type in POST" id:11;
+#@MainRule "msg:uncommon/malformed URL" id:12;
+
+#MainRule "str:123FREETEXT" "msg:exemple learning test pattern"  "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:BLOCK" id:0;
 
 ##################################
 ## SQL Injections IDs:1000-1099 ##
 ##################################
-MainRule "rx:select|union|update|delete|insert|table|from|ascii|hex|unhex" "msg:sql keywords" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1000;
+MainRule "rx:select|union|update|delete|insert|table|from|ascii|hex|unhex|drop" "msg:sql keywords" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1000;
 MainRule "str:\"" "msg:double quote" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:8,$XSS:8" id:1001;
 MainRule "str:0x" "msg:0x, possible hex encoding" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:2" id:1002;
 ## Hardcore rules

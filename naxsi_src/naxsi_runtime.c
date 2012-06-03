@@ -48,6 +48,7 @@ ngx_http_dummy_loc_conf_t *dummy_lc;
 //nx_int__post_without_content_type
 
 
+
 ngx_http_rule_t nx_int__weird_request = {/*type*/ 0, /*whitelist flag*/ 0, 
 					 /*wl_id ptr*/ NULL, /*rule_id*/ 1,
 					 /*log_msg*/ NULL, /*score*/ 0, 
@@ -56,6 +57,35 @@ ngx_http_rule_t nx_int__weird_request = {/*type*/ 0, /*whitelist flag*/ 0,
 					 /*block*/ 1,  /*allow*/ 0, 
 					 /*lnk_to & from*/ 0, 0,
 					 /*br ptrs*/ NULL};
+
+ngx_http_rule_t nx_int__uncommon_hex_encoding = {/*type*/ 0, /*whitelist flag*/ 0, 
+						 /*wl_id ptr*/ NULL, /*rule_id*/ 10,
+						 /*log_msg*/ NULL, /*score*/ 0, 
+						 /*sscores*/ NULL,
+						 /*sc_block*/ 1,  /*sc_allow*/ 0, 
+						 /*block*/ 1,  /*allow*/ 0, 
+						 /*lnk_to & from*/ 0, 0,
+						 /*br ptrs*/ NULL};
+
+ngx_http_rule_t nx_int__uncommon_content_type = {/*type*/ 0, /*whitelist flag*/ 0, 
+					   /*wl_id ptr*/ NULL, /*rule_id*/ 11,
+					   /*log_msg*/ NULL, /*score*/ 0, 
+					   /*sscores*/ NULL,
+					   /*sc_block*/ 1,  /*sc_allow*/ 0, 
+					   /*block*/ 1,  /*allow*/ 0, 
+					   /*lnk_to & from*/ 0, 0,
+					   /*br ptrs*/ NULL};
+
+ngx_http_rule_t nx_int__uncommon_url = {/*type*/ 0, /*whitelist flag*/ 0, 
+					/*wl_id ptr*/ NULL, /*rule_id*/ 12,
+					/*log_msg*/ NULL, /*score*/ 0, 
+					/*sscores*/ NULL,
+					/*sc_block*/ 1,  /*sc_allow*/ 0, 
+					/*block*/ 1,  /*allow*/ 0, 
+					/*lnk_to & from*/ 0, 0,
+					/*br ptrs*/ NULL};
+
+
 ngx_http_rule_t nx_int__big_request = {/*type*/ 0, /*whitelist flag*/ 0, 
 				       /*wl_id ptr*/ NULL, /*rule_id*/ 2,
 				       /*log_msg*/ NULL, /*score*/ 0, 
@@ -657,7 +687,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 /* #define whitelist_light_debug */
 /* #define whitelist_heavy_debug */
 
-void	
+int
 ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx, 
 			     ngx_http_request_t *req, ngx_str_t *name, 
 			     ngx_str_t *value, enum DUMMY_MATCH_ZONE zone, 
@@ -667,17 +697,23 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
   ngx_http_special_score_t	*sc, *rsc;
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_http_matched_rule_t	*mr;
+  ngx_str_t			empty=ngx_string("");
+  
+  if (!name)
+    name = &empty;
+  if (!value)
+    value = &empty;
   
   cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
   if (!cf || !ctx )
-    return ;
+    return (0);
   if (ngx_http_dummy_is_rule_whitelisted_n(req, cf, r, name, 
 					   zone, target_name) == 1) {
   #ifdef whitelist_light_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		  "rule is whitelisted.");
   #endif  
-    return ;
+    return (0);
   }
   if (nb_match == 0)
     nb_match = 1;
@@ -686,10 +722,10 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
 				    sizeof(ngx_http_matched_rule_t));
   /* log stuff, cause this case sux */
   if (!ctx->matched)
-    return ;
+    return (0);
   mr = ngx_array_push(ctx->matched);
   if (!mr)
-    return ;
+    return (0);
   memset(mr, 0, sizeof(ngx_http_matched_rule_t));
   if (target_name)
     mr->target_name = 1;
@@ -759,7 +795,7 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
 #endif
 	sc = ngx_array_push(ctx->special_scores);
 	if (!sc)
-	  return ;
+	  return (0);
 	memset(sc, 0, sizeof(ngx_http_special_score_t));
 	sc->sc_tag = rsc[z].sc_tag;
 	sc->sc_score = (rsc[z].sc_score * nb_match);	
@@ -776,7 +812,7 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
   //}
   
   ngx_http_dummy_update_current_ctx_status(ctx, cf, req);
-  return ;
+  return (1);
 }
 
 
@@ -835,9 +871,10 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       name.len = 0;
     }
     /* ?&&val | ?var&& | ?val& | ?&val | ?val&var */
-    else if (!eq && ev) {
-      if (ngx_http_dummy_is_rule_whitelisted_n(req, cf, &nx_int__weird_request, NULL, zone, 0) == 0)
-	ctx->weird_request = 1;
+    else if (!eq && ev) { 
+      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_url, ctx, req, NULL, NULL, zone, 1, 0);
+      /* if (ngx_http_dummy_is_rule_whitelisted_n(req, cf, &nx_int__uncommon_url, NULL, zone, 0) == 0) */
+      /* 	ctx->weird_request = 1; */
       if (ev > str) /* ?var& | ?var&val */ {
 	val.data = (unsigned char *) str;
 	val.len = ev - str;
@@ -872,15 +909,17 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       //start
       dst = val.data;
       src = val.data;
-      /* ngx_unescape_uri(&src, &dst, */
-      /* 		       val.len, NGX_UNESCAPE_URI);       */
+      
       naxsi_unescape_uri(&src, &dst,
 			 val.len, 0);      
       val.len =  src - val.data;
       //tmp hack fix, avoid %00 & co (null byte) encoding :p
       for (i = 0; i < val.len; i++)
 	if (val.data[i] == 0x0)
-	  val.data[i] = '0';
+	  {
+	    ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, req, &name, &val, zone, 1, 0);
+	    val.data[i] = '0';
+	  }
       //end
 #ifdef spliturl_ruleset_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
@@ -910,746 +949,753 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
   return (0);
 }
 
-    /*
-    ** check variable + name against a set of rules, checking against 'custom' location rules too.
-    */
+/*
+** check variable + name against a set of rules, checking against 'custom' location rules too.
+*/
 #define basestr_ruleset_debug
 
-    int 
-      ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
-				 ngx_str_t	*name,
-				 ngx_str_t	*value,
-				 ngx_array_t *rules,
-				 ngx_http_request_t *req,
-				 ngx_http_request_ctx_t *ctx,
-				 enum DUMMY_MATCH_ZONE	zone)
-    {
-      ngx_http_rule_t		   *r;
-      unsigned int			   i, ret, z;
-      ngx_int_t			   nb_match;
-      ngx_http_custom_rule_location_t *location;
-      ngx_http_dummy_loc_conf_t	*cf;
+int 
+ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
+			   ngx_str_t	*name,
+			   ngx_str_t	*value,
+			   ngx_array_t *rules,
+			   ngx_http_request_t *req,
+			   ngx_http_request_ctx_t *ctx,
+			   enum DUMMY_MATCH_ZONE	zone)
+{
+  ngx_http_rule_t		   *r;
+  unsigned int			   i, ret, z;
+  ngx_int_t			   nb_match=0;
+  ngx_http_custom_rule_location_t *location;
+  ngx_http_dummy_loc_conf_t	*cf;
   
 #ifdef basestr_ruleset_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		    "XX-check check [%V]=[%V] in zone %s", name, value,
-		    zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : zone == URL ? "URL" :
-		    zone == ARGS ? "ARGS" : "UNKNOWN"); 
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		"XX-check check [%V]=[%V] in zone %s", name, value,
+		zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : zone == URL ? "URL" :
+		zone == ARGS ? "ARGS" : "UNKNOWN"); 
 #endif
   
-      if (!rules) {
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		      "XX-no rules, wtf ?!"); 
-	return (0);
-      }
-      r = rules->elts;
-      cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
+  if (!rules) {
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		  "XX-no rules, wtf ?!"); 
+    return (0);
+  }
+  r = rules->elts;
+  cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
 #ifdef basestr_ruleset_debug 
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		    "XX-checking rules ..."); 
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		"XX-checking rules ..."); 
 #endif
   
-      for (i = 0; i < rules->nelts && (!ctx->block || cf->learning) ; i++) {
+  for (i = 0; i < rules->nelts && (!ctx->block || cf->learning) ; i++) {
 #ifdef basestr_ruleset_debug 
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		      "XX-rule %d (%V=%V)", r[i].rule_id, name, value); 
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		  "XX-rule %d (%V=%V)", r[i].rule_id, name, value); 
 #endif
       
-	/* does the rule have a custom location ? custom location means checking only on a specific argument */
-	if (name && name->len > 0 && r[i].br->custom_location) {
-	  location = r[i].br->custom_locations->elts;
-	  /* for each custom location */
-	  for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
-	    /* if the name are the same, check */
-	    if (name->len == location[z].target.len &&
-		!strncasecmp((const char *)name->data, 
-			     (const char *) location[z].target.data, 
-			     location[z].target.len)) {
+    /* does the rule have a custom location ? custom location means checking only on a specific argument */
+    if (name && name->len > 0 && r[i].br->custom_location) {
+      location = r[i].br->custom_locations->elts;
+      /* for each custom location */
+      for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
+	/* if the name are the same, check */
+	if (name->len == location[z].target.len &&
+	    !strncasecmp((const char *)name->data, 
+			 (const char *) location[z].target.data, 
+			 location[z].target.len)) {
 	    
 #ifdef basestr_ruleset_debug
-	      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-			    "XX-[SPECIFIC] check one rule [%d] iteration %d * %d", r[i].rule_id, i, z);
+	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
+			"XX-[SPECIFIC] check one rule [%d] iteration %d * %d", r[i].rule_id, i, z);
 #endif
-	      /* match rule against var content, */
-	      ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
-	      //if our rule matched, apply effects (score etc.)
-	      if (ret == 1) {
-#ifdef basestr_ruleset_debug
-		ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			      "XX-apply rulematch!! [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
-#endif
-		ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);	    
-	      }
-	  
-	      if (!r[i].br->negative) {  
-		/* match rule against var name, */
-		ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);
-		//if our rule matched, apply effects (score etc.)
-		if (ret == 1) {
-#ifdef basestr_ruleset_debug
-		  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-				"XX-apply rulematch[in name] [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
-#endif
-		  ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, name, zone, nb_match, 1);
-		}
-	      }
-	  
-	    }
-	  }
-      
-	}
-    
-    
-    
-	/*
-	** check against the rule if the current zone is matching 
-	** the zone the rule is meant to be check against
-	*/
-	if ( (zone == HEADERS && r[i].br->headers) ||
-	     (zone == URL && r[i].br->url) ||
-	     (zone == ARGS && r[i].br->args) ||
-	     (zone == BODY && r[i].br->body && !r[i].br->file_ext) ||
-	     (zone == FILE_EXT && r[i].br->file_ext) ) {
-
-	  /* #ifdef basestr_ruleset_debug */
-	  /* 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,  */
-	  /* 		      "XX-check [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match);  */
-	  /* #endif */
-
-#ifdef basestr_ruleset_debug
-	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			"XX-test rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
-#endif
-    
-	  /* check the rule against the value*/
+	  /* match rule against var content, */
 	  ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
-	  /*if our rule matched, apply effects (score etc.)*/
+	  //if our rule matched, apply effects (score etc.)
 	  if (ret == 1) {
 #ifdef basestr_ruleset_debug
 	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			  "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+			  "XX-apply rulematch!! [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
 #endif
-	    ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);
+	    ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);	    
 	  }
-    
-	  if (!r[i].br->negative) {
-#ifdef basestr_ruleset_debug
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			  "XX-test rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
-#endif
-	    /* check the rule against the name*/
+	  
+	  if (!r[i].br->negative) {  
+	    /* match rule against var name, */
 	    ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);
-	    /*if our rule matched, apply effects (score etc.)*/
+	    //if our rule matched, apply effects (score etc.)
 	    if (ret == 1) {
 #ifdef basestr_ruleset_debug
 	      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			    "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+			    "XX-apply rulematch[in name] [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
 #endif
-	      ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 1);
+	      ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, name, zone, nb_match, 1);
 	    }
 	  }
-	}
-      }
-      return (0);
-    }
-  
-
-
-
-    /*
-    ** does : parse body data, a.k.a POST/PUT datas. identifies content-type,
-    **	  and, if appropriate, boundary. then parse the stuff if multipart/for..
-    **	  or rely on spliturl if application/x-w..
-    ** [XXX] : this function sucks ! I don't parse bigger-than-body-size posts that 
-    **	   are partially stored in files, TODO ;)
-    */
-    //#define post_heavy_debug
-    //#define dummy_body_parse_debug
-    void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx, 
-					       ngx_http_request_t	 *r,
-					       u_char			*src,
-					       u_int			 len)
-    {
-      ngx_str_t				final_var, final_data;
-      char				*boundary, *varn_start, *varn_end;
-      char				*filen_start, *filen_end;
-      char				*end, *line_end;
-      u_int				boundary_len, varn_len, varc_len, idx;
-      ngx_http_dummy_loc_conf_t		*cf;
-      ngx_http_dummy_main_conf_t		*main_cf;
-  
-      cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
-      main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
-  
-#ifdef post_heavy_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		    "XX-multipart/form-data");
-#endif
-      /* So far, I have noticed to correct ways of putting the boundary in a multipart post :
-      ** 1: in the content-type header, after multipart/form-data
-      ** 2: at the very begining of the body. */
-      /*extract boundary*/
-      boundary = ngx_strstr(src, "boundary=");
-      if (!boundary)
-	boundary = ngx_strstr(r->headers_in.content_type->value.data, "boundary=");
-      if (!boundary)
-	{
-	  dummy_error_fatal(ctx, r, "no boundary present in POST data ?");
-	  return ;
-	}
-      boundary += 9; //strlen ("boundary=")
-      boundary_len = strlen(boundary);
-   
-      /* fetch every line starting with boundary */
-      idx = 0;
-      while (idx < len) {
-#ifdef post_heavy_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		      "XX-POST data : (%s)", src+idx);
-#endif
-	//dummy_error_fatal(ctx, r, "POST data : (%s)", src+idx);
-	/* if we've reached the last boundary '--' + boundary + '--' + '\r\n'*/
-	if (idx+boundary_len+6 >= len)
-	  {
-#ifdef post_heavy_debug
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-			  "XX-reached end, not enough len");
-#endif
-	    break;
-	  }
-	//check if line starts with -- (pre-boundary stuff) 
-	if (src[idx] != '-' || src[idx+1] != '-' || 
-	    //and if it's really followed by a boundary
-	    ngx_strncmp(src+idx+2, boundary, boundary_len) || 
-	    //and if it's not the last boundary of the buffer
-	    idx+boundary_len + 2 + 2  >= len ||  
-	    //and if it's followed by \r\n
-	    src[idx+boundary_len+2] != '\r' || src[idx+boundary_len+3] != '\n') {
-      
-	  dummy_error_fatal(ctx, r, "POST data is malformed (%s)", src+idx);
-	  return ;
-	}
-	idx += boundary_len + 4;
-	/* we have two cases :
-	** ---- file upload
-	** Content-Disposition: form-data; name="somename"; filename="NetworkManager.conf"\r\n
-	** Content-Type: application/octet-stream\r\n\r\n
-	** <DATA>
-	** ---- normal post var
-	** Content-Disposition: form-data; name="lastname"\r\n\r\n
-	** <DATA>
-	*/
-	if (ngx_strncasecmp(src+idx, 
-			    (u_char *) "content-disposition: form-data;", 30)) {
-	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-			"Unknown content-type: [%s]", src+idx);
-	  dummy_error_fatal(ctx, r, "POST data : unknown content-disposition");
-      
-	  return ;
-	}
-	idx += 30;
-	line_end = ngx_strchr(src+idx, '\n');
-	if (!line_end) {
-	  dummy_error_fatal(ctx, r, "POST data : malformed boundary line");
-	  return ;
-	}
-	// seek for name="<var>" and filename="<var>" in the current line
-	// verify that the name/filename tag founds are present
-	varn_end = filen_end = NULL;
-	varn_start = ngx_strstr(src+idx, "name=\"");
-	if (varn_start && varn_start < line_end) {
-	  varn_start += 6;
-	  varn_end = ngx_strchr(varn_start, '"');
-	}
-	else
-	  varn_start = NULL;
-	filen_start = ngx_strstr(src+idx, "filename=\"");
-	if (filen_start && filen_start < line_end) {
-	  filen_start += 10;
-	  /* avoid being bypassed by filenames like bla\"aa.php */
-	  filen_end = filen_start;
-	  do {
-	    filen_end = ngx_strchr(filen_end, '"');
-	    if (*(filen_end - 1) != '\\')
-	      break;
-	    filen_end++;
-	  } while (filen_end < line_end);
-	  /* here add support :
-	  ** - when a file is here, the line bellow 'content-disposition' is content-type.
-	  ** - skip this line. we should probably parse it ... to make regex on it :D
-	  */
-	  line_end = ngx_strchr(line_end+1, '\n');
-	  if (!line_end) {
-	    dummy_error_fatal(ctx, r, "POST data : malformed 'filename' field");
-	    return ;
-	  }
-	}
-	else
-	  filen_start = NULL;
 	  
-	// check that var name is present and not malformed
-	if (!varn_start || !varn_end || varn_end <= varn_start) {
-	  dummy_error_fatal(ctx, r, "POST data : no 'name' in POST var");
-	  return ;
 	}
-	varn_len = varn_end - varn_start;
-	// now idx point to the end of the
-	// content-disposition: form-data; filename="" name=""
-	idx += (u_char *)line_end - (src+idx) + 1;
-	if (src[idx] != '\r' || src[idx+1] != '\n') {
-	  dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
-	  return ;
-	}
-	idx += 2;
-	// seek the end of the data too
-	end = NULL;
-	while (idx < len) {
-	  end = ngx_strstr(src+idx, "\r\n--");
-	  if (!end) {
-	    dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
-	    return ;
-	  }
-	  if (!ngx_strncmp(end+4, boundary, boundary_len))
-	    break;
-	  else {
-	    idx += ((u_char *) end - (src+idx)) + 1;
-	    end = NULL;
-	  }
-	}
-	if (!end) {
-	  dummy_error_fatal(ctx, r, "POST data : malformed line");
-	  return ;
-	}
-	if (filen_start) {
-	  final_var.data = (unsigned char *)varn_start;
-	  final_var.len = varn_len;
-	  final_data.data = (unsigned char *)filen_start;
-	  final_data.len = filen_end - filen_start;
-#ifdef post_heavy_debug
-	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-			"[POST] checking filename [%V] = [%V]",
-			&final_var, &final_data);
-#endif
-	  /* here we got val name + val content !*/	      
-	  if (cf->body_rules)
-	    ngx_http_basestr_ruleset_n(r->pool, &final_var, &final_data,
-				       cf->body_rules, r, ctx, FILE_EXT);
-#ifdef post_heavy_debug
-	  else
-	    /* here we got val name + val content !*/	      
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-			  "No local body rules ?!");
-#endif
-		
-	  if (main_cf->body_rules)
-	    ngx_http_basestr_ruleset_n(r->pool, &final_var, &final_data,
-				       main_cf->body_rules, r, ctx, FILE_EXT);
-#ifdef post_heavy_debug
-	  else
-	    /* here we got val name + val content !*/	      
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-			  "No main body rules ?!");
-#endif
+      }
       
-	  idx += (u_char *) end - (src+idx);
-	}
-	else
-	  if (varn_start) {
-	    varc_len = (u_char *) end - (src+idx);
-	    final_var.data = (unsigned char *)varn_start;
-	    final_var.len = varn_len;
-	    final_data.data = src+idx;
-	    final_data.len = varc_len;
-#ifdef post_heavy_debug
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-			  "[POST] [%V]=[%V]",
-			  &final_var, &final_data);
-#endif
-	    /* here we got val name + val content !*/	      
-	    if (cf->body_rules)
-	      ngx_http_basestr_ruleset_n(r->pool, &final_var, &final_data,
-					 cf->body_rules, r, ctx, BODY);
-#ifdef post_heavy_debug
-	    else
-	      /* here we got val name + val content !*/	      
-	      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-			    "No local body rules ?!");
-#endif
-		
-	    if (main_cf->body_rules)
-	      ngx_http_basestr_ruleset_n(r->pool, &final_var, &final_data,
-					 main_cf->body_rules, r, ctx, BODY);
-#ifdef post_heavy_debug
-	    else
-	      /* here we got val name + val content !*/	      
-	      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-			    "No main body rules ?!");
-#endif
-	      
-	    idx += (u_char *) end - (src+idx);
-	  }
-	  else {
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-			  "(multipart) : ");
-
-	  }
-	if (!ngx_strncmp(end, "\r\n", 2))
-	  idx += 2;
-      }
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		    "(multipart) : OVER");
-
     }
-
-    //#define dummy_body_parse_debug
-
-    void	
-      ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx, 
-				ngx_http_request_t	 *r,
-				ngx_http_dummy_loc_conf_t *cf,
-				ngx_http_dummy_main_conf_t *main_cf)
-    {
-      u_char			*src; 
-      ngx_str_t			tmp;
-      ngx_chain_t			*bb;
-      u_char			*full_body;
-      u_int				full_body_len;
-  
-  
-#ifdef dummy_body_parse_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		    "XX-BODY PARSE");
-#endif
-      if (!r->request_body->bufs || !r->headers_in.content_type) {
-#ifdef dummy_body_parse_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		      "XX-No content type ..");
-#endif
-	if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY, 0) == 0)
-	  ctx->weird_request = 1;
-	return ;
-      }
-
-      if (r->request_body->temp_file) {
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		      "naxsi: POST REQUEST to temp_file, partially parsed.");
-	if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__big_request, NULL, BODY, 0) == 0)
-	  ctx->big_request = 1;
-	return ;
-      }
-
-#ifdef dummy_body_parse_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		    "XX-VALID BODY");
-#endif
-      /* request body in single buffer */
-      if (r->request_body->bufs->next == NULL) {
-	full_body_len = (u_int) (r->request_body->bufs->buf->last - 
-				 r->request_body->bufs->buf->pos);
-	full_body =  ngx_pcalloc(r->pool, (u_int) (full_body_len+1));
-	memcpy(full_body, r->request_body->bufs->buf->pos, full_body_len);
-      }
-      /* request body in chain */
-      else {
-#ifdef dummy_body_parse_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		      "[POST] REQUEST BODY IN CHAIN !");
-#endif
-	for (full_body_len = 0, bb = r->request_body->bufs; bb; bb = bb->next)
-	  full_body_len += (bb->buf->last - bb->buf->pos);
-	full_body = ngx_pcalloc(r->pool, full_body_len+1);
-	src = full_body;
-	if (!full_body) 
-	  return ;
-	for(bb = r->request_body->bufs ; bb ; bb = bb->next)
-	  full_body = ngx_cpymem(full_body, bb->buf->pos, 
-				 bb->buf->last - bb->buf->pos);
-	full_body = src;
-#ifdef dummy_body_parse_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		      "[POST] REQUEST BODY IN CHAIN [%s] (len=%d)", 
-		      full_body, full_body_len);
-#endif
-      }
-#ifdef dummy_body_parse_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		    "content-len header (%d) mismatch actual len (%d) ??", 
-		    r->headers_in.content_length_n, full_body_len);
-#endif
-      /* File probably got buffered. */
-      if (r->headers_in.content_length_n != full_body_len) {
-	if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY, 0) == 0)
-	  ctx->weird_request = 1;
-	return ;
-      }
-      /* x-www-form-urlencoded POSTs */
-      //33 = echo -n "application/x-www-form-urlencoded" | wc -c
-      if (!ngx_strncasecmp(r->headers_in.content_type->value.data, 
-			   (u_char *)"application/x-www-form-urlencoded", 33)) {
-#ifdef post_heavy_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		      "XX-application/x-www..");
-#endif
-	tmp.len = full_body_len;
-	tmp.data = full_body;
-
-#ifdef post_heavy_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		      "XX-POST DATA [%V]", &tmp);
-#endif
-	if(ngx_http_spliturl_ruleset(r->pool, (char *)tmp.data, 
-				     cf->body_rules, main_cf->body_rules, 
-				     r, ctx, BODY)) {
-#ifdef post_heavy_debug
-	  dummy_error_fatal(ctx, r, "spliturl failed, someone is trying to trick us");
-#endif
-	  if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY, 0) == 0)
-	    ctx->weird_request = 1;
-	  return ;
-	}
-      }
-      //19 = echo -n "multipart/form-data" | wc -c
-      else if (!ngx_strncasecmp(r->headers_in.content_type->value.data, 
-				(u_char *) "multipart/form-data", 19)) {
-	ngx_http_dummy_multipart_parse(ctx, r, full_body, full_body_len);
-      }
-      else {
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		      "[POST] Unknown content-type, gtfo");
-	if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY, 0) == 0)
-	  ctx->weird_request = 1;
-      }
-    }
-
-
-
+    
+    
+    
     /*
-    ** does : bui ! this is a 'main' function, all the stuff goes from here.
-    **	  to make it short, it does the following :
-    ** - if we got header rules, apply header_rules on each.
-    ** - apply generic_rules on url decoded URI.
-    ** - if we got get_rules and get args, apply get_rules varname/value couple.
-    ** - if we are in a POST/PUT request and we got body_rules, apply rules :)
+    ** check against the rule if the current zone is matching 
+    ** the zone the rule is meant to be check against
     */
-    void	
-      ngx_http_dummy_uri_parse(ngx_http_dummy_main_conf_t *main_cf, 
-			       ngx_http_dummy_loc_conf_t *cf, 
-			       ngx_http_request_ctx_t *ctx, ngx_http_request_t *r)
-    {
-      ngx_str_t			tmp, name;
-  
-      if (!r->uri.len)
-	return ;
-      if (ctx->block && !cf->learning)
-	return ;
-      if (!main_cf->generic_rules && !cf->generic_rules) {
-	dummy_error_fatal(ctx, r, "no generic rules ?!");
-	return ;
-      }
-      tmp.len = r->uri.len;
-      tmp.data = ngx_pcalloc(r->pool, r->uri.len+1);
-      if (!tmp.data) {
-	dummy_error_fatal(ctx, r, "failed alloc of %d", r->uri.len+1);
-	return ;
-      }
-      memcpy(tmp.data, r->uri.data, r->uri.len);
-      name.data = NULL;
-      name.len = 0;
-      if (cf->generic_rules)
-	ngx_http_basestr_ruleset_n(r->pool, &name, &tmp, cf->generic_rules, 
-				   r, ctx, URL);
-      if (main_cf->generic_rules)
-	ngx_http_basestr_ruleset_n(r->pool, &name, &tmp, main_cf->generic_rules, 
-				   r, ctx, URL);
-      ngx_pfree(r->pool, tmp.data);
-    }
+    if ( (zone == HEADERS && r[i].br->headers) ||
+	 (zone == URL && r[i].br->url) ||
+	 (zone == ARGS && r[i].br->args) ||
+	 (zone == BODY && r[i].br->body && !r[i].br->file_ext) ||
+	 (zone == FILE_EXT && r[i].br->file_ext) ) {
 
-    void	
-      ngx_http_dummy_args_parse(ngx_http_dummy_main_conf_t *main_cf, 
-				ngx_http_dummy_loc_conf_t *cf, 
-				ngx_http_request_ctx_t *ctx, ngx_http_request_t *r)
-    {
-      ngx_str_t			tmp;
-  
-      if (ctx->block && !cf->learning)
-	return ;
-      if (!r->args.len)
-	return ;
-      if (!cf->get_rules && !main_cf->get_rules)
-	return ;
-      tmp.len = r->args.len;
-      tmp.data = ngx_pcalloc(r->pool, r->args.len+1);
-      if (!tmp.data) {
-	dummy_error_fatal(ctx, r, "failed alloc");
-	return ;
-      }
-      memcpy(tmp.data, r->args.data, r->args.len);
-      if(ngx_http_spliturl_ruleset(r->pool, (char *)tmp.data, 
-				   cf->get_rules, main_cf->get_rules, r, 
-				   ctx, ARGS)) {
-	dummy_error_fatal(ctx, r, 
-			  "spliturl error : malformed url, possible attack");
-	return ;
-      }
-      ngx_pfree(r->pool, tmp.data);
-    }
+      /* #ifdef basestr_ruleset_debug */
+      /* 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,  */
+      /* 		      "XX-check [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match);  */
+      /* #endif */
 
-    void	
-      ngx_http_dummy_headers_parse(ngx_http_dummy_main_conf_t *main_cf, 
-				   ngx_http_dummy_loc_conf_t *cf, 
-				   ngx_http_request_ctx_t *ctx, ngx_http_request_t *r)
-    {
-      ngx_list_part_t	    *part;
-      ngx_table_elt_t	    *h;
-      unsigned int		     i;
-
-      if (!cf->header_rules && !main_cf->header_rules)
-	return ;
-      // this check may be removed, as it shouldn't be needed anymore !
-      if (ctx->block && !cf->learning)
-	return ;
-      part = &r->headers_in.headers.part;
-      h = part->elts;
-      // this check may be removed, as it shouldn't be needed anymore !
-      for (i = 0; !ctx->block ; i++) {
-	if (i >= part->nelts) {
-	  if (part->next == NULL) 
-	    break;
-	  part = part->next;
-	  h = part->elts;
-	  i = 0;
+#ifdef basestr_ruleset_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		    "XX-test rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+#endif
+    
+      /* check the rule against the value*/
+      ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
+      /*if our rule matched, apply effects (score etc.)*/
+      if (ret == 1) {
+#ifdef basestr_ruleset_debug
+	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		      "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+#endif
+	ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);
+      }
+    
+      if (!r[i].br->negative) {
+#ifdef basestr_ruleset_debug
+	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		      "XX-test rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+#endif
+	/* check the rule against the name*/
+	ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);
+	/*if our rule matched, apply effects (score etc.)*/
+	if (ret == 1) {
+#ifdef basestr_ruleset_debug
+	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+			"XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+#endif
+	  ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 1);
 	}
-	if (cf->header_rules)
-	  ngx_http_basestr_ruleset_n(r->pool, &(h[i].key), &(h[i].value), 
-				     cf->header_rules, r, ctx, HEADERS);
-	if (main_cf->header_rules)
-	  ngx_http_basestr_ruleset_n(r->pool, &(h[i].key), &(h[i].value), 
-				     main_cf->header_rules, r, ctx, HEADERS);
       }
+    }
+  }
+  return (0);
+}
+  
+
+
+
+/*
+** does : parse body data, a.k.a POST/PUT datas. identifies content-type,
+**	  and, if appropriate, boundary. then parse the stuff if multipart/for..
+**	  or rely on spliturl if application/x-w..
+** [XXX] : this function sucks ! I don't parse bigger-than-body-size posts that 
+**	   are partially stored in files, TODO ;)
+*/
+//#define post_heavy_debug
+//#define dummy_body_parse_debug
+void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx, 
+				       ngx_http_request_t	 *r,
+				       u_char			*src,
+				       u_int			 len)
+{
+  ngx_str_t				final_var, final_data;
+  char				*boundary, *varn_start, *varn_end;
+  char				*filen_start, *filen_end;
+  char				*end, *line_end;
+  u_int				boundary_len, varn_len, varc_len, idx;
+  ngx_http_dummy_loc_conf_t		*cf;
+  ngx_http_dummy_main_conf_t		*main_cf;
+  
+  cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
+  main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
+  
+#ifdef post_heavy_debug
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		"XX-multipart/form-data");
+#endif
+  /* So far, I have noticed to correct ways of putting the boundary in a multipart post :
+  ** 1: in the content-type header, after multipart/form-data
+  ** 2: at the very begining of the body. */
+  /*extract boundary*/
+  boundary = ngx_strstr(src, "boundary=");
+  if (!boundary)
+    boundary = ngx_strstr(r->headers_in.content_type->value.data, "boundary=");
+  if (!boundary)
+    {
+      dummy_error_fatal(ctx, r, "no boundary present in POST data ?");
       return ;
     }
-
-    void	
-      ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx, 
-				ngx_http_request_t	 *r)
-    {
-      ngx_http_dummy_loc_conf_t	*cf;
-      ngx_http_dummy_main_conf_t	*main_cf;
-      ngx_http_core_main_conf_t  *cmcf;
-
-      cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
-      cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
-      main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
-      if (!cf || !ctx || !cmcf) {
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		      "XX-UNABLE TO PARSE IN DATA PARSE !!");
+  boundary += 9; //strlen ("boundary=")
+  boundary_len = strlen(boundary);
+   
+  /* fetch every line starting with boundary */
+  idx = 0;
+  while (idx < len) {
+#ifdef post_heavy_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		  "XX-POST data : (%s)", src+idx);
+#endif
+    //dummy_error_fatal(ctx, r, "POST data : (%s)", src+idx);
+    /* if we've reached the last boundary '--' + boundary + '--' + '\r\n'*/
+    if (idx+boundary_len+6 >= len)
+      {
+#ifdef post_heavy_debug
+	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		      "XX-reached end, not enough len");
+#endif
+	break;
+      }
+    //check if line starts with -- (pre-boundary stuff) 
+    if (src[idx] != '-' || src[idx+1] != '-' || 
+	//and if it's really followed by a boundary
+	ngx_strncmp(src+idx+2, boundary, boundary_len) || 
+	//and if it's not the last boundary of the buffer
+	idx+boundary_len + 2 + 2  >= len ||  
+	//and if it's followed by \r\n
+	src[idx+boundary_len+2] != '\r' || src[idx+boundary_len+3] != '\n') {
+      
+      dummy_error_fatal(ctx, r, "POST data is malformed (%s)", src+idx);
+      return ;
+    }
+    idx += boundary_len + 4;
+    /* we have two cases :
+    ** ---- file upload
+    ** Content-Disposition: form-data; name="somename"; filename="NetworkManager.conf"\r\n
+    ** Content-Type: application/octet-stream\r\n\r\n
+    ** <DATA>
+    ** ---- normal post var
+    ** Content-Disposition: form-data; name="lastname"\r\n\r\n
+    ** <DATA>
+    */
+    if (ngx_strncasecmp(src+idx, 
+			(u_char *) "content-disposition: form-data;", 30)) {
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		    "Unknown content-type: [%s]", src+idx);
+      dummy_error_fatal(ctx, r, "POST data : unknown content-disposition");
+      
+      return ;
+    }
+    idx += 30;
+    line_end = ngx_strchr(src+idx, '\n');
+    if (!line_end) {
+      dummy_error_fatal(ctx, r, "POST data : malformed boundary line");
+      return ;
+    }
+    // seek for name="<var>" and filename="<var>" in the current line
+    // verify that the name/filename tag founds are present
+    varn_end = filen_end = NULL;
+    varn_start = ngx_strstr(src+idx, "name=\"");
+    if (varn_start && varn_start < line_end) {
+      varn_start += 6;
+      varn_end = ngx_strchr(varn_start, '"');
+    }
+    else
+      varn_start = NULL;
+    filen_start = ngx_strstr(src+idx, "filename=\"");
+    if (filen_start && filen_start < line_end) {
+      filen_start += 10;
+      /* avoid being bypassed by filenames like bla\"aa.php */
+      filen_end = filen_start;
+      do {
+	filen_end = ngx_strchr(filen_end, '"');
+	if (*(filen_end - 1) != '\\')
+	  break;
+	filen_end++;
+      } while (filen_end < line_end);
+      /* here add support :
+      ** - when a file is here, the line bellow 'content-disposition' is content-type.
+      ** - skip this line. we should probably parse it ... to make regex on it :D
+      */
+      line_end = ngx_strchr(line_end+1, '\n');
+      if (!line_end) {
+	dummy_error_fatal(ctx, r, "POST data : malformed 'filename' field");
 	return ;
       }
-      /* process rules only if request is not already blocked or if
-	 the learning mode is enabled */
-      ngx_http_dummy_headers_parse(main_cf, cf, ctx, r);
-      //check uri
-      ngx_http_dummy_uri_parse(main_cf, cf, ctx, r);
-      //check args
-      ngx_http_dummy_args_parse(main_cf, cf, ctx, r);
-      // check method
-      if ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) && 
-	  //presence of body rules (POST/PUT rules)
-	  (cf->body_rules || main_cf->body_rules) && 
-	  //and the presence of data to parse
-	  r->request_body && (!ctx->block || cf->learning)) 
-	ngx_http_dummy_body_parse(ctx, r, cf, main_cf);
-      ngx_http_dummy_update_current_ctx_status(ctx, cf, r);
     }
-
-
-
-    //#define custom_score_debug
-    void	
-      ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx, 
-					       ngx_http_dummy_loc_conf_t	*cf, 
-					       ngx_http_request_t *r)
-    {
-      unsigned int	i, z, matched;
-      ngx_http_check_rule_t		*cr;
-      ngx_http_special_score_t	*sc;
-      /* ngx_http_whitelist_rule_t	*b; */
-      /* //ngx_http_whitelist_location_t	*cl; */
-      /* ngx_int_t			k; */
-      //ngx_int_t			*tmp_ptr;
-
-#ifdef custom_score_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		    "XX-custom check rules");
-#endif
-      if (ctx->weird_request) {
-#ifdef custom_score_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		      "XX-blocking, weird_request flag set");
-#endif
-	ctx->block = 1;
+    else
+      filen_start = NULL;
+	  
+    // check that var name is present and not malformed
+    if (!varn_start || !varn_end || varn_end <= varn_start) {
+      dummy_error_fatal(ctx, r, "POST data : no 'name' in POST var");
+      return ;
+    }
+    varn_len = varn_end - varn_start;
+    // now idx point to the end of the
+    // content-disposition: form-data; filename="" name=""
+    idx += (u_char *)line_end - (src+idx) + 1;
+    if (src[idx] != '\r' || src[idx+1] != '\n') {
+      dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
+      return ;
+    }
+    idx += 2;
+    // seek the end of the data too
+    end = NULL;
+    while (idx < len) {
+      end = ngx_strstr(src+idx, "\r\n--");
+      if (!end) {
+	dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
+	return ;
       }
-      if (ctx->big_request) {
-#ifdef custom_score_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		      "XX-blocking unexpected big request");
-#endif
-	ctx->block = 1;
+      if (!ngx_strncmp(end+4, boundary, boundary_len))
+	break;
+      else {
+	idx += ((u_char *) end - (src+idx)) + 1;
+	end = NULL;
       }
-      /*cr, sc, cf, ctx*/
-      if (cf->check_rules && ctx->special_scores) {
+    }
+    if (!end) {
+      dummy_error_fatal(ctx, r, "POST data : malformed line");
+      return ;
+    }
+    if (filen_start) {
+      final_var.data = (unsigned char *)varn_start;
+      final_var.len = varn_len;
+      final_data.data = (unsigned char *)filen_start;
+      final_data.len = filen_end - filen_start;
+#ifdef post_heavy_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		    "[POST] checking filename [%V] = [%V]",
+		    &final_var, &final_data);
+#endif
+      /* here we got val name + val content !*/	      
+      if (cf->body_rules)
+	ngx_http_basestr_ruleset_n(r->pool, &final_var, &final_data,
+				   cf->body_rules, r, ctx, FILE_EXT);
+#ifdef post_heavy_debug
+      else
+	/* here we got val name + val content !*/	      
+	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		      "No local body rules ?!");
+#endif
+		
+      if (main_cf->body_rules)
+	ngx_http_basestr_ruleset_n(r->pool, &final_var, &final_data,
+				   main_cf->body_rules, r, ctx, FILE_EXT);
+#ifdef post_heavy_debug
+      else
+	/* here we got val name + val content !*/	      
+	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		      "No main body rules ?!");
+#endif
+      
+      idx += (u_char *) end - (src+idx);
+    }
+    else
+      if (varn_start) {
+	varc_len = (u_char *) end - (src+idx);
+	final_var.data = (unsigned char *)varn_start;
+	final_var.len = varn_len;
+	final_data.data = src+idx;
+	final_data.len = varc_len;
+#ifdef post_heavy_debug
+	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		      "[POST] [%V]=[%V]",
+		      &final_var, &final_data);
+#endif
+	/* here we got val name + val content !*/	      
+	if (cf->body_rules)
+	  ngx_http_basestr_ruleset_n(r->pool, &final_var, &final_data,
+				     cf->body_rules, r, ctx, BODY);
+#ifdef post_heavy_debug
+	else
+	  /* here we got val name + val content !*/	      
+	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+			"No local body rules ?!");
+#endif
+		
+	if (main_cf->body_rules)
+	  ngx_http_basestr_ruleset_n(r->pool, &final_var, &final_data,
+				     main_cf->body_rules, r, ctx, BODY);
+#ifdef post_heavy_debug
+	else
+	  /* here we got val name + val content !*/	      
+	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+			"No main body rules ?!");
+#endif
+	      
+	idx += (u_char *) end - (src+idx);
+      }
+      else {
+	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		      "(multipart) : ");
+
+      }
+    if (!ngx_strncmp(end, "\r\n", 2))
+      idx += 2;
+  }
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		"(multipart) : OVER");
+
+}
+
+    //#define dummy_body_parse_debug
+
+void	
+ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx, 
+			  ngx_http_request_t	 *r,
+			  ngx_http_dummy_loc_conf_t *cf,
+			  ngx_http_dummy_main_conf_t *main_cf)
+{
+  u_char			*src; 
+  ngx_str_t			tmp;
+  ngx_chain_t			*bb;
+  u_char			*full_body;
+  u_int				full_body_len;
+  
+  
+#ifdef dummy_body_parse_debug
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		"XX-BODY PARSE");
+#endif
+  if (!r->request_body->bufs || !r->headers_in.content_type) {
+#ifdef dummy_body_parse_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		  "XX-No content type ..");
+#endif
+    //2xx
+    ngx_http_apply_rulematch_v_n(&nx_int__uncommon_content_type, ctx, r, NULL, NULL, BODY, 1, 0);
+    /* if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__no_content_type, NULL, BODY, 0) == 0) */
+    /*   ctx->weird_request = 1; */
+    return ;
+  }
+
+  if (r->request_body->temp_file) {
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		  "naxsi: POST REQUEST to temp_file, partially parsed.");
+    ngx_http_apply_rulematch_v_n(&nx_int__big_request, ctx, r, NULL, NULL, BODY, 1, 0);
+    /* if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__big_request, NULL, BODY, 0) == 0) */
+    /*   ctx->big_request = 1; */
+    return ;
+  }
+
+#ifdef dummy_body_parse_debug
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		"XX-VALID BODY");
+#endif
+  /* request body in single buffer */
+  if (r->request_body->bufs->next == NULL) {
+    full_body_len = (u_int) (r->request_body->bufs->buf->last - 
+			     r->request_body->bufs->buf->pos);
+    full_body =  ngx_pcalloc(r->pool, (u_int) (full_body_len+1));
+    memcpy(full_body, r->request_body->bufs->buf->pos, full_body_len);
+  }
+  /* request body in chain */
+  else {
+#ifdef dummy_body_parse_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		  "[POST] REQUEST BODY IN CHAIN !");
+#endif
+    for (full_body_len = 0, bb = r->request_body->bufs; bb; bb = bb->next)
+      full_body_len += (bb->buf->last - bb->buf->pos);
+    full_body = ngx_pcalloc(r->pool, full_body_len+1);
+    src = full_body;
+    if (!full_body) 
+      return ;
+    for(bb = r->request_body->bufs ; bb ; bb = bb->next)
+      full_body = ngx_cpymem(full_body, bb->buf->pos, 
+			     bb->buf->last - bb->buf->pos);
+    full_body = src;
+#ifdef dummy_body_parse_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		  "[POST] REQUEST BODY IN CHAIN [%s] (len=%d)", 
+		  full_body, full_body_len);
+#endif
+  }
+#ifdef dummy_body_parse_debug
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		"content-len header (%d) mismatch actual len (%d) ??", 
+		r->headers_in.content_length_n, full_body_len);
+#endif
+  /* File probably got buffered. */
+  if (r->headers_in.content_length_n != full_body_len) {
+    ngx_http_apply_rulematch_v_n(&nx_int__big_request, ctx, r, NULL, NULL, BODY, 1, 0);
+    /* if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY, 0) == 0) */
+    /*   ctx->weird_request = 1; */
+    return ;
+  }
+  /* x-www-form-urlencoded POSTs */
+  //33 = echo -n "application/x-www-form-urlencoded" | wc -c
+  if (!ngx_strncasecmp(r->headers_in.content_type->value.data, 
+		       (u_char *)"application/x-www-form-urlencoded", 33)) {
+#ifdef post_heavy_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		  "XX-application/x-www..");
+#endif
+    tmp.len = full_body_len;
+    tmp.data = full_body;
+
+#ifdef post_heavy_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		  "XX-POST DATA [%V]", &tmp);
+#endif
+    if(ngx_http_spliturl_ruleset(r->pool, (char *)tmp.data, 
+				 cf->body_rules, main_cf->body_rules, 
+				 r, ctx, BODY)) {
+#ifdef post_heavy_debug
+      dummy_error_fatal(ctx, r, "spliturl failed, someone is trying to trick us");
+#endif
+      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_url, ctx, r, NULL, NULL, BODY, 1, 0);
+	  
+      /*   if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__uncommon_url, NULL, BODY, 0) == 0) */
+      /*     ctx->weird_request = 1; */
+      return ;
+    } 
+  }
+  //19 = echo -n "multipart/form-data" | wc -c
+  else if (!ngx_strncasecmp(r->headers_in.content_type->value.data, 
+			    (u_char *) "multipart/form-data", 19)) {
+    ngx_http_dummy_multipart_parse(ctx, r, full_body, full_body_len);
+  }
+  else {
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		  "[POST] Unknown content-type");
+    ngx_http_apply_rulematch_v_n(&nx_int__uncommon_content_type, ctx, r, NULL, NULL, BODY, 1, 0);
+    /*   if (ngx_http_dummy_is_rule_whitelisted_n(r, cf, &nx_int__weird_request, NULL, BODY, 0) == 0) */
+    /*     ctx->weird_request = 1; */
+  }
+}
+
+
+
+/*
+** does : bui ! this is a 'main' function, all the stuff goes from here.
+**	  to make it short, it does the following :
+** - if we got header rules, apply header_rules on each.
+** - apply generic_rules on url decoded URI.
+** - if we got get_rules and get args, apply get_rules varname/value couple.
+** - if we are in a POST/PUT request and we got body_rules, apply rules :)
+*/
+void	
+ngx_http_dummy_uri_parse(ngx_http_dummy_main_conf_t *main_cf, 
+			 ngx_http_dummy_loc_conf_t *cf, 
+			 ngx_http_request_ctx_t *ctx, ngx_http_request_t *r)
+{
+  ngx_str_t			tmp, name;
+  
+  if (!r->uri.len)
+    return ;
+  if (ctx->block && !cf->learning)
+    return ;
+  if (!main_cf->generic_rules && !cf->generic_rules) {
+    dummy_error_fatal(ctx, r, "no generic rules ?!");
+    return ;
+  }
+  tmp.len = r->uri.len;
+  tmp.data = ngx_pcalloc(r->pool, r->uri.len+1);
+  if (!tmp.data) {
+    dummy_error_fatal(ctx, r, "failed alloc of %d", r->uri.len+1);
+    return ;
+  }
+  memcpy(tmp.data, r->uri.data, r->uri.len);
+  name.data = NULL;
+  name.len = 0;
+  if (cf->generic_rules)
+    ngx_http_basestr_ruleset_n(r->pool, &name, &tmp, cf->generic_rules, 
+			       r, ctx, URL);
+  if (main_cf->generic_rules)
+    ngx_http_basestr_ruleset_n(r->pool, &name, &tmp, main_cf->generic_rules, 
+			       r, ctx, URL);
+  ngx_pfree(r->pool, tmp.data);
+}
+
+void	
+ngx_http_dummy_args_parse(ngx_http_dummy_main_conf_t *main_cf, 
+			  ngx_http_dummy_loc_conf_t *cf, 
+			  ngx_http_request_ctx_t *ctx, ngx_http_request_t *r)
+{
+  ngx_str_t			tmp;
+  
+  if (ctx->block && !cf->learning)
+    return ;
+  if (!r->args.len)
+    return ;
+  if (!cf->get_rules && !main_cf->get_rules)
+    return ;
+  tmp.len = r->args.len;
+  tmp.data = ngx_pcalloc(r->pool, r->args.len+1);
+  if (!tmp.data) {
+    dummy_error_fatal(ctx, r, "failed alloc");
+    return ;
+  }
+  memcpy(tmp.data, r->args.data, r->args.len);
+  if(ngx_http_spliturl_ruleset(r->pool, (char *)tmp.data, 
+			       cf->get_rules, main_cf->get_rules, r, 
+			       ctx, ARGS)) {
+    dummy_error_fatal(ctx, r, 
+		      "spliturl error : malformed url, possible attack");
+    return ;
+  }
+  ngx_pfree(r->pool, tmp.data);
+}
+
+void	
+ngx_http_dummy_headers_parse(ngx_http_dummy_main_conf_t *main_cf, 
+			     ngx_http_dummy_loc_conf_t *cf, 
+			     ngx_http_request_ctx_t *ctx, ngx_http_request_t *r)
+{
+  ngx_list_part_t	    *part;
+  ngx_table_elt_t	    *h;
+  unsigned int		     i;
+
+  if (!cf->header_rules && !main_cf->header_rules)
+    return ;
+  // this check may be removed, as it shouldn't be needed anymore !
+  if (ctx->block && !cf->learning)
+    return ;
+  part = &r->headers_in.headers.part;
+  h = part->elts;
+  // this check may be removed, as it shouldn't be needed anymore !
+  for (i = 0; !ctx->block ; i++) {
+    if (i >= part->nelts) {
+      if (part->next == NULL) 
+	break;
+      part = part->next;
+      h = part->elts;
+      i = 0;
+    }
+    if (cf->header_rules)
+      ngx_http_basestr_ruleset_n(r->pool, &(h[i].key), &(h[i].value), 
+				 cf->header_rules, r, ctx, HEADERS);
+    if (main_cf->header_rules)
+      ngx_http_basestr_ruleset_n(r->pool, &(h[i].key), &(h[i].value), 
+				 main_cf->header_rules, r, ctx, HEADERS);
+  }
+  return ;
+}
+
+void	
+ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx, 
+			  ngx_http_request_t	 *r)
+{
+  ngx_http_dummy_loc_conf_t	*cf;
+  ngx_http_dummy_main_conf_t	*main_cf;
+  ngx_http_core_main_conf_t  *cmcf;
+
+  cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
+  cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
+  main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
+  if (!cf || !ctx || !cmcf) {
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-UNABLE TO PARSE IN DATA PARSE !!");
+    return ;
+  }
+  /* process rules only if request is not already blocked or if
+     the learning mode is enabled */
+  ngx_http_dummy_headers_parse(main_cf, cf, ctx, r);
+  //check uri
+  ngx_http_dummy_uri_parse(main_cf, cf, ctx, r);
+  //check args
+  ngx_http_dummy_args_parse(main_cf, cf, ctx, r);
+  // check method
+  if ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) && 
+      //presence of body rules (POST/PUT rules)
+      (cf->body_rules || main_cf->body_rules) && 
+      //and the presence of data to parse
+      r->request_body && (!ctx->block || cf->learning)) 
+    ngx_http_dummy_body_parse(ctx, r, cf, main_cf);
+  ngx_http_dummy_update_current_ctx_status(ctx, cf, r);
+}
+
+
+
+//#define custom_score_debug
+void	
+ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx, 
+					 ngx_http_dummy_loc_conf_t	*cf, 
+					 ngx_http_request_t *r)
+{
+  unsigned int	i, z, matched;
+  ngx_http_check_rule_t		*cr;
+  ngx_http_special_score_t	*sc;
+  /* ngx_http_whitelist_rule_t	*b; */
+  /* //ngx_http_whitelist_location_t	*cl; */
+  /* ngx_int_t			k; */
+  //ngx_int_t			*tmp_ptr;
+
+#ifdef custom_score_debug
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		"XX-custom check rules");
+#endif
+  if (ctx->weird_request) {
+#ifdef custom_score_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-blocking, weird_request flag set");
+#endif
+    ctx->block = 1;
+  }
+  if (ctx->big_request) {
+#ifdef custom_score_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-blocking unexpected big request");
+#endif
+    ctx->block = 1;
+  }
+  /*cr, sc, cf, ctx*/
+  if (cf->check_rules && ctx->special_scores) {
+#ifdef custom_score_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-we have custom check rules and CTX got special score :)");
+#endif
+    cr = cf->check_rules->elts;
+    sc = ctx->special_scores->elts;
+    for (z = 0; z < ctx->special_scores->nelts; z++)
+      for (i = 0; i < cf->check_rules->nelts; i++) {
 #ifdef custom_score_debug
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		      "XX-we have custom check rules and CTX got special score :)");
+		      "XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
+		      cr[i].sc_tag.data, cr[i].sc_score,
+		      sc[z].sc_tag->data, sc[z].sc_score, cr[i].cmp);
 #endif
-	cr = cf->check_rules->elts;
-	sc = ctx->special_scores->elts;
-	for (z = 0; z < ctx->special_scores->nelts; z++)
-	  for (i = 0; i < cf->check_rules->nelts; i++) {
+	if (!ngx_strcmp(sc[z].sc_tag->data, cr[i].sc_tag.data)) {
+#ifdef custom_score_debug
+	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+			"XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
+			cr[i].sc_tag.data, cr[i].sc_score,
+			sc[z].sc_tag->data, sc[z].sc_score, cr[i].cmp);
+#endif
+	  matched=0;
+	  // huglier than your mom :)
+	  switch (cr[i].cmp) {
+	  case SUP:
+	    matched = sc[z].sc_score > cr[i].sc_score ? 1 : 0;
+	    break;
+	  case SUP_OR_EQUAL:
+	    matched = sc[z].sc_score >= cr[i].sc_score ? 1 : 0;
+	    break;
+	  case INF:
+	    matched = sc[z].sc_score < cr[i].sc_score ? 1 : 0;
+	    break;
+	  case INF_OR_EQUAL:
+	    matched = sc[z].sc_score <= cr[i].sc_score ? 1 : 0;
+	    break;
+	  }
+	  if (matched) {
 #ifdef custom_score_debug
 	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-			  "XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
-			  cr[i].sc_tag.data, cr[i].sc_score,
-			  sc[z].sc_tag->data, sc[z].sc_score, cr[i].cmp);
-#endif
-	    if (!ngx_strcmp(sc[z].sc_tag->data, cr[i].sc_tag.data)) {
-#ifdef custom_score_debug
-	      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-			    "XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
-			    cr[i].sc_tag.data, cr[i].sc_score,
-			    sc[z].sc_tag->data, sc[z].sc_score, cr[i].cmp);
-#endif
-	      matched=0;
-	      // huglier than your mom :)
-	      switch (cr[i].cmp) {
-	      case SUP:
-		matched = sc[z].sc_score > cr[i].sc_score ? 1 : 0;
-		break;
-	      case SUP_OR_EQUAL:
-		matched = sc[z].sc_score >= cr[i].sc_score ? 1 : 0;
-		break;
-	      case INF:
-		matched = sc[z].sc_score < cr[i].sc_score ? 1 : 0;
-		break;
-	      case INF_OR_EQUAL:
-		matched = sc[z].sc_score <= cr[i].sc_score ? 1 : 0;
-		break;
-	      }
-	      if (matched) {
-#ifdef custom_score_debug
-		ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-			      "XX- custom score rule triggered ..");
+			  "XX- custom score rule triggered ..");
 #endif
 
-		if (cr[i].block)
-		  ctx->block = 1;
-		if (cr[i].allow)
-		  ctx->allow = 1;
-	      }
-	    }
+	    if (cr[i].block)
+	      ctx->block = 1;
+	    if (cr[i].allow)
+	      ctx->allow = 1;
 	  }
+	}
       }
-    }
+  }
+}
 
 
     /*

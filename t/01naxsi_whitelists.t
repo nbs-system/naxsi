@@ -1007,7 +1007,7 @@ location /RequestDenied {
 POST /
 
 --- error_code: 412
-=== WL TEST 18.1 : Whitelisting rule id 1
+=== WL TEST 18.1 : Whitelisting internal rule
 --- user_files
 >>> foobar
 eh yo
@@ -1024,7 +1024,7 @@ location / {
 	 CheckRule "$XSS >= 8" BLOCK;
   	 root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-	 BasicRule wl:1 "mz:$URL:/|BODY";
+	 BasicRule wl:11 "mz:$URL:/|BODY";
 	 error_page 405 = $uri;
 }
 location /RequestDenied {

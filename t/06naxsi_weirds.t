@@ -44,7 +44,7 @@ location / {
 	 CheckRule "$XSS >= 8" BLOCK;
   	 root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-	 BasicRule wl:1 "mz:ARGS";
+	 BasicRule wl:12 "mz:ARGS";
 }
 location /RequestDenied {
 	 return 412;
@@ -66,7 +66,7 @@ location / {
 	 CheckRule "$XSS >= 8" BLOCK;
   	 root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-	 BasicRule wl:1 "mz:$URL:/|ARGS";
+	 BasicRule wl:12 "mz:$URL:/|ARGS";
 }
 location /RequestDenied {
 	 return 412;
@@ -88,7 +88,7 @@ location / {
 	 CheckRule "$XSS >= 8" BLOCK;
   	 root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-	 BasicRule wl:1 "mz:$URL:/a|ARGS";
+	 BasicRule wl:12 "mz:$URL:/a|ARGS";
 }
 location /RequestDenied {
 	 return 412;
@@ -110,7 +110,7 @@ location / {
 	 CheckRule "$XSS >= 8" BLOCK;
   	 root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-	 BasicRule wl:1 "mz:$URL:/|URL";
+	 BasicRule wl:12 "mz:$URL:/|URL";
 }
 location /RequestDenied {
 	 return 412;

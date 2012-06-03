@@ -968,7 +968,7 @@ GET /?z=&%00yesone
 eh yo
 --- http_config
 include /etc/nginx/naxsi_core.rules;
-MainRule "str:yesone" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:42" id:1999;
+#MainRule "str:yesone" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:42" id:1999;
 --- config
 location / {
 	 #LearningMode;
@@ -987,7 +987,7 @@ location /RequestDenied {
 }
 --- request
 GET /?z=&y%00esone
---- error_code: 200
+--- error_code: 412
 
 
 

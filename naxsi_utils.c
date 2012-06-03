@@ -589,10 +589,10 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
   int				zone, uri_idx, name_idx, ret;
   ngx_http_rule_t		*curr_r/*, *father_r*/;
   ngx_http_whitelist_rule_t	*father_wlr;
-  unsigned char			*fullname;
+  char			*fullname;
   uint	i;
 
-  if (!dlc->whitelist_rules || dlc->whitelist_rules->nelts < 1) {
+  if (!dlc->whitelist_rules  || dlc->whitelist_rules->nelts < 1) {
 #ifdef whitelist_heavy_debug    
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 		       "No whitelist registred, but it's your call.");    
@@ -632,6 +632,13 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
 			   "naxsi internal error in wlr_identify.");
 	return (NGX_ERROR);
       }
+    /*
+      ngx_http_whitelist_rule_t *
+      ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
+      ngx_http_rule_t *curr, int zone, int uri_idx,
+      int name_idx, char **fullname) {
+      
+    */
     father_wlr = ngx_http_wlr_find(cf, dlc, curr_r, zone, uri_idx, name_idx, (char **) &fullname);
     if (!father_wlr) {
 #ifdef whitelist_heavy_debug
@@ -649,7 +656,7 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
       if (!father_wlr->name)
 	return (NGX_ERROR);
       father_wlr->name->len = strlen((const char *) fullname);
-      father_wlr->name->data = fullname;
+      father_wlr->name->data = (unsigned char *) fullname;
       father_wlr->zone = zone;
       /* If there is URI and no name idx, specify it,
 	 so that WL system won't get fooled by an argname like an URL */

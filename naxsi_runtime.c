@@ -85,6 +85,15 @@ ngx_http_rule_t nx_int__uncommon_url = {/*type*/ 0, /*whitelist flag*/ 0,
 					/*lnk_to & from*/ 0, 0,
 					/*br ptrs*/ NULL};
 
+ngx_http_rule_t nx_int__uncommon_post_format = {/*type*/ 0, /*whitelist flag*/ 0, 
+						/*wl_id ptr*/ NULL, /*rule_id*/ 13,
+						/*log_msg*/ NULL, /*score*/ 0, 
+						/*sscores*/ NULL,
+						/*sc_block*/ 1,  /*sc_allow*/ 0, 
+						/*block*/ 1,  /*allow*/ 0, 
+						/*lnk_to & from*/ 0, 0,
+						/*br ptrs*/ NULL};
+
 
 ngx_http_rule_t nx_int__big_request = {/*type*/ 0, /*whitelist flag*/ 0, 
 				       /*wl_id ptr*/ NULL, /*rule_id*/ 2,
@@ -234,7 +243,7 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
 ** returns (1) if rule is whitelisted, else (0)
 */
 
-/* #define whitelist_debug */
+#define whitelist_debug
 /* #define whitelist_heavy_debug */
 
 int
@@ -249,7 +258,9 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
   
   /* if something was found, check the rule ID */
   if (!b) return (0);
-
+  /* FILE_EXT zone is just a hack, as it indeed targets BODY */
+  if (zone == FILE_EXT)
+    zone = BODY;
   /* if whitelist targets arg name, but the rules hit content*/
   if (b->target_name && !target_name)
     {
@@ -350,11 +361,11 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   
   /* if name is NULL, replace it by an empty string */
   if (!name) name = &nullname;
-  
 #ifdef whitelist_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		"is rule [%d] whitelisted in zone %s for item %V", r->rule_id,
-		zone == ARGS ? "ARGS" : zone == HEADERS ? "HEADERS" : zone == BODY ? "BODY" : zone == URL ? "URL" : "UNKNOWN",
+		zone == ARGS ? "ARGS" : zone == HEADERS ? "HEADERS" : zone == BODY ? 
+		"BODY" : zone == URL ? "URL" : zone == FILE_EXT ? "FILE_EXT" : "UNKNOWN",
 		name);
 #endif
   tmp_hashname.data = NULL;
@@ -390,6 +401,12 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 	    if (!dr[i]->br->target_name && !target_name)
 	      return (1);
 	  }
+	  else if (zone == FILE_EXT && dr[i]->br && dr[i]->br->file_ext) {
+	    if (dr[i]->br->target_name && target_name)
+	      return (1);
+	    if (!dr[i]->br->target_name && !target_name)
+	      return (1);
+	  }
 	  else if (zone == URL && dr[i]->br && dr[i]->br->url) return (1);
 	  /* this one, with no match zone at all, means the rule is purely disabled */
 	  else if (dr[i]->br && !(dr[i]->br->args ||  dr[i]->br->headers ||
@@ -415,7 +432,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 						     name->len);
     else
       /* search if there is WL on this BODY name */
-      if (cf->wlr_body_hash && cf->wlr_body_hash->size > 0 && zone == BODY)
+      if (cf->wlr_body_hash && cf->wlr_body_hash->size > 0 && (zone == BODY || zone == FILE_EXT))
 	b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_body_hash, k, 
 						       (u_char*) name->data, 
 						       name->len); 
@@ -458,7 +475,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 						   req->uri.len);
   else 
     /* search if there is WL on this BODY name */
-    if (cf->wlr_body_hash && cf->wlr_body_hash->size > 0 && zone == BODY)
+    if (cf->wlr_body_hash && cf->wlr_body_hash->size > 0 && (zone == BODY || zone == FILE_EXT))
       b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_body_hash, k, 
 						     (u_char*) req->uri.data, 
 						     req->uri.len); 
@@ -497,7 +514,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 		  "hashing [%V]", &tmp_hashname);
 #endif
     k = ngx_hash_key_lc(tmp_hashname.data, tmp_hashname.len);
-    if (zone == BODY && cf->wlr_body_hash && cf->wlr_body_hash->size > 0)
+    if ((zone == BODY || zone == FILE_EXT) && cf->wlr_body_hash && cf->wlr_body_hash->size > 0)
       b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_body_hash, k, 
 						     (u_char*) tmp_hashname.data, 
 						     tmp_hashname.len);
@@ -608,6 +625,8 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 	strcat(tmp_zone, "HEADERS");
       if (mr[i].url)
 	strcat(tmp_zone, "URL");
+      if (mr[i].file_ext)
+	strcat(tmp_zone, "FILE_EXT");
       if (mr[i].target_name)
 	strcat(tmp_zone, "|NAME");
       
@@ -683,7 +702,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 /*
 ** new rulematch, less arguments ^
 */
-#define whitelist_debug 
+//#define whitelist_debug 
 /* #define whitelist_light_debug */
 /* #define whitelist_heavy_debug */
 
@@ -741,6 +760,9 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
     break;
   case BODY:
     mr->body_var = 1;
+    break;
+  case FILE_EXT:
+    mr->file_ext = 1;
     break;
   default:
     break;
@@ -952,7 +974,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 /*
 ** check variable + name against a set of rules, checking against 'custom' location rules too.
 */
-#define basestr_ruleset_debug
+//#define basestr_ruleset_debug
 
 int 
 ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
@@ -973,7 +995,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		"XX-check check [%V]=[%V] in zone %s", name, value,
 		zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : zone == URL ? "URL" :
-		zone == ARGS ? "ARGS" : "UNKNOWN"); 
+		zone == ARGS ? "ARGS" : zone == FILE_EXT ? "FILE_EXT" : "UNKNOWN"); 
 #endif
   
   if (!rules) {
@@ -1103,6 +1125,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 **	   are partially stored in files, TODO ;)
 */
 //#define post_heavy_debug
+
 //#define dummy_body_parse_debug
 void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx, 
 				       ngx_http_request_t	 *r,
@@ -1182,13 +1205,14 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 			(u_char *) "content-disposition: form-data;", 30)) {
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		    "Unknown content-type: [%s]", src+idx);
+      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
       dummy_error_fatal(ctx, r, "POST data : unknown content-disposition");
-      
       return ;
     }
     idx += 30;
     line_end = ngx_strchr(src+idx, '\n');
     if (!line_end) {
+      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
       dummy_error_fatal(ctx, r, "POST data : malformed boundary line");
       return ;
     }
@@ -1219,6 +1243,7 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
       */
       line_end = ngx_strchr(line_end+1, '\n');
       if (!line_end) {
+	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
 	dummy_error_fatal(ctx, r, "POST data : malformed 'filename' field");
 	return ;
       }
@@ -1228,6 +1253,7 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 	  
     // check that var name is present and not malformed
     if (!varn_start || !varn_end || varn_end <= varn_start) {
+      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
       dummy_error_fatal(ctx, r, "POST data : no 'name' in POST var");
       return ;
     }
@@ -1236,6 +1262,7 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
     // content-disposition: form-data; filename="" name=""
     idx += (u_char *)line_end - (src+idx) + 1;
     if (src[idx] != '\r' || src[idx+1] != '\n') {
+      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
       dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
       return ;
     }
@@ -1244,7 +1271,18 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
     end = NULL;
     while (idx < len) {
       end = ngx_strstr(src+idx, "\r\n--");
+      /* file data can contain \x0 */
+      while (!end) {
+	idx += strlen((const char *)src+idx);
+	if (idx < len - 2) {
+	  idx++;
+	  end = ngx_strstr(src+idx, "\r\n--");
+	}
+	else
+	  break;
+      }
       if (!end) {
+	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
 	dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
 	return ;
       }
@@ -1698,31 +1736,31 @@ ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx,
 }
 
 
-    /*
-    ** This function is called when the body is read.
-    ** Will set-up flags to tell that parsing can be done,
-    ** and then run the core phases again
-    ** (WARNING: check backward compatibility of count--
-    ** with older version of nginx 0.7.x)
-    */
-    //#define payload_handler_debug
-    void 
-      ngx_http_dummy_payload_handler(ngx_http_request_t *r) {
-      ngx_http_request_ctx_t  *ctx;
-      ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
-      ctx->ready = 1;
-      r->count--;
+/*
+** This function is called when the body is read.
+** Will set-up flags to tell that parsing can be done,
+** and then run the core phases again
+** (WARNING: check backward compatibility of count--
+** with older version of nginx 0.7.x)
+*/
+//#define payload_handler_debug
+void 
+ngx_http_dummy_payload_handler(ngx_http_request_t *r) {
+  ngx_http_request_ctx_t  *ctx;
+  ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
+  ctx->ready = 1;
+  r->count--;
 #ifdef payload_handler_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		    "XX-dummy PAYLOAD HANDLER !");
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		"XX-dummy PAYLOAD HANDLER !");
 #endif
-      if (ctx->wait_for_body) {
+  if (ctx->wait_for_body) {
 #ifdef payload_handler_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		      "XX-dummy : AFTER NGX_AGAIN");
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : AFTER NGX_AGAIN");
 #endif
-	ctx->wait_for_body = 0;
-	ngx_http_core_run_phases(r);
-      }
-    }
+    ctx->wait_for_body = 0;
+    ngx_http_core_run_phases(r);
+  }
+}
 

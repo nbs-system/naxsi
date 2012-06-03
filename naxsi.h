@@ -329,9 +329,11 @@ typedef struct
   ngx_flag_t		args_var:1;
   /* matched on URL */
   ngx_flag_t		url:1;
+  /* matched in filename [name] of args*/
+  ngx_flag_t		file_ext:1;
   /* matched within the 'NAME' */
   ngx_flag_t		target_name:1;
-
+  
   ngx_str_t		*name;
   ngx_http_rule_t	*rule;
 } ngx_http_matched_rule_t;

@@ -276,13 +276,15 @@ ngx_http_wlr_merge(ngx_conf_t *cf, ngx_http_whitelist_rule_t *father_wl,
   location index refers to $URL:bla or $ARGS_VAR:bla */
 #define custloc_array(x) ((ngx_http_custom_rule_location_t *) x)
 
+//#define whitelist_heavy_debug
+
 ngx_int_t 
 ngx_http_wlr_identify(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc, 
 		      ngx_http_rule_t *curr, int *zone,
 		      int *uri_idx, int *name_idx) {
   
   uint	i;
-
+  
   /*
     identify global match zones (|ARGS|BODY|HEADERS|URL|FILE_EXT)
    */
@@ -629,7 +631,17 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
     if (ret != NGX_OK)
       {
 	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-			   "naxsi internal error in wlr_identify.");
+			   "Following whitelist doesn't target any zone or is incorrect :");
+	if (name_idx != -1)
+	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist target name : %V", 
+			     &(custloc_array(curr_r->br->custom_locations->elts)[name_idx].target));
+	else
+	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist has no target name.");
+	if (uri_idx != -1)
+	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist target uri : %V", 
+			     &(custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target));
+	else
+	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelists has no target uri.");
 	return (NGX_ERROR);
       }
     /*

@@ -155,7 +155,12 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
     tmp_idx = 0;
     len = str->len;
     while 
-#if defined nginx_version && (nginx_version > 1001011)
+#if defined nginx_version && (nginx_version >= 1003000)
+      (tmp_idx < len && 
+       (match = pcre_exec(rl->br->rx->regex->code, 0, 
+			  (const char *) str->data, str->len, tmp_idx, 0, 
+			  captures, 6)) >= 0)
+#elif defined nginx_version && (nginx_version > 1001011)
       (tmp_idx < len && 
        (match = pcre_exec(rl->br->rx->regex->pcre, 0, 
 			  (const char *) str->data, str->len, tmp_idx, 0, 

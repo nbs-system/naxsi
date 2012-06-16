@@ -811,6 +811,8 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       //redirect : return (NGX_HTTP_OK);
       return (rc);
     }
+    else if (ctx->log)
+      rc = ngx_http_output_forbidden_page(ctx, r);
   }
 #ifdef mechanics_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,

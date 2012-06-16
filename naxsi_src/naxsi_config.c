@@ -143,6 +143,11 @@ dummy_score(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
       rule->allow = 1;
       tmp_ptr += 5;
     }
+    else if (!strcasecmp(tmp_ptr, "LOG")) {
+      rule->log = 1;
+      tmp_ptr += 3;
+    }
+    
     //or maybe you just want to assign a score
     else if ( (tmp_ptr[0] >= '0' && tmp_ptr[0] <= '9') || tmp_ptr[0] == '-') {
       score = atoi((const char *)tmp->data+2);

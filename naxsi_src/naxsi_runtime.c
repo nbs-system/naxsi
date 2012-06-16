@@ -54,7 +54,7 @@ ngx_http_rule_t nx_int__weird_request = {/*type*/ 0, /*whitelist flag*/ 0,
 					 /*log_msg*/ NULL, /*score*/ 0, 
 					 /*sscores*/ NULL,
 					 /*sc_block*/ 0,  /*sc_allow*/ 0, 
-					 /*block*/ 1,  /*allow*/ 0, 
+					 /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
 					 /*lnk_to & from*/ 0, 0,
 					 /*br ptrs*/ NULL};
 
@@ -63,7 +63,7 @@ ngx_http_rule_t nx_int__uncommon_hex_encoding = {/*type*/ 0, /*whitelist flag*/ 
 						 /*log_msg*/ NULL, /*score*/ 0, 
 						 /*sscores*/ NULL,
 						 /*sc_block*/ 1,  /*sc_allow*/ 0, 
-						 /*block*/ 1,  /*allow*/ 0, 
+						 /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
 						 /*lnk_to & from*/ 0, 0,
 						 /*br ptrs*/ NULL};
 
@@ -72,7 +72,7 @@ ngx_http_rule_t nx_int__uncommon_content_type = {/*type*/ 0, /*whitelist flag*/ 
 					   /*log_msg*/ NULL, /*score*/ 0, 
 					   /*sscores*/ NULL,
 					   /*sc_block*/ 1,  /*sc_allow*/ 0, 
-					   /*block*/ 1,  /*allow*/ 0, 
+					   /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
 					   /*lnk_to & from*/ 0, 0,
 					   /*br ptrs*/ NULL};
 
@@ -81,7 +81,7 @@ ngx_http_rule_t nx_int__uncommon_url = {/*type*/ 0, /*whitelist flag*/ 0,
 					/*log_msg*/ NULL, /*score*/ 0, 
 					/*sscores*/ NULL,
 					/*sc_block*/ 1,  /*sc_allow*/ 0, 
-					/*block*/ 1,  /*allow*/ 0, 
+					/*block*/ 1,  /*allow*/ 0, /*log*/ 0,
 					/*lnk_to & from*/ 0, 0,
 					/*br ptrs*/ NULL};
 
@@ -90,7 +90,7 @@ ngx_http_rule_t nx_int__uncommon_post_format = {/*type*/ 0, /*whitelist flag*/ 0
 						/*log_msg*/ NULL, /*score*/ 0, 
 						/*sscores*/ NULL,
 						/*sc_block*/ 1,  /*sc_allow*/ 0, 
-						/*block*/ 1,  /*allow*/ 0, 
+						/*block*/ 1,  /*allow*/ 0, /*log*/ 0,
 						/*lnk_to & from*/ 0, 0,
 						/*br ptrs*/ NULL};
 
@@ -100,7 +100,7 @@ ngx_http_rule_t nx_int__big_request = {/*type*/ 0, /*whitelist flag*/ 0,
 				       /*log_msg*/ NULL, /*score*/ 0, 
 				       /*sscores*/ NULL,
 				       /*sc_block*/ 0,  /*sc_allow*/ 0, 
-				       /*block*/ 1,  /*allow*/ 0, 
+				       /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
 				       /*lnk_to & from*/ 0, 0,
 				       /*br ptrs*/ NULL};
 
@@ -652,6 +652,14 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   }
   denied_args.data = (unsigned char *)fmt;
   denied_args.len = w;
+  
+  if (ctx->log && !ctx->block) {
+    ngx_log_error(NGX_LOG_ERR, r->connection->log, 
+		  0, "NAXSI_FMT: %s", fmt);
+    return (NGX_DECLINED);
+  }
+  
+  
   /* add headers with original url and arguments */
   ngx_table_elt_t	    *h;
   
@@ -836,6 +844,9 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
     ctx->block = 1;
   if (r->allow)
     ctx->allow = 1;
+  if (r->log)
+    ctx->log = 1;
+  
   //}
   
   ngx_http_dummy_update_current_ctx_status(ctx, cf, req);
@@ -1734,6 +1745,8 @@ ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx,
 	      ctx->block = 1;
 	    if (cr[i].allow)
 	      ctx->allow = 1;
+	    if (cr[i].log)
+	      ctx->log = 1;
 	  }
 	}
       }

@@ -248,7 +248,7 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
 ** returns (1) if rule is whitelisted, else (0)
 */
 
-#define whitelist_debug
+//#define whitelist_debug
 /* #define whitelist_heavy_debug */
 
 int

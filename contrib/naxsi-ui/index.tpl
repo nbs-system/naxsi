@@ -55,7 +55,7 @@ document.getElementById('display').innerHTML = "__STATS__";
               <li class="active" id="home"><a href="#" onclick="javascript:DisplayHome()">Home</a></li>
               <li class="inactive" id="Graphics"><a href="/graphs">Graphics</a></li>
               <li class="inactive" id="rules"><a href="/get_rules">Generate Whitelist</a></li>
-              <li class="inactive" id="stats"><a href="#" onclick="javascript:DisplayStats()">Statitics</a></li>
+              <li class="inactive" id="stats"><a href="#" onclick="javascript:DisplayStats()">Statistics</a></li>
               <li class="inactive" id="help"><a href="#" onclick="javascript:DisplayHelp()">Help</a></li>
             </ul>
           </div>

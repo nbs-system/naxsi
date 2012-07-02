@@ -2,64 +2,29 @@ from datetime import datetime
 
 import urlparse
 import pprint
-import MySQLdb
 import hashlib
-import MySQLConnector
+import SQLWrapper
 
 # the signature parser needs its own mysql connection/cursor, 
 # as it makes heavy use of mysql's last_inserted_id()
 class signature_parser:
-    def __init__(self, cursor):
-        self.cursor = cursor
+    def __init__(self, wrapper):
+        self.wrapper = wrapper
         try:
-            self.cursor.execute("SELECT COUNT(*) FROM exception")
+            self.wrapper.execute("SELECT COUNT(*) FROM exception")
         except:
             self.dbcreate()
 
     def dbcreate(self):
         print ("[+] drop and creating new tables")
-        self.cursor.execute("DROP TABLES IF EXISTS rules")
-        self.cursor.execute("CREATE TABLE rules (rule_id integer "
-                            "auto_increment primary key "
-                            ", action TEXT, msg TEXT, rx TEXT, "
-                            "rx_type INT, url TEXT, "
-                            "zone TEXT, arg_name TEXT, INDEX id (rule_id));")
-        
-        self.cursor.execute("DROP TABLES IF EXISTS connections")
-        self.cursor.execute("CREATE TABLE connections (connection_id INTEGER "
-                            "auto_increment primary key, "
-                            "src_peer_id INT, dst_peer_id INT, exception_id "
-                            "INT, capture_id INT, date TIMESTAMP default "
-                            "CURRENT_TIMESTAMP, match_id INT, INDEX id (connection_id, exception_id));")
-        
-        self.cursor.execute("DROP TABLES IF EXISTS peer")
-        self.cursor.execute("CREATE TABLE peer (peer_id INTEGER "
-                            "auto_increment primary key, "
-                            "peer_ip TEXT, peer_host TEXT, peer_tags TEXT, INDEX id (peer_id));")
-                
-        self.cursor.execute("DROP TABLES IF EXISTS exception")
-        self.cursor.execute("CREATE TABLE exception (exception_id integer "
-                            "auto_increment primary key "
-                            ",url TEXT, md5 TEXT, count INT default 1, INDEX id (exception_id));")
-        
-        self.cursor.execute("DROP TABLES IF EXISTS match_zone")
-        self.cursor.execute("CREATE TABLE match_zone (match_id INTEGER "
-                            "auto_increment primary key, exception_id INTEGER, "
-                            "zone TEXT, arg_name TEXT, rule_id INTEGER, INDEX id (match_id, exception_id, rule_id));")
-
-        self.cursor.execute("DROP TABLES IF EXISTS capture")
-        self.cursor.execute("CREATE TABLE capture (capture_id INTEGER "
-                            "auto_increment primary key, http_request TEXT, "
-                            "exception_id INTEGER);")
-
-        self.cursor.execute("DROP TABLES IF EXISTS http_monitor")
-        self.cursor.execute("CREATE TABLE http_monitor (id INTEGER auto_increment primary key, peer_ip TEXT, md5 TEXT)")
+#        self.wrapper.execute("DROP TABLES IF EXISTS rules")
+        self.wrapper.create_all_tables()
 
     def last_id(self):
-        return self.cursor.lastrowid
+        return self.wrapper.getLastId()
 
     def insert(self, fmt, *args):
-        self.cursor.execute(fmt, [args])
+        self.wrapper.execute(fmt, [args])
 
     def create_exception_hash(self, d):
         """
@@ -87,7 +52,7 @@ class signature_parser:
                 break
             if "var_name"+str(i) in d:
                 vn = d.get("var_name"+str(i), "")
-            self.cursor.execute("INSERT INTO match_zone (exception_id, "
+            self.wrapper.execute("INSERT INTO match_zone (exception_id, "
                                 "zone, arg_name, rule_id) "
                                 "VALUES (%s, %s, %s, %s)", 
                                 (str(exception_id), zn, vn, 
@@ -97,7 +62,7 @@ class signature_parser:
     def add_capture(self, exception_id, raw_request, add_capture):
         if add_capture is False:
             return 0
-        self.cursor.execute("INSERT INTO capture (http_request, exception_id)"
+        self.wrapper.execute("INSERT INTO capture (http_request, exception_id)"
                             "VALUES (%s, %s)", (str(raw_request), 
                                                 str(exception_id)))
         capture_id = self.last_id()
@@ -111,95 +76,95 @@ class signature_parser:
         d = dict(urlparse.parse_qsl(sig))
 #        pprint.pprint(d)
         sig_hash = self.create_exception_hash(d)
-        self.cursor.execute("INSERT INTO peer (peer_ip) "
-                            "VALUES (%s)", (d.get("ip", "")))
+        self.wrapper.execute("INSERT INTO peer (peer_ip) "
+                            "VALUES (%s)", (d.get("ip", ""),))
         ip_id = self.last_id()
-        self.cursor.execute("INSERT INTO peer (peer_host) "
-                            "VALUES (%s)", (d.get("server", "")))
+        self.wrapper.execute("INSERT INTO peer (peer_host) "
+                            "VALUES (%s)", (d.get("server", ""),))
         host_id = self.last_id()
-        self.cursor.execute('SELECT 1 FROM exception where md5=%s', (sig_hash))
-        if self.cursor.fetchall():
-            self.cursor.execute("UPDATE exception SET url=%s,md5=%s,count = count + 1 "
+        self.wrapper.execute('SELECT 1 FROM exception where md5=%s', (sig_hash,))
+        if self.wrapper.getResults():
+            self.wrapper.execute("UPDATE exception SET url=%s,md5=%s,count = count + 1 "
                                 "where md5=%s", (d.get("uri", ""), sig_hash, sig_hash))
-            self.cursor.execute("select exception_id from exception where url=%s and md5=%s", (d.get('uri', ''), sig_hash))
-            exception_id = self.cursor.fetchall()[0][0]
+            self.wrapper.execute("select exception_id from exception where url=%s and md5=%s", (d.get('uri', ''), sig_hash))
+            exception_id = self.wrapper.getResults()[0][0]
         else:
-            self.cursor.execute('INSERT INTO exception (url, md5) VALUES (%s, %s)', (d.get('uri', ''), sig_hash))
+            self.wrapper.execute('INSERT INTO exception (url, md5) VALUES (%s, %s)', (d.get('uri', ''), sig_hash))
             exception_id = self.last_id()
-        self.cursor.execute("SELECT 1 FROM http_monitor WHERE peer_ip = %s or md5 = %s", (d.get("ip", ""), sig_hash))
-        if self.cursor.fetchall():    
+        self.wrapper.execute("SELECT 1 FROM http_monitor WHERE peer_ip = %s or md5 = %s", (d.get("ip", ""), sig_hash))
+        if self.wrapper.getResults():    
             add_capture = True
         capture_id = self.add_capture(exception_id, raw_request, add_capture)
 
         connection_id = self.last_id()
         self.add_matchzones(exception_id, d)
         match_id = self.last_id()
-        self.cursor.execute("INSERT INTO connections (src_peer_id, "
+        self.wrapper.execute("INSERT INTO connections (src_peer_id, "
                             "dst_peer_id, exception_id, capture_id, date, match_id)"
                             "VALUES (%s, %s, %s, %s, %s, %s)", (str(ip_id),
                                                         str(host_id), 
                                                         str(exception_id), 
                                                         str(capture_id), datetime.now() if date is None else date, str(match_id)))
-#        self.cursor.execute("UPDATE exception SET md5=%s where "
+#        self.wrapper.execute("UPDATE exception SET md5=%s where "
 #                            "exception_id=%s", (sig_hash, str(exception_id)))
         return (connection_id)
     
 class signature_extractor:
-    def __init__(self, cursor):
-        self.cursor = cursor
+    def __init__(self, wrapper):
+        self.wrapper = wrapper
         try:
-            self.cursor.execute("select 1 from exception")
+            self.wrapper.execute("select 1 from exception")
         except:
             self.create_table()
 
     def create_table(self):
         print ("[+] drop and creating new tables")
-        self.cursor.execute("DROP TABLES IF EXISTS rules")
-        self.cursor.execute("CREATE TABLE rules (rule_id integer "
+        self.wrapper.execute("DROP TABLES IF EXISTS rules;")
+        self.wrapper.execute("CREATE TABLE rules (rule_id integer "
                             "auto_increment primary key "
                             ", action TEXT, msg TEXT, rx TEXT, "
                             "rx_type INT, url TEXT, "
                             "zone TEXT, arg_name TEXT);")
         
-        self.cursor.execute("DROP TABLES IF EXISTS connections")
-        self.cursor.execute("CREATE TABLE connections (connection_id INTEGER "
+        self.wrapper.execute("DROP TABLES IF EXISTS connections")
+        self.wrapper.execute("CREATE TABLE connections (connection_id INTEGER "
                             "auto_increment primary key, "
                             "src_peer_id INT, dst_peer_id INT, exception_id "
                             "INT, capture_id INT, date TIMESTAMP default "
                             "CURRENT_TIMESTAMP);")
         
-        self.cursor.execute("DROP TABLES IF EXISTS peer")
-        self.cursor.execute("CREATE TABLE peer (peer_id INTEGER "
+        self.wrapper.execute("DROP TABLES IF EXISTS peer")
+        self.wrapper.execute("CREATE TABLE peer (peer_id INTEGER "
                             "auto_increment primary key, "
                             "peer_ip TEXT, peer_host TEXT, peer_tags TEXT);")
         
         
-        self.cursor.execute("DROP TABLES IF EXISTS exception")
-        self.cursor.execute("CREATE TABLE exception (exception_id integer "
+        self.wrapper.execute("DROP TABLES IF EXISTS exception")
+        self.wrapper.execute("CREATE TABLE exception (exception_id integer "
                             "auto_increment primary key "
                             ",url TEXT, md5 TEXT, count INT default 1);")
         
-        self.cursor.execute("DROP TABLES IF EXISTS match_zone")
-        self.cursor.execute("CREATE TABLE match_zone (match_id INTEGER "
+        self.wrapper.execute("DROP TABLES IF EXISTS match_zone")
+        self.wrapper.execute("CREATE TABLE match_zone (match_id INTEGER "
                             "auto_increment primary key, exception_id INTEGER, "
                             "zone TEXT, arg_name TEXT, rule_id INTEGER);")
 
-        self.cursor.execute("DROP TABLES IF EXISTS capture")
-        self.cursor.execute("CREATE TABLE capture (capture_id INTEGER "
+        self.wrapper.execute("DROP TABLES IF EXISTS capture")
+        self.wrapper.execute("CREATE TABLE capture (capture_id INTEGER "
                             "auto_increment primary key, http_request TEXT, "
                             "exception_id INTEGER);")
 
-        self.cursor.execute("DROP TABLES IF EXISTS http_monitor")
-        self.cursor.execute("CREATE TABLE http_monitor (id INTEGER auto_increment primary key, peer_ip TEXT, md5 TEXT)")
+        self.wrapper.execute("DROP TABLES IF EXISTS http_monitor")
+        self.wrapper.execute("CREATE TABLE http_monitor (id INTEGER auto_increment primary key, peer_ip TEXT, md5 TEXT)")
 
     def count_per_exception(self, exception_id):
-        self.cursor.execute("select count(DISTINCT srcpeer.peer_ip) as count from "
+        self.wrapper.execute("select count(DISTINCT srcpeer.peer_ip) as count from "
                        "peer "
                        "as srcpeer,  peer as dstpeer, connections where "
                        "connections.src_peer_id = srcpeer.peer_id and "
                        "connections.dst_peer_id = dstpeer.peer_id and "
                        "connections.exception_id = %s", (str(exception_id)))
-        data = self.cursor.fetchone()
+        data = self.wrapper.fetchone()
         if data is None:
             return None
         return (data["count"])
@@ -248,7 +213,7 @@ class signature_extractor:
             self.wls = self.gen_whitelists(d)
 
     def extract_exceptions(self):
-        self.cursor.execute("""select exception.exception_id as id, 
+        self.wrapper.execute("""select exception.exception_id as id, 
 exception.md5 as md5, exception.url as url, exception.count as count, 
 srcpeer.peer_ip as src, dstpeer.peer_host as dst, GROUP_CONCAT("MZ:", 
 match_zone.rule_id, "&", match_zone.zone, "&", match_zone.arg_name, "&" )  
@@ -257,9 +222,9 @@ connections, match_zone)  on (connections.src_peer_id = srcpeer.peer_id and
 connections.dst_peer_id = dstpeer.peer_id and  connections.exception_id = 
 exception.exception_id and  match_zone.exception_id = exception.exception_id) 
 GROUP BY id;""")
-        data = self.cursor.fetchall()
+        data = self.wrapper.getResults()
         pprint.pprint(data)
         return data
 
 if __name__ == '__main__':
-    print 'nope :)'
+    print 'This module is not intended for direct use. Please launch nx_intercept.py or nx_extract.py'

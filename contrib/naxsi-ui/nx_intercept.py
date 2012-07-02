@@ -8,8 +8,7 @@ from nx_parser import signature_parser
 import urllib
 import pprint
 import socket
-import MySQLConnector
-import MySQLdb
+import SQLWrapper
 import getopt
 import sys
 import re
@@ -40,15 +39,16 @@ class InterceptHandler(http.Request):
         return
 
     def background(self, fullstr, sig):
-        self.db = MySQLConnector.MySQLConnector(filename = conf_path).connect()
-        if self.db is None:
-            raise ValueError("Cannot connect to db.")
-        self.cursor = self.db.cursor()
-        if self.cursor is None:
-            raise ValueError("Cannot connect to db.")
-        parser = signature_parser(self.cursor)
+        self.wrapper = SQLWrapper.SQLWrapper(conf_path)
+        self.wrapper.connect()
+#        if self.db is None:
+#            raise ValueError("Cannot connect to db.")
+#        self.cursor = self.db.cursor()
+#        if self.cursor is None:
+#            raise ValueError("Cannot connect to db.")
+        parser = signature_parser(self.wrapper)
         parser.sig_to_db(fullstr, sig)
-        self.db.close()
+#        self.db.close()
 
 class InterceptProtocol(http.HTTPChannel):
     requestFactory = InterceptHandler
@@ -78,37 +78,33 @@ def add_monitoring(arg, conf_path):
         except socket.error:
             print 'ip is not valid ! Nothing will be inserted in db !'
             return
-    db = MySQLConnector.MySQLConnector(conf_path).connect()
-    cursor = db.cursor()
+    wrapper = SQLWrapper.SQLWrapper(conf_path)
+    wrapper.connect()
     if md5 is not None and ip is not None:
-        cursor.execute("INSERT INTO http_monitor (peer_ip, md5) VALUES (%s, %s)", (ip, md5))
+        wrapper.execute("INSERT INTO http_monitor (peer_ip, md5) VALUES (%s, %s)", (ip, md5))
         return
     if md5 is not None:
-        cursor.execute("INSERT INTO http_monitor (md5) VALUES (%s)", (md5))
+        wrapper.execute("INSERT INTO http_monitor (md5) VALUES (%s)", (md5))
         return
     if ip is not None:
-        cursor.execute("INSERT INTO http_monitor (peer_ip) VALUES (%s)", (ip))
+        wrapper.execute("INSERT INTO http_monitor (peer_ip) VALUES (%s)", (ip))
         return
 
 def fill_db(files, conf_path):
 
-    mysqlh = MySQLConnector.MySQLConnector(conf_path)
-    db = mysqlh.connect()
+    wrapper = SQLWrapper.SQLWrapper(conf_path)
+    wrapper.connect()
     sig = ''
 
-    if db is None:
-        raise ValueError('Cannot connect to db')
-    cursor = db.cursor()
-    if cursor is None:
-        raise ValueError('Cannot connect to db')
 
-    if re.match("[a-z0-9]+$", mysqlh.dbname) == False:        
+    if re.match("[a-z0-9]+$", wrapper.dbname) == False:
         print 'bad db name :)'
         exit(-2)
     
-    cursor.execute("DROP DATABASE IF EXISTS %s;" % mysqlh.dbname)
-    cursor.execute("CREATE DATABASE %s;" %  mysqlh.dbname)
-    db.select_db(mysqlh.dbname)
+    wrapper.drop_database()
+    wrapper.create_db()
+    
+    wrapper.select_db(wrapper.dbname)
     
     print "Filling db with %s (TABLES WILL BE DROPPED !)" %  ' '.join(files)
 
@@ -129,10 +125,10 @@ def fill_db(files, conf_path):
                     if request_args:
                         fullstr = request_args['request'][2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
                 if sig != ''  and fullstr != '':
-        #            print "adding %s (%s) " % (sig, fullstr)
-                    parser = signature_parser(cursor)
+                    print "adding %s (%s) " % (sig, fullstr)
+                    parser = signature_parser(wrapper)
                     parser.sig_to_db(fullstr, sig, date=date)
-    db.close()
+#    db.close()
 
 
 if __name__ == '__main__':

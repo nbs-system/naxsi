@@ -58,37 +58,8 @@ class InterceptFactory(http.HTTPFactory):
 
 
 def usage():
-    print 'Usage: python nx_intercept [-h,--help]  [-a,--add-monitoring ip:1.2.3.4|md5:af794f5e532d7a4fa59c49845af7947e] [-q,--quiet] [-l,--log-file /path/to/logfile] [-c, --conf-file naxsi-ui-learning.conf] '
+    print 'Usage: python nx_intercept [-h,--help]  [-q,--quiet] [-l,--log-file /path/to/logfile] [-c, --conf-file naxsi-ui-learning.conf] '
 
-def add_monitoring(arg, conf_path):
-    l = arg.split('|')
-    ip = None
-    md5 = None
-    for i in l:
-        if i.startswith('ip:'):
-            ip = i[3:]
-        elif i.startswith('md5:'):
-            md5 = i[4:]
-    if md5 is not None and len(md5) != 32:
-        print 'md5 is not valid ! Nothing will be inserted in db !'
-        return
-    if ip is not None:
-        try:
-            socket.inet_aton(ip)
-        except socket.error:
-            print 'ip is not valid ! Nothing will be inserted in db !'
-            return
-    wrapper = SQLWrapper.SQLWrapper(conf_path)
-    wrapper.connect()
-    if md5 is not None and ip is not None:
-        wrapper.execute("INSERT INTO http_monitor (peer_ip, md5) VALUES (%s, %s)", (ip, md5))
-        return
-    if md5 is not None:
-        wrapper.execute("INSERT INTO http_monitor (md5) VALUES (%s)", (md5))
-        return
-    if ip is not None:
-        wrapper.execute("INSERT INTO http_monitor (peer_ip) VALUES (%s)", (ip))
-        return
 
 def fill_db(files, conf_path):
 
@@ -133,7 +104,7 @@ def fill_db(files, conf_path):
 
 if __name__ == '__main__':
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'c:ha:l:', ['conf-file', 'help', 'add-monitoring', 'log-file'])
+        opts, args = getopt.getopt(sys.argv[1:], 'c:hl:', ['conf-file', 'help', 'log-file'])
     except getopt.GetoptError, err:
         print str(err)
         usage()

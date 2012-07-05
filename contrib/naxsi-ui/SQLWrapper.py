@@ -49,7 +49,6 @@ class SQLWrapper(object):
         if args is None:
             self.__cursor.execute(query)
         else:
-            print query % args
             if self.dbtype == 'sqlite':
                 query = query.replace('%s', '?') #hmmmm....
             self.__cursor.execute(query, args)
@@ -81,69 +80,20 @@ class SQLWrapper(object):
 
     def select_db(self, dbname):
         if self.dbtype == 'mysql':
-            self.__cursor.select_db(dbname)
+            self.__conn.select_db(dbname)
 
 
     def create_all_tables(self):
         if self.dbtype == 'mysql':
-            self.execute("CREATE TABLE rules (rule_id integer "
-                                 "auto_increment primary key "
-                                 ", action TEXT, msg TEXT, rx TEXT, "
-                                 "rx_type INT, url TEXT, "
-                                 "zone TEXT, arg_name TEXT, INDEX id (rule_id));")
-            self.execute("CREATE TABLE connections (connection_id INTEGER "
-                                 "auto_increment primary key, "
-                                 "src_peer_id INT, dst_peer_id INT, exception_id "
-                                 "INT, capture_id INT, date TIMESTAMP default "
-                                 "CURRENT_TIMESTAMP, match_id INT, INDEX id (connection_id, exception_id, src_peer_id, dst_peer_id));")        
-            self.execute("CREATE TABLE peer (peer_id INTEGER "
-                                 "auto_increment primary key, "
-                                 "peer_ip TEXT, peer_host TEXT, peer_tags TEXT, INDEX id (peer_id));")                
-            self.execute("CREATE TABLE exception (exception_id integer "
-                                 "auto_increment primary key "
-                                 ",url TEXT, md5 TEXT, count INT default 1, INDEX id (exception_id));")
-            self.execute("CREATE TABLE match_zone (match_id INTEGER "
-                                 "auto_increment primary key, exception_id INTEGER, "
-                                 "zone TEXT, arg_name TEXT, rule_id INTEGER, INDEX id (match_id, exception_id, rule_id));")
-            self.execute("CREATE TABLE capture (capture_id INTEGER "
-                                 "auto_increment primary key, http_request TEXT, "
-                                 "exception_id INTEGER);")
-            self.execute("CREATE TABLE http_monitor (id INTEGER auto_increment primary key, peer_ip TEXT, md5 TEXT)")
+            self.execute("CREATE TABLE connections (url_id INTEGER auto_increment, id_exception INTEGER , date TIMESTAMP default CURRENT_TIMESTAMP, peer_ip TEXT, host TEXT, primary key(url_id, id_exception))")
+            self.execute("CREATE TABLE urls (url_id INTEGER auto_increment primary key, url TEXT)")
+            self.execute("CREATE TABLE exceptions (exception_id INTEGER auto_increment, zone TEXT, var_name TEXT, rule_id INTEGER , primary key (exception_id, rule_id))")            
         elif self.dbtype == 'sqlite':
-            self.execute("CREATE TABLE rules (rule_id integer"
-                         " primary key "
-                         ", action TEXT, msg TEXT, rx TEXT, "
-                         "rx_type INT, url TEXT, "
-                         "zone TEXT, arg_name TEXT);")
-            self.execute("CREATE INDEX r_id ON rules (rule_id);")
-            self.execute("CREATE TABLE connections (connection_id INTEGER "
-                         " primary key, "
-                         "src_peer_id INT, dst_peer_id INT, exception_id "
-                         "INT, capture_id INT, date TIMESTAMP default "
-                         "CURRENT_TIMESTAMP, match_id INT);")
-            self.execute("CREATE INDEX conn_id ON connections (connection_id, exception_id, src_peer_id, dst_peer_id)")
-            self.execute("CREATE TABLE peer (peer_id INTEGER "
-                                 " primary key, "
-                                 "peer_ip TEXT, peer_host TEXT, peer_tags TEXT);")
-            self.execute("CREATE INDEX p_id on peer(peer_id)")
-            self.execute("CREATE TABLE exception (exception_id integer "
-                                 "primary key "
-                                 ",url TEXT, md5 TEXT, count INT default 1);")
-            self.execute("CREATE INDEX ex_id on exception (exception_id)")
-            self.execute("CREATE TABLE match_zone (match_id INTEGER "
-                                 "primary key, exception_id INTEGER, "
-                                 "zone TEXT, arg_name TEXT, rule_id INTEGER);")
-            self.execute("CREATE INDEX m_id ON match_zone(match_id, exception_id, rule_id)")
-            self.execute("CREATE TABLE capture (capture_id INTEGER "
-                                 "primary key, http_request TEXT, "
-                                 "exception_id INTEGER);")
-            self.execute("CREATE TABLE http_monitor (id INTEGER  primary key, peer_ip TEXT, md5 TEXT)")
+            self.execute("CREATE TABLE connections (url_id INTEGER, id_exception INTEGER, date TIMESTAMP default CURRENT_TIMESTAMP, peer_ip TEXT, host TEXT, primary key(url_id, id_exception))")
+            self.execute("CREATE TABLE urls (url_id INTEGER primary key, url TEXT)")
+            self.execute("CREATE TABLE exceptions (exception_id INTEGER PRIMARY KEY AUTOINCREMENT, zone TEXT, var_name TEXT, rule_id INTEGER)")
 
 
     def getWhitelist(self):
-        if self.dbtype == 'sqlite':
-            self.execute("""select exception.exception_id as id, exception.md5 as md5, exception.url as url, exception.count as count, GROUP_CONCAT(distinct "mz:" || match_zone.rule_id || ":" || "$" || match_zone.zone ||  "_VAR:" ||  match_zone.arg_name) as match_zones from exception LEFT JOIN match_zone on (match_zone.exception_id = exception.exception_id) GROUP BY id;""")
-            return self.getResults()
-        elif self.dbtype == 'mysql':
-            self.execute("""select exception.exception_id as id, exception.md5 as md5, exception.url as url, exception.count as count, GROUP_CONCAT(distinct "mz:" , match_zone.rule_id , ":" , "$" , match_zone.zone ,  "_VAR:" ,  match_zone.arg_name) as match_zones from exception LEFT JOIN match_zone on (match_zone.exception_id = exception.exception_id) GROUP BY id;""")            
+        self.execute('select e.exception_id as id, e.zone as zone, e.var_name as var_name, e.rule_id as rule_id, u.url as url from exceptions as e join connections as c on (c.id_exception = e.exception_id) join urls as u on (c.url_id = u.url_id)')
         return self.getResults()

@@ -300,8 +300,13 @@ class GenWhitelist(Resource):
                            glob_rules_file)
       ex.gen_basic_rules()
       base_rules, opti_rules = ex.opti_rules_back()
+      opti_rules.sort(lambda a,b: (b['hratio']+(b['pratio']*3)) < (a['hratio']+(a['pratio']*3)))
+      pprint.pprint(opti_rules)
       r = '########### Optimized Rules Suggestion ##################\n'
-      for i in opti_rules:
+      _i = 0
+      while _i < len(opti_rules):
+         i = opti_rules[_i]
+         _i+=1
          r += ("# total_count:"+str(i['hcount'])+" ("+str(i['hratio'])+
                "%), peer_count:"+str(i['pcount'])+" ("+str(i['pratio'])+"%)\n")
          if (i['hratio'] < 5 or i['pratio'] < 5):

@@ -52,10 +52,17 @@ class SQLWrapper(object):
             if self.dbtype == 'sqlite':
                 query = query.replace('%s', '?') #hmmmm....
             self.__cursor.execute(query, args)
+        # if self.dbtype == 'sqlite':
+        #     self.__conn.commit()
+
+    def StartInsert(self):
+        if self.dbtype == 'sqlite':
+            self.__conn.execute("BEGIN")
+
+        pass
+    def StopInsert(self):
         if self.dbtype == 'sqlite':
             self.__conn.commit()
-            
-
 
     def getResults(self):
         return self.__cursor.fetchall()

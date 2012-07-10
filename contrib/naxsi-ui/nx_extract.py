@@ -94,46 +94,59 @@ class rules_extractor(object):
       # more restrictive to less restrictive.
       opti_select_DESC = [
          # select on url+var_name+zone+rule_id
-         ("select  count(*) as ct, e.rule_id, e.zone, e.var_name, u.url, count(distinct c.peer_ip) "
-          "as peer_count from exceptions as e, urls as u, connections as c where c.url_id "
+         ("select  count(*) as ct, e.rule_id, e.zone, e.var_name, u.url, count(distinct c.peer_ip) as peer_count, "
+          "(select count(distinct peer_ip) from connections) as ptot, "
+          "(select count(*) from connections) as tot "
+          "from exceptions as e, urls as u, connections as c where c.url_id "
           "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, e.var_name,"
-          "e.zone, e.rule_id HAVING (ct/5) > ((select count(*) from connections)/100)"),
+          "e.zone, e.rule_id HAVING (ct) > ((select count(*) from connections)/100)"),
          # select on var_name+zone+rule_id (unpredictable URL)
-         ("select  count(*) as ct, e.rule_id, e.zone, e.var_name, '' as url, count(distinct c.peer_ip) as peer_count "
+         ("select  count(*) as ct, e.rule_id, e.zone, e.var_name, '' as url, count(distinct c.peer_ip) as peer_count, "
+          "(select count(distinct peer_ip) from connections) as ptot, "
+          "(select count(*) from connections) as tot "
           "from exceptions as e, urls as u, connections as c where c.url_id = u.url_id and c.id_exception = "
-          "e.exception_id GROUP BY e.var_name,  e.zone, e.rule_id HAVING (ct/5) > "
+          "e.exception_id GROUP BY e.var_name,  e.zone, e.rule_id HAVING (ct) > "
           "((select count(*) from connections)/100)"),
          # select on zone+url+rule_id (unpredictable arg_name)
-         ("select  count(*) as ct, e.rule_id, e.zone, '' as var_name, u.url, count(distinct c.peer_ip) as peer_count "
+         ("select  count(*) as ct, e.rule_id, e.zone, '' as var_name, u.url, count(distinct c.peer_ip) as peer_count, "
+          "(select count(distinct peer_ip) from connections) as ptot, "
+          "(select count(*) from connections) as tot "
           "from exceptions as e, urls as u, connections as c where c.url_id "
           "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, "
-          "e.zone, e.rule_id HAVING (ct/5) > ((select count(*) from connections)/100)"),
+          "e.zone, e.rule_id HAVING (ct) > ((select count(*) from connections)/100)"),
         # select on zone+url+var_name (unpredictable id)
-         ("select  count(*) as ct, 0 as rule_id, e.zone, e.var_name, u.url, count(distinct c.peer_ip) as peer_count "
+         ("select  count(*) as ct, 0 as rule_id, e.zone, e.var_name, u.url, count(distinct c.peer_ip) as peer_count, "
+          "(select count(distinct peer_ip) from connections) as ptot, "
+          "(select count(*) from connections) as tot "
           "from exceptions as e, urls as u, connections as c where c.url_id "
           "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, "
-          "e.zone, e.var_name HAVING (ct/5) > ((select count(*) from connections)/100)")
+          "e.zone, e.var_name HAVING (ct) > ((select count(*) from connections)/100)")
          ]
       
       for req in opti_select_DESC:
          self.wrapper.execute(req)
          res = self.wrapper.getResults()
          for r in res:
+            #r += "# total_count:"+str(i['count'])+" ("+str(round((i['count'] / float(i['total'])) * 100,2))+"% of total) peer_count:"+str(i['peer_count'])+"\n"
             if len(r['var_name']) > 0:
                self.try_append({'url': r['url'], 'rule_id': r['rule_id'], 'zone': r['zone'],  'var_name': r['var_name'], 
-                                'count':  r['ct'],'tag': 'at least 5% of total exceptions',
-                                'peer_count':r['peer_count']})
+                                'hcount':  r['ct'], 'htotal': r['tot'], 'pcount':r['peer_count'], 'ptotal':r['ptot'],
+                                'pratio': round((r['peer_count'] / float(r['ptot'])) * 100,2),
+                                'hratio': round((r['ct'] / float(r['tot'])) * 100,2)
+                                })
             else:
                self.try_append({'url': r['url'], 'rule_id': r['rule_id'], 'zone': r['zone'], 'var_name': '', 
-                                'count': r['ct'],
-                                'tag': 'at least 5% of total exceptions', 'peer_count':r['peer_count']})
+                                'hcount': r['ct'],  'htotal': r['tot'], 'ptotal':r['ptot'],
+                                'pratio': round((r['peer_count'] / float(r['ptot'])) * 100,2),
+                                'hratio': round((r['ct'] / float(r['tot'])) * 100,2),
+                                'pcount':r['peer_count']})
       return self.base_rules, self.final_rules
 
 #returns true if whitelist 'target' is already handled by final_rules
 #does a dummy comparison and compares the counters
    def try_append(self, target, delmatch=False):
       count=0
-      for z in self.final_rules:
+      for z in self.final_rules[:]:
          if len(target['url']) > 0 and len(z['url']) > 0 and target['url'] != z['url']:
             continue
          if target['rule_id'] != 0 and z['rule_id'] != 0 and target['rule_id'] != z['rule_id']:
@@ -145,18 +158,13 @@ class rules_extractor(object):
          if delmatch is True:
             self.final_rules.remove(z)
          else:
-            print "target matched vs :",
-            pprint.pprint(z)
-            count += int(z['count'])
-      if target['count'] > count:
-         if delmatch is True:
-            return
+            count += int(z['hcount'])
+      if delmatch is True:
+         return
+      if target['hcount'] > count:
          self.try_append(target, True)
          self.final_rules.append(target)
-         print "+ (actual:"+str(count)+" vs target:"+str(target['count'])+") Inserting new rule : ",
-         pprint.pprint(target)
          return
-      print "[skip] (actual:"+str(count)+" vs target:"+str(target['count'])+")"
 
    def generate_stats(self):
       stats = ""
@@ -294,7 +302,10 @@ class GenWhitelist(Resource):
       base_rules, opti_rules = ex.opti_rules_back()
       r = '########### Optimized Rules Suggestion ##################\n'
       for i in opti_rules:
-         r += "# total_count:"+str(i['count'])+" peer_count:"+str(i['peer_count'])+" | "+i['tag']+"\n"
+         r += ("# total_count:"+str(i['hcount'])+" ("+str(i['hratio'])+
+               "%), peer_count:"+str(i['pcount'])+" ("+str(i['pratio'])+"%)\n")
+         if (i['hratio'] < 5 or i['pratio'] < 5):
+            r += '#'
          r += 'BasicRule wl:' + str(i['rule_id']) + ' "mz:'
          if i['url'] is not None and len(i['url']) > 0:
             r += '$URL:' + i['url']

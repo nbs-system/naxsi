@@ -82,7 +82,7 @@ def fill_db(files, conf_path):
     print "Filling db with %s (TABLES WILL BE DROPPED !)" %  ' '.join(files)
 #    parser = signature_parser(wrapper)
     parser = signature_parser(wrapper)
-
+    parser.wrapper.StartInsert()
     for filename in files:
         with open(filename, 'r') as fd:
             for line in fd:
@@ -96,15 +96,11 @@ def fill_db(files, conf_path):
                     for i in l:
                         s = i.split(':')
                         request_args[s[0]] = urllib.unquote(''.join(s[1:]))
-        #            print 'args are ', request_args
                     if request_args:
                         fullstr = request_args['request'][2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
                 if sig != ''  and fullstr != '':
                     parser.sig_to_db(fullstr, sig, date=date)
-                    
-                    print "."
-#                    parser.sig_to_db(fullstr, sig, date=date)
-#    db.close()
+    parser.wrapper.StartInsert()
 
 
 if __name__ == '__main__':

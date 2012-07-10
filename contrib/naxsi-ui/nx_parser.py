@@ -51,28 +51,21 @@ class signature_parser:
         associated connection_id.
         """
         d = dict(urlparse.parse_qsl(sig))
+        if not d.has_key('server'):
+            d['server'] = ''
+        if not d.has_key('uri'):
+            d['uri'] = ''
         # pprint.pprint(d)
         # pprint.pprint(raw_request)
         
-        self.wrapper.execute("SELECT url_id from urls where url = %s", (d['uri'],))
+#        self.wrapper.execute("SELECT url_id from urls where url = %s", (d['uri'],))
+ #       self.wrapper.StartInsert()
         url_id = self.wrapper.getResults()
         if (len(url_id) == 0):
             self.wrapper.execute("INSERT INTO urls (url) VALUES (%s)", (d['uri'],))
             url_id = self.wrapper.getLastId()
         else:
             url_id = url_id[0]['url_id']
-#        print "id is "+str(url_id)
-
-
-# exceptions sur une meme url
-#sqlite> select *, count(*) as c from connections  GROUP BY url_id HAVING c > 1;
-# exceptions par un meme peer
-#sqlite> select *, count(*) as c from connections  GROUP BY peer_ip HAVING c > 1;
-# exceptions sur la meme rule
-#select count(*), * from exceptions group by rule_id;
-# exceptions sur le meme zone+arg_name
-
-
         for i in itertools.count():
             zn = ''
             vn = ''
@@ -88,6 +81,7 @@ class signature_parser:
             self.wrapper.execute('INSERT INTO exceptions (zone, var_name, rule_id) VALUES (%s,%s,%s)', (zn, vn, rn))
             exception_id  = self.wrapper.getLastId()
             self.wrapper.execute('INSERT INTO connections (peer_ip, host, url_id, id_exception,date) VALUES (%s,%s,%s,%s,%s)', (d['ip'], d['server'], str(url_id), str(exception_id), date))
+  #      self.wrapper.StopInsert()
                             
 if __name__ == '__main__':
     print 'This module is not intended for direct use. Please launch nx_intercept.py or nx_extract.py'

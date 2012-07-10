@@ -66,26 +66,9 @@ class rules_extractor(object):
                 exception_id=None):
 
      tmp_rules = []
-     self.rules_list = self.wrapper.getWhitelist()
-     
+     #self.rules_list = self.wrapper.getWhitelist()     
      self.base_rules = self.rules_list[:]
-#      for i in tmp_rules:
-#          if i['match_zones'] is None:
-#             continue
-#          for j in i['match_zones'].split(','):
-#             if len(j.split(':')) < 2:
-#                continue
-#             da_dict = {}
-#             da_dict['url'] = i['url']
-#             da_dict['arg'] = ':'.join(j.split(':')[2:])            
-#             # fix exception of URL
-#             da_dict['arg'] = da_dict['arg'].replace("$URL_VAR:", "URL")
-#             da_dict['id'] = j.split(':')[1]
-#             da_dict['count'] = i['count']
-# #            da_dict['cnt_peer'] = i['cnt_peer']
-#             if da_dict not in self.rules_list:
-#                self.rules_list.append(da_dict)
-#      self.base_rules = self.rules_list[:]
+#     pprint.pprint(self.base_rules)
 
    def transform_to_dict(self, l):
       d = {}
@@ -107,114 +90,74 @@ class rules_extractor(object):
 
 
    def opti_rules_back(self):
-     #   lr = len(self.rules_list)
-     #   i = 0
-     #   while i < lr:
-     #       matching = []
-     #       if (len(self.rules_list[i]['arg'].split(':')) > 1):
-     #           arg_type, arg_name = tuple(self.rules_list[i]['arg'].split(':'))
-     #       else:
-     #        # Rules targeting URL zone
-     #           if self.rules_list[i]['arg'] == "URL":
-     #               arg_name = ""
-     #               arg_type = "URL"
-     #        # Internal rules have small IDs
-     #           elif self.rules_list[i]['id'] < 10:
-     #               arg_name = ""
-     #               arg_type = ""
-     #       id = self.rules_list[i]['id']
-     #       url = self.rules_list[i]['url']
-     #       matching = filter(lambda l: (l['arg'] == arg_type + ':' + arg_name) and id == l['id'] , self.rules_list)
-     #       if len(matching) >= self.page_hit:
-     #        #whitelist the ids on every url with arg_name and arg_type -> BasicRule wl:id "mz:argtype:argname"
-     #           self.final_rules.append({'url': None, 'id': id, 'arg': arg_type + ':' + arg_name})
-     #           for bla in matching:
-     #               self.rules_list.remove(bla)
-     #           lr -= len(matching)
-     #           i = 0
-     #           print "*) "+str(len(matching))+" hits for same mz:"+arg_type+':'+arg_name+" and id:"+str(id)
-     #           print "removed "+str(len(matching))+" items from biglist, now :"+str(len(self.rules_list))
-     #           continue
-     #       matching = filter(lambda l: url == l['url'] and l['arg'] == arg_type + ':' + arg_name, self.rules_list)
-     #       if len(matching) >= self.rules_hit:
-     #        #whitelist all id on url with arg_name and arg_type -> BasicRule wl:0 "mz:$url:xxx|argtype:argname"
-     #           self.final_rules.append({'url': url, 'id': str(0), 'arg': arg_type + ':' + arg_name})
-     #           print "about to del "+str(len(matching))+" items from biglist, now :"+str(len(self.rules_list))
-     #           for bla in matching:
-     #               self.rules_list.remove(bla)
-     #           lr -= len(matching)
-     #           i = 0
-     #           print "*) "+str(len(matching))+" hits for same mz:"+str(url)+'|'+str(arg_type)+':'+str(arg_name)+" and id:"+str(id)
-     #           print "removed "+str(len(matching))+" items from biglist, now :"+str(len(self.rules_list))
-     #           print " current LR:"+str(lr)
-     #           continue
-     #       i += 1
-     #   if self.rules_list == self.final_rules:
-     #       return self.base_rules, self.final_rules
-     #  #append rules that cant be optimized
-     #   self.final_rules += self.rules_list
-     #  #remove duplicate
-     #   tmp_list = []
-     #   for i in self.final_rules:
-     #       if i not in tmp_list:
-     #           tmp_list.append(i)
-     #   self.final_rules = tmp_list
-     # #try to reoptimize
-     #   self.rules_list = self.final_rules
-       #   self.opti_rules_back()
-       return self.base_rules, self.final_rules
-
-
-#       url_dict = {}
+      # rules of requests extracting optimized whitelists, from 
+      # more restrictive to less restrictive.
+      opti_select_DESC = [
+         # select on url+var_name+zone+rule_id
+         ("select  count(*) as ct, e.rule_id, e.zone, e.var_name, u.url, count(distinct c.peer_ip) "
+          "as peer_count from exceptions as e, urls as u, connections as c where c.url_id "
+          "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, e.var_name,"
+          "e.zone, e.rule_id HAVING (ct/5) > ((select count(*) from connections)/100)"),
+         # select on var_name+zone+rule_id (unpredictable URL)
+         ("select  count(*) as ct, e.rule_id, e.zone, e.var_name, '' as url, count(distinct c.peer_ip) as peer_count "
+          "from exceptions as e, urls as u, connections as c where c.url_id = u.url_id and c.id_exception = "
+          "e.exception_id GROUP BY e.var_name,  e.zone, e.rule_id HAVING (ct/5) > "
+          "((select count(*) from connections)/100)"),
+         # select on zone+url+rule_id (unpredictable arg_name)
+         ("select  count(*) as ct, e.rule_id, e.zone, '' as var_name, u.url, count(distinct c.peer_ip) as peer_count "
+          "from exceptions as e, urls as u, connections as c where c.url_id "
+          "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, "
+          "e.zone, e.rule_id HAVING (ct/5) > ((select count(*) from connections)/100)"),
+        # select on zone+url+var_name (unpredictable id)
+         ("select  count(*) as ct, 0 as rule_id, e.zone, e.var_name, u.url, count(distinct c.peer_ip) as peer_count "
+          "from exceptions as e, urls as u, connections as c where c.url_id "
+          "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, "
+          "e.zone, e.var_name HAVING (ct/5) > ((select count(*) from connections)/100)")
+         ]
       
-#       # if more than 10 rules are triggered on the same url and the same args -> BasicRule wl:0 "mz:$URL:urlname|argtype:argname"
-#       for pos, content in enumerate(self.rules_list):
-#          #we build a dict with url as key and a list of tuple as value ([(argtype:name, rule_id), ....])
-#          key  = content['url']
-#          if not url_dict.has_key(key):
-#             url_dict[key] = []
-#          url_dict[key].append((self.rules_list[pos]['arg'], self.rules_list[pos]['id']))
+      for req in opti_select_DESC:
+         self.wrapper.execute(req)
+         res = self.wrapper.getResults()
+         for r in res:
+            if len(r['var_name']) > 0:
+               self.try_append({'url': r['url'], 'rule_id': r['rule_id'], 'zone': r['zone'],  'var_name': r['var_name'], 
+                                'count':  r['ct'],'tag': 'at least 5% of total exceptions',
+                                'peer_count':r['peer_count']})
+            else:
+               self.try_append({'url': r['url'], 'rule_id': r['rule_id'], 'zone': r['zone'], 'var_name': '', 
+                                'count': r['ct'],
+                                'tag': 'at least 5% of total exceptions', 'peer_count':r['peer_count']})
+      return self.base_rules, self.final_rules
 
-#       for url in url_dict:
-#          d = self.transform_to_dict(url_dict[url])
-#          for arg in d:
-#             if len(d[arg]) >= self.rules_hit:
-#                #we will whitelist all id on this url and this arg
-#                self.final_rules.append({'id': '0', 'url': url, 'arg': arg})
-#                #remove the match in base_rule
-#                for id in d[arg]:
-#                   self.base_rules.pop(self.get_partial_match_dict(self.base_rules, {'arg': arg, 'url': url, 'id': id}))
+#returns true if whitelist 'target' is already handled by final_rules
+#does a dummy comparison and compares the counters
+   def try_append(self, target, delmatch=False):
+      count=0
+      for z in self.final_rules:
+         if len(target['url']) > 0 and len(z['url']) > 0 and target['url'] != z['url']:
+            continue
+         if target['rule_id'] != 0 and z['rule_id'] != 0 and target['rule_id'] != z['rule_id']:
+            continue
+         if len(target['zone']) > 0 and len(z['zone']) > 0 and target['zone'] != z['zone']:
+            continue
+         if len(target['var_name']) > 0 and len(z['var_name']) > 0 and target['var_name'] != z['var_name']:
+            continue
+         if delmatch is True:
+            self.final_rules.remove(z)
+         else:
+            print "target matched vs :",
+            pprint.pprint(z)
+            count += int(z['count'])
+      if target['count'] > count:
+         if delmatch is True:
+            return
+         self.try_append(target, True)
+         self.final_rules.append(target)
+         print "+ (actual:"+str(count)+" vs target:"+str(target['count'])+") Inserting new rule : ",
+         pprint.pprint(target)
+         return
+      print "[skip] (actual:"+str(count)+" vs target:"+str(target['count'])+")"
 
-#       #if more than 10 pages trigerred the same exception on the same arg -> BasicRule wl:ruleid "mz:argtype:argname"               
-#       id_dict = {}
-#       for pos, content in enumerate(self.rules_list):
-#          #we build a dict with url as key and a list of tuple as value ([(argtype:name, rule_id), ....])
-#          key  = content['id']
-#          if not id_dict.has_key(key):
-#             id_dict[key] = []
-#          id_dict[key].append((self.rules_list[pos]['arg'], self.rules_list[pos]['url']))
-
-
-#       for id in id_dict:
-#           print id_dict[id]
-#           d = self.transform_to_dict(id_dict[id])
-#           for url in d:
-#              if len(d[url]) >= self.rules_hit:
-# #               we will whitelist all id on this url and this arg
-#                  self.final_rules.append({'id': id, 'url': url, 'arg': arg})
-#              remove the match in base_rule
-#                 for id in d[url]:
-#                     print arg, url, id
-#                     self.base_rules.pop(self.get_partial_match_dict(self.base_rules, {'arg': arg, 'url': url, 'id': id}))
-
-
-#      pprint.pprint(url_dict)
-#      pprint.pprint(self.base_rules)
-#      print 'base_rule : ', len(self.base_rules), ' rules_list ', len(self.rules_list)
-      
-#      self.final_rules.extend(self.base_rules)
-#      return self.base_rules, self.final_rules
-                  
    def generate_stats(self):
       stats = ""
       self.wrapper.execute("select count(distinct exception_id) as uniq_exception from exceptions")
@@ -349,32 +292,21 @@ class GenWhitelist(Resource):
                            glob_rules_file)
       ex.gen_basic_rules()
       base_rules, opti_rules = ex.opti_rules_back()
-      r = '########### Rules Before Optimisation ##################\n'
-      
-      for i in base_rules:
-#         r += '#%s hits on rule %s (%s) on url %s from ? different peers\n' % (i['count'], i['id'], 
-#                                                                                ex.core_msg.get(i['id'], 
-#                                                                                                'Unknown id. Check the path to the core rules file and/or the content.'), 
- #                                                                               i['url'])
-         r += '#BasicRule wl:' + str(i['rule_id']) + ' "mz:$URL:' + i['url']
-         r += '|$' + i['zone'] + '_VAR' + ':' + i['var_name'] + ('|NAME' if '|NAME' in i['zone'] else '')
-         # if '|NAME' in i['arg']:
-         #     i['arg'] = i['arg'].split('|')[0] + '_VAR:' +  i['arg'].split('|')[1].split(':')[1] + '|NAME'
-         # if i['arg'] is not None and len(i['arg']) > 0:
-         #    r += '|' + i['arg']
-         r +=  '";\n'
-      r += '########### End Of Rules Before Optimisation ###########\n'
-      return r
+      r = '########### Optimized Rules Suggestion ##################\n'
       for i in opti_rules:
-         r += 'BasicRule wl:' + i['rule_id'] + ' "mz:'
+         r += "# total_count:"+str(i['count'])+" peer_count:"+str(i['peer_count'])+" | "+i['tag']+"\n"
+         r += 'BasicRule wl:' + str(i['rule_id']) + ' "mz:'
          if i['url'] is not None and len(i['url']) > 0:
             r += '$URL:' + i['url']
-         if i['arg'] is not None and len(i['arg']) > 0:
-            if i['url'] is not None and len(i['url']):
-               r += '|'+i['arg']
-            else:
-               r += i['arg']
-            r += '";\n'      
+         if i['zone'] is not None and len(i['zone']) > 0:
+            if i['url']:
+               r += '|'
+            r += i['zone']
+         if i['var_name'] is not None and len(i['var_name']) > 0:
+            # oooh, that must be bad.
+            r = r[:-len(i['zone'])]+"$"+r[-len(i['zone']):]
+            r += "_VAR:"+i['var_name']
+         r += '";\n'      
       return r
 
 class HTTPRealm(object):

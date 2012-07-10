@@ -36,6 +36,7 @@ class signature_parser:
                 break
             if "var_name"+str(i) in d:
                 vn = d.get("var_name"+str(i), "")
+
             self.wrapper.execute("INSERT INTO match_zone (exception_id, "
                                 "zone, arg_name, rule_id) "
                                 "VALUES (%s, %s, %s, %s)", 
@@ -50,10 +51,28 @@ class signature_parser:
         associated connection_id.
         """
         d = dict(urlparse.parse_qsl(sig))
-        pprint.pprint(d)
-        pprint.pprint(raw_request)
-        self.wrapper.execute("INSERT INTO urls (url) VALUES (%s)", (d['uri'],))
-        url_id = self.wrapper.getLastId()
+        # pprint.pprint(d)
+        # pprint.pprint(raw_request)
+        
+        self.wrapper.execute("SELECT url_id from urls where url = %s", (d['uri'],))
+        url_id = self.wrapper.getResults()
+        if (len(url_id) == 0):
+            self.wrapper.execute("INSERT INTO urls (url) VALUES (%s)", (d['uri'],))
+            url_id = self.wrapper.getLastId()
+        else:
+            url_id = url_id[0]['url_id']
+#        print "id is "+str(url_id)
+
+
+# exceptions sur une meme url
+#sqlite> select *, count(*) as c from connections  GROUP BY url_id HAVING c > 1;
+# exceptions par un meme peer
+#sqlite> select *, count(*) as c from connections  GROUP BY peer_ip HAVING c > 1;
+# exceptions sur la meme rule
+#select count(*), * from exceptions group by rule_id;
+# exceptions sur le meme zone+arg_name
+
+
         for i in itertools.count():
             zn = ''
             vn = ''

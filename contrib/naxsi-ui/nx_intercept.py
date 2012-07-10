@@ -61,6 +61,7 @@ def usage():
     print 'Usage: python nx_intercept [-h,--help]  [-q,--quiet] [-l,--log-file /path/to/logfile] [-c, --conf-file naxsi-ui-learning.conf] '
 
 
+
 def fill_db(files, conf_path):
 
     wrapper = SQLWrapper.SQLWrapper(conf_path)
@@ -76,8 +77,11 @@ def fill_db(files, conf_path):
     wrapper.create_db()
     
     wrapper.select_db(wrapper.dbname)
+    #wrapper.exec()
     
     print "Filling db with %s (TABLES WILL BE DROPPED !)" %  ' '.join(files)
+#    parser = signature_parser(wrapper)
+    parser = signature_parser(wrapper)
 
     for filename in files:
         with open(filename, 'r') as fd:
@@ -96,9 +100,10 @@ def fill_db(files, conf_path):
                     if request_args:
                         fullstr = request_args['request'][2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
                 if sig != ''  and fullstr != '':
-                    print "adding %s (%s) " % (sig, fullstr)
-                    parser = signature_parser(wrapper)
                     parser.sig_to_db(fullstr, sig, date=date)
+                    
+                    print "."
+#                    parser.sig_to_db(fullstr, sig, date=date)
 #    db.close()
 
 

@@ -158,6 +158,7 @@ document.getElementById('display').innerHTML = "Welcome to the NAXSI Web Interfa
               <li id="days" ><a href="#" onclick="javascript:DisplayDays()">Hit Per Days</a></li>
               <li id="repartition" ><a href="#"  onclick="javascript:DisplayRepartition()">Hits Repartition</a></li>
               <li id="top10" ><a href="#" onclick="javascript:DisplayTop()">Top 10</a></li>
+              <li id="worldmap" ><a href="/map">World Map</a></li>
             </ul>
           </div>
         </div>

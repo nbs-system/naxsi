@@ -182,7 +182,7 @@ class NaxsiUI(Resource):
       self.putChild('bootstrap', File('./bootstrap'))
       self.putChild('js', File('./js'))
       #make the correspondance between the path and the object to call
-      self.page_handler = {'/' : Index, '/graphs': GraphView, '/get_rules': GenWhitelist}
+      self.page_handler = {'/' : Index, '/graphs': GraphView, '/get_rules': GenWhitelist, '/map': WootMap}
 
    def getChild(self, name, request):
       handler = self.page_handler.get(request.path)
@@ -208,9 +208,95 @@ class Index(Resource):
       return helpmsg
 
 
+class WootMap(Resource):
+   isLeaf = True
+   def __init__(self):
+      self.has_geoip = False
+      try:
+         import GeoIP
+         self.has_geoip = True
+      except:
+         print "No GeoIP module, no map"
+         return
+      Resource.__init__(self)
+      self.ex = rules_extractor(0,0, None)
+      self.gi = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
+   def render_GET(self, request):
+      if self.has_geoip is False:
+         return "No GeoIP module/database installed."
+      render = """<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map_canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+      src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBbKJnS1H3sZ3EAAlNTtzZogOH43O2NcMo&sensor=false">
+    </script><script>"""
+      self.ex.wrapper.execute('select peer_ip as p, count(*) as c from connections group by peer_ip')
+      ips = self.ex.wrapper.getResults()
+      fd = open("country2coords.txt", "r")
+      bycn = {}
+      for ip in ips:
+         country = self.gi.country_code_by_addr(ip['p'])
+         if country is None or len(country) < 2:
+            country = "CN"
+         if country not in bycn:
+            bycn[country] = {'count': int(ip['c']), 'coords': ''}
+            fd.seek(0)
+            for cn in fd:
+               if country in cn:
+                  bycn[country]['coords'] = cn[len(country)+1:-1]
+                  break
+            if len(bycn[country]['coords']) < 1:
+               bycn[country]['coords'] = "37.090240,-95.7128910"
+         else:
+            bycn[country]['count'] += ip['c']
+            pprint.pprint(bycn[country])
+      render += "var citymap = {};\n"
+      for cn in bycn.keys():
+         render += ("citymap['"+cn+"'] = {\n"
+                    "center: new google.maps.LatLng("+bycn[cn]['coords']+"),\n"
+                    "population: "+str(bycn[cn]['count'])+"\n"
+                    "};\n")
+
+      render += ("var cityCircle;\n"
+                 "function initialize() {\n"
+                 "var mapOptions = {\n"
+                 "zoom: 2,\n"
+                 "center: new google.maps.LatLng(46.2276380,2.2137490),\n"
+                 "mapTypeId: google.maps.MapTypeId.TERRAIN\n"
+                 "};\n")
+      render += ('var map = new google.maps.Map(document.getElementById("map_canvas"),'
+                 'mapOptions);\n'
+                 'for (var city in citymap) {\n'
+                 'var populationOptions = {\n'
+                 'strokeColor: "#FF0000",\n'
+                 'strokeOpacity: 0.8,\n'
+                 'strokeWeight: 2,\n'
+                 'fillColor: "#FF0000",\n'
+                 'fillOpacity: 0.35,\n'
+                 'map: map,\n'
+                 'center: citymap[city].center,\n'
+                 'radius: citymap[city].population * 100\n'
+                 '};\n'
+                 'cityCircle = new google.maps.Circle(populationOptions);\n'
+                 '}\n'
+                 '}\n')
+      render += ('</script>\n'
+                 '</head>\n'
+                 '<body onload="initialize()">\n'
+                 '<div id="map_canvas"></div>\n'
+                 '</body>\n'
+                 '</html>\n')
+      return render
+   
 class GraphView(Resource):
    isLeaf = True
-
+   
    def __init__(self):
       Resource.__init__(self)
       self.ex = rules_extractor(0,0, None)

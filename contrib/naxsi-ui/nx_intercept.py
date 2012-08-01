@@ -29,8 +29,11 @@ class InterceptHandler(http.Request):
         args['Cookie'] = self.getHeader('Cookie')
         args['Referer'] = self.getHeader('Referer')
         sig = self.getHeader("naxsi_sig")
+        print self
         if sig is None:
-            print "no naxsi_sig header."
+            print "no naxsi_sig header ?"
+            print self
+            self.finish()
             return
         url = sig.split('&uri=')[1].split('&')[0]
         fullstr = method + ' ' + url + ' ' + ','.join([x + ' : ' + str(args.get(x, 'No Value !')) for x in args.keys()])

@@ -96,8 +96,7 @@ def fill_db(files, conf_path):
                     for i in l:
                         s = i.split(':')
                         request_args[s[0]] = urllib.unquote(''.join(s[1:]))
-                    if request_args:
-                        fullstr = request_args['request'][2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
+                    fullstr = request_args.get('request', 'None')[2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
                 if sig != ''  and fullstr != '':
                     parser.sig_to_db(fullstr, sig, date=date)
     parser.wrapper.StartInsert()

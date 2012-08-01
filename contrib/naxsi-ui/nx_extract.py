@@ -59,6 +59,7 @@ class rules_extractor(object):
                self.core_msg[i[pos + 3:i[pos + 3].find(';') - 1]] = i[pos_msg + 4:][:i[pos_msg + 4:].find('"')]
          fd.close()
       except:
+         print ("Unable to open rules file.")
          pass
 
    def gen_basic_rules(self,url=None, srcip=None, dsthost=None,
@@ -99,28 +100,28 @@ class rules_extractor(object):
           "(select count(*) from connections) as tot "
           "from exceptions as e, urls as u, connections as c where c.url_id "
           "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, e.var_name,"
-          "e.zone, e.rule_id HAVING (ct) > ((select count(*) from connections)/100)"),
+          "e.zone, e.rule_id HAVING (ct) > ((select count(*) from connections)/1000)"),
          # select on var_name+zone+rule_id (unpredictable URL)
          ("select  count(*) as ct, e.rule_id, e.zone, e.var_name, '' as url, count(distinct c.peer_ip) as peer_count, "
           "(select count(distinct peer_ip) from connections) as ptot, "
           "(select count(*) from connections) as tot "
           "from exceptions as e, urls as u, connections as c where c.url_id = u.url_id and c.id_exception = "
           "e.exception_id GROUP BY e.var_name,  e.zone, e.rule_id HAVING (ct) > "
-          "((select count(*) from connections)/100)"),
+          "((select count(*) from connections)/1000)"),
          # select on zone+url+rule_id (unpredictable arg_name)
          ("select  count(*) as ct, e.rule_id, e.zone, '' as var_name, u.url, count(distinct c.peer_ip) as peer_count, "
           "(select count(distinct peer_ip) from connections) as ptot, "
           "(select count(*) from connections) as tot "
           "from exceptions as e, urls as u, connections as c where c.url_id "
           "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, "
-          "e.zone, e.rule_id HAVING (ct) > ((select count(*) from connections)/100)"),
+          "e.zone, e.rule_id HAVING (ct) > ((select count(*) from connections)/1000)"),
         # select on zone+url+var_name (unpredictable id)
          ("select  count(*) as ct, 0 as rule_id, e.zone, e.var_name, u.url, count(distinct c.peer_ip) as peer_count, "
           "(select count(distinct peer_ip) from connections) as ptot, "
           "(select count(*) from connections) as tot "
           "from exceptions as e, urls as u, connections as c where c.url_id "
           "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, "
-          "e.zone, e.var_name HAVING (ct) > ((select count(*) from connections)/100)")
+          "e.zone, e.var_name HAVING (ct) > ((select count(*) from connections)/1000)")
          ]
       
       for req in opti_select_DESC:
@@ -338,7 +339,7 @@ class GraphView(Resource):
 
 class GenWhitelist(Resource):
 
-   def render_GET(self, request):
+    def render_GET(self, request):
       request.setHeader('content-type', 'text/plain')
       ex = rules_extractor(int(request.args.get('page_hit', ['10'])[0]), 
                            int(request.args.get('rules_hit', ['10'])[0]), 
@@ -348,13 +349,18 @@ class GenWhitelist(Resource):
       opti_rules.sort(lambda a,b: (b['hratio']+(b['pratio']*3)) < (a['hratio']+(a['pratio']*3)))
       pprint.pprint(opti_rules)
       r = '########### Optimized Rules Suggestion ##################\n'
-      _i = 0
-      while _i < len(opti_rules):
+      if not len(opti_rules):
+         r+= "#No rules to be generated\n"
+         return
+      opti_rules.sort(key=lambda k: (k['hratio'], k['pratio']))
+      _i = len(opti_rules)-1
+      while _i >= 0:
          i = opti_rules[_i]
-         _i+=1
+         _i = _i - 1
          r += ("# total_count:"+str(i['hcount'])+" ("+str(i['hratio'])+
-               "%), peer_count:"+str(i['pcount'])+" ("+str(i['pratio'])+"%)\n")
-         if (i['hratio'] < 5 or i['pratio'] < 5):
+               "%), peer_count:"+str(i['pcount'])+" ("+str(i['pratio'])+"%)")
+         r += " | "+ex.core_msg.get(str(i['rule_id']), "?")+"\n"
+         if (i['hratio'] < 5 and i['pratio'] < 5) or (i['pratio'] < 5):
             r += '#'
          r += 'BasicRule wl:' + str(i['rule_id']) + ' "mz:'
          if i['url'] is not None and len(i['url']) > 0:

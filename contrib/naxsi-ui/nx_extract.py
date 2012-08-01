@@ -224,18 +224,7 @@ class WootMap(Resource):
    def render_GET(self, request):
       if self.has_geoip is False:
          return "No GeoIP module/database installed."
-      render = """<!DOCTYPE html>
-<html>
-  <head>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-    <style type="text/css">
-      html { height: 100% }
-      body { height: 100%; margin: 0; padding: 0 }
-      #map_canvas { height: 100% }
-    </style>
-    <script type="text/javascript"
-      src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBbKJnS1H3sZ3EAAlNTtzZogOH43O2NcMo&sensor=false">
-    </script><script>"""
+      render = open('map.tpl').read()
       self.ex.wrapper.execute('select peer_ip as p, count(*) as c from connections group by peer_ip')
       ips = self.ex.wrapper.getResults()
       fd = open("country2coords.txt", "r")
@@ -256,42 +245,12 @@ class WootMap(Resource):
          else:
             bycn[country]['count'] += ip['c']
             pprint.pprint(bycn[country])
-      render += "var citymap = {};\n"
+      base_array = 'citymap["__CN__"] = {center: new google.maps.LatLng(__COORDS__), population: __COUNT__};\n'
+      citymap = ''
       for cn in bycn.keys():
-         render += ("citymap['"+cn+"'] = {\n"
-                    "center: new google.maps.LatLng("+bycn[cn]['coords']+"),\n"
-                    "population: "+str(bycn[cn]['count'])+"\n"
-                    "};\n")
-
-      render += ("var cityCircle;\n"
-                 "function initialize() {\n"
-                 "var mapOptions = {\n"
-                 "zoom: 2,\n"
-                 "center: new google.maps.LatLng(46.2276380,2.2137490),\n"
-                 "mapTypeId: google.maps.MapTypeId.TERRAIN\n"
-                 "};\n")
-      render += ('var map = new google.maps.Map(document.getElementById("map_canvas"),'
-                 'mapOptions);\n'
-                 'for (var city in citymap) {\n'
-                 'var populationOptions = {\n'
-                 'strokeColor: "#FF0000",\n'
-                 'strokeOpacity: 0.8,\n'
-                 'strokeWeight: 2,\n'
-                 'fillColor: "#FF0000",\n'
-                 'fillOpacity: 0.35,\n'
-                 'map: map,\n'
-                 'center: citymap[city].center,\n'
-                 'radius: citymap[city].population * 100\n'
-                 '};\n'
-                 'cityCircle = new google.maps.Circle(populationOptions);\n'
-                 '}\n'
-                 '}\n')
-      render += ('</script>\n'
-                 '</head>\n'
-                 '<body onload="initialize()">\n'
-                 '<div id="map_canvas"></div>\n'
-                 '</body>\n'
-                 '</html>\n')
+         citymap += base_array.replace('__CN__', cn).replace('__COORDS__', bycn[cn]['coords']).replace('__COUNT__', 
+                                                                                                       str(bycn[cn]['count']))
+      render = render.replace('__CITYMAP__', citymap)
       return render
    
 class GraphView(Resource):

@@ -33,11 +33,12 @@ class SQLWrapper(object):
     def connect(self):
         if self.dbtype == 'mysql':
             self.__conn = self.DBManager.connect(self.host, self.user, self.password, self.dbname)
+            self.__cursor = self.__conn.cursor(self.DBManager.cursors.DictCursor)
         else:
             self.__conn = self.DBManager.connect(self.dbname)
             self.__conn.row_factory = self.DBManager.Row
             self.__conn.text_factory = str  # to avoid problems with encoding
-        self.__cursor = self.__conn.cursor()
+            self.__cursor = self.__conn.cursor()
 
     def setRowToDict(self):
         if self.dbtype == 'sqlite3':

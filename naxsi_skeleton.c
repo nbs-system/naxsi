@@ -528,12 +528,12 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     // get the score
     rule_c->sc_score = atoi((const char *)(value[1].data+i));
     /* process the second word : Action rule */
-    if (!ngx_strstr(value[2].data, "BLOCK"))
+    if (ngx_strstr(value[2].data, "BLOCK"))
       rule_c->block = 1;
-    else if (!ngx_strstr(value[2].data, "ALLOW"))
-      rule_c->block = 1;
-    else if (!ngx_strstr(value[2].data, "LOG"))
-      rule_c->block = 1;
+    else if (ngx_strstr(value[2].data,"ALLOW"))
+      rule_c->allow = 1;
+    else if (ngx_strstr(value[2].data, "LOG"))
+      rule_c->log = 1;
     else {
       ngx_http_dummy_line_conf_error(cf, value);
       return (NGX_CONF_ERROR);

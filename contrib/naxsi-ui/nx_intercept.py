@@ -36,22 +36,20 @@ class InterceptHandler(http.Request):
             self.finish()
             return
         url = sig.split('&uri=')[1].split('&')[0]
+        print "+ "+url
         fullstr = method + ' ' + url + ' ' + ','.join([x + ' : ' + str(args.get(x, 'No Value !')) for x in args.keys()])
         threads.deferToThread(self.background, fullstr, sig)
         self.finish()
         return
 
     def background(self, fullstr, sig):
-        self.wrapper = SQLWrapper.SQLWrapper(conf_path)
-        self.wrapper.connect()
-#        if self.db is None:
-#            raise ValueError("Cannot connect to db.")
-#        self.cursor = self.db.cursor()
-#        if self.cursor is None:
-#            raise ValueError("Cannot connect to db.")
-        parser = signature_parser(self.wrapper)
+        wrapper = SQLWrapper.SQLWrapper(conf_path)
+        wrapper.connect()
+        parser = signature_parser(wrapper)
+        parser.wrapper.StartInsert()
         parser.sig_to_db(fullstr, sig)
-#        self.db.close()
+        parser.wrapper.StopInsert()
+#        parser.wrapper.close()
 
 class InterceptProtocol(http.HTTPChannel):
     requestFactory = InterceptHandler
@@ -102,8 +100,7 @@ def fill_db(files, conf_path):
                     fullstr = request_args.get('request', 'None')[2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
                 if sig != ''  and fullstr != '':
                     parser.sig_to_db(fullstr, sig, date=date)
-    parser.wrapper.StartInsert()
-
+    parser.wrapper.StopInsert()
 
 if __name__ == '__main__':
     try:

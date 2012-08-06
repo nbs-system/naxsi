@@ -5,6 +5,7 @@ import pprint
 import hashlib
 import SQLWrapper
 import itertools
+import sys
 
 # the signature parser needs its own mysql connection/cursor, 
 # as it makes heavy use of mysql's last_inserted_id()
@@ -12,8 +13,9 @@ class signature_parser:
     def __init__(self, wrapper):
         self.wrapper = wrapper
         try:
-            self.wrapper.execute("SELECT COUNT(*) FROM exceptions")
-        except:
+            self.wrapper.execute("SELECT 1 FROM exceptions")
+        except :
+            print "Unable to select, DB must be empty. Create ..."
             self.dbcreate()
 
     def dbcreate(self):
@@ -55,17 +57,20 @@ class signature_parser:
             d['server'] = ''
         if not d.has_key('uri'):
             d['uri'] = ''
-        # pprint.pprint(d)
-        # pprint.pprint(raw_request)
         
-#        self.wrapper.execute("SELECT url_id from urls where url = %s", (d['uri'],))
- #       self.wrapper.StartInsert()
-        url_id = self.wrapper.getResults()
-        if (len(url_id) == 0):
-            self.wrapper.execute("INSERT INTO urls (url) VALUES (%s)", (d['uri'],))
-            url_id = self.wrapper.getLastId()
-        else:
-            url_id = url_id[0]['url_id']
+        # self.wrapper.execute("SELECT url_id from urls where url = %s", (d['uri'],))
+        # url_id = self.wrapper.getResults()
+        # self.wrapper.StartInsert()
+        # if (len(url_id) == 0):
+        #     print "New url "+d['uri']
+        #     self.wrapper.execute("INSERT INTO urls (url) VALUES (%s)", (d['uri'],))
+        #     url_id = self.wrapper.getLastId()
+        # else:
+        #     url_id = url_id[0]['url_id']
+        #     print "Existing url "+d['uri']+" id "+str(url_id)
+        self.wrapper.execute("INSERT INTO urls (url) VALUES (%s)", (d['uri'],))
+        url_id = self.wrapper.getLastId()
+        print "url id "+str(url_id)
         for i in itertools.count():
             zn = ''
             vn = ''
@@ -81,7 +86,6 @@ class signature_parser:
             self.wrapper.execute('INSERT INTO exceptions (zone, var_name, rule_id) VALUES (%s,%s,%s)', (zn, vn, rn))
             exception_id  = self.wrapper.getLastId()
             self.wrapper.execute('INSERT INTO connections (peer_ip, host, url_id, id_exception,date) VALUES (%s,%s,%s,%s,%s)', (d['ip'], d['server'], str(url_id), str(exception_id), date))
-  #      self.wrapper.StopInsert()
                             
 if __name__ == '__main__':
     print 'This module is not intended for direct use. Please launch nx_intercept.py or nx_extract.py'

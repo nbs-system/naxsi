@@ -147,6 +147,7 @@ class rules_extractor(object):
 #does a dummy comparison and compares the counters
    def try_append(self, target, delmatch=False):
       count=0
+      nb_rule=0
       for z in self.final_rules[:]:
          if len(target['url']) > 0 and len(z['url']) > 0 and target['url'] != z['url']:
             continue
@@ -159,10 +160,12 @@ class rules_extractor(object):
          if delmatch is True:
             self.final_rules.remove(z)
          else:
+            nb_rule += 1
             count += int(z['hcount'])
       if delmatch is True:
          return
-      if target['hcount'] > count:
+      if (target['hcount'] > count) or (target['hcount'] >= count and nb_rule > self.rules_hit):
+         pprint.pprint(target)
          self.try_append(target, True)
          self.final_rules.append(target)
          return

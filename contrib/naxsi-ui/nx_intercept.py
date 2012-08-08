@@ -46,7 +46,7 @@ class InterceptHandler(http.Request):
         wrapper = SQLWrapper.SQLWrapper(conf_path)
         wrapper.connect()
         parser = signature_parser(wrapper)
-        parser.wrapper.StartInsert()
+        #parser.wrapper.StartInsert()
         parser.sig_to_db(fullstr, sig)
         parser.wrapper.StopInsert()
 #        parser.wrapper.close()

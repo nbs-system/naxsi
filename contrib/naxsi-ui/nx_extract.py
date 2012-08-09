@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from ConfigParser import ConfigParser
+# twisted imports
 from twisted.web import http
 from twisted.internet import protocol
 from twisted.internet import reactor, threads
@@ -14,9 +14,16 @@ from twisted.cred.checkers import InMemoryUsernamePasswordDatabaseDontUse, ICred
 from twisted.web.guard import HTTPAuthSessionWrapper, DigestCredentialFactory
 from twisted.web.resource import IResource
 from twisted.cred import credentials
-from ordereddict import OrderedDict # don't lose compatibility with python < 2.7
 
-import SQLWrapper
+
+# nx* imports
+from NaxsiLib.ordereddict import OrderedDict
+from NaxsiLib.nx_commons import nxlogger
+from NaxsiLib.nx_commons import nxdaemonizer
+from NaxsiLib.SQLWrapper import SQLWrapper
+
+# system imports
+from ConfigParser import ConfigParser
 import pprint
 import re
 import getopt
@@ -37,7 +44,7 @@ glob_fileList = []
 class rules_extractor(object):
    def __init__(self, page_hit, rules_hit, rules_file, conf_file='naxsi-ui.conf'):
        
-       self.wrapper = SQLWrapper.SQLWrapper(glob_conf_file)
+       self.wrapper = SQLWrapper(glob_conf_file)
        self.wrapper.connect()
        self.wrapper.setRowToDict()
            
@@ -59,7 +66,7 @@ class rules_extractor(object):
                self.core_msg[i[pos + 3:i[pos + 3].find(';') - 1]] = i[pos_msg + 4:][:i[pos_msg + 4:].find('"')]
          fd.close()
       except:
-         print ("Unable to open rules file.")
+         log.warning ("Unable to open rules file.")
          pass
 
    def gen_basic_rules(self,url=None, srcip=None, dsthost=None,
@@ -183,8 +190,8 @@ class NaxsiUI(Resource):
    def __init__(self):
       Resource.__init__(self)
       #twisted will handle static content for me
-      self.putChild('bootstrap', File('./bootstrap'))
-      self.putChild('js', File('./js'))
+      self.putChild('bootstrap', File(data_path+'/bootstrap'))
+      self.putChild('js', File(data_path+'/js'))
       #make the correspondance between the path and the object to call
       self.page_handler = {'/' : Index, '/graphs': GraphView, '/get_rules': GenWhitelist, '/map': WootMap}
 
@@ -200,13 +207,21 @@ class Index(Resource):
    def __init__(self):
       Resource.__init__(self)
       self.ex = rules_extractor(0,0, None)
-
+         
    def render_GET(self, request):
-      fd = open('index.tpl', 'r')
+      try:
+         fd = open(data_path+'/index.tpl', 'r')
+      except:
+         log.critical("Unable to open index template.")
+         return "Unable to open index template, please check your setup."
       helpmsg = ''
       for i in fd:
          helpmsg += i
       fd.close()
+      if self.ex.wrapper.checkDB() is False:
+         log.critical("Database is empty, nx_extract won't work.")
+         return "Your database seems to be empty."
+      
       helpmsg = helpmsg.replace('__STATS__', self.ex.generate_stats())
       helpmsg = helpmsg.replace('__HOSTNAME__', request.getHeader('Host'))
       return helpmsg
@@ -220,7 +235,7 @@ class WootMap(Resource):
          import GeoIP
          self.has_geoip = True
       except:
-         print "No GeoIP module, no map"
+         sys.critical("No GeoIP module, no map")
          return
       Resource.__init__(self)
       self.ex = rules_extractor(0,0, None)
@@ -228,10 +243,19 @@ class WootMap(Resource):
    def render_GET(self, request):
       if self.has_geoip is False:
          return "No GeoIP module/database installed."
-      render = open('map.tpl').read()
+      try:
+         render = open(data_path+'/map.tpl').read()
+      except:
+         log.critical("Unable to open map template.")
+         return "Unable to open map template, please check your setup."
+      
       self.ex.wrapper.execute('select peer_ip as p, count(*) as c from connections group by peer_ip')
       ips = self.ex.wrapper.getResults()
-      fd = open("country2coords.txt", "r")
+      try:
+         fd = open(data_path+"/country2coords.txt", "r")
+      except:
+         log.critical("Unable to open GeoLoc database.")
+         return "Unable to open GeoLoc database, please check your setup."
       bycn = {}
       for ip in ips:
          country = self.gi.country_code_by_addr(ip['p'])
@@ -267,7 +291,11 @@ class GraphView(Resource):
 
    def render_GET(self, request):
 
-      fd = open('graphs.tpl')
+      try:
+         fd = open(data_path+'/graphs.tpl')
+      except:
+         log.critical("Unable to open graphs template.")
+         return "Unable to open graphs template, please check your setup."
       html = ''
       for i in fd:
          html += i
@@ -342,11 +370,15 @@ class GraphView(Resource):
 
 class GenWhitelist(Resource):
 
-    def render_GET(self, request):
-      request.setHeader('content-type', 'text/plain')
-      ex = rules_extractor(int(request.args.get('page_hit', ['10'])[0]), 
-                           int(request.args.get('rules_hit', ['10'])[0]), 
-                           glob_rules_file)
+   def render_GET(self, request):
+      if request is not None:
+         request.setHeader('content-type', 'text/plain')
+         ex = rules_extractor(int(request.args.get('page_hit', ['10'])[0]), 
+                              int(request.args.get('rules_hit', ['10'])[0]), 
+                              glob_rules_file)
+      else: 
+         ex = rules_extractor(5, 5, glob_rules_file)
+        
       ex.gen_basic_rules()
       base_rules, opti_rules = ex.opti_rules_back()
       opti_rules.sort(lambda a,b: (b['hratio']+(b['pratio']*3)) < (a['hratio']+(a['pratio']*3)))
@@ -384,47 +416,42 @@ class HTTPRealm(object):
 
    def requestAvatar(self, avatarID, mind, *interfaces):
       return (IResource, NaxsiUI(), lambda: None)
-
-def daemonize (stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
-    try: 
-        pid = os.fork() 
-        if pid > 0:
-            sys.exit(0)
-    except OSError, e: 
-        sys.stderr.write ("fork #1 failed: (%d) %s\n" % (e.errno, e.strerror) )
-        sys.exit(1)
-
-#    os.chdir("/") 
-    os.umask(0) 
-    os.setsid() 
-
-    try: 
-        pid = os.fork() 
-        if pid > 0:
-            sys.exit(0)
-    except OSError, e: 
-        sys.stderr.write ("fork #2 failed: (%d) %s\n" % (e.errno, e.strerror) )
-        sys.exit(1)
-
-    si = open(stdin, 'r')
-    so = open(stdout, 'a+')
-    se = open(stderr, 'a+', 0)
-    os.dup2(si.fileno(), sys.stdin.fileno())
-    os.dup2(so.fileno(), sys.stdout.fileno())
-    os.dup2(se.fileno(), sys.stderr.fileno())
-         
-
       
 def usage():
-   print 'Usage : python nx_extract /path/to/conf/file'
+   print 'Usage : python nx_extract -c /path/to/conf/file [-s]'
+   print '[-s --stdout : Do not daemonize, output whitelists on stdout and exit.]'
+   print 'nx_extract is a web service that you can use to :'
+   print '\t* Generate whitelist - using the database filled by nx_intercept'
+   print '\t* Obtain statistics - using the database filled by nx_intercept'
 
 
 if __name__  == '__main__':
-   if len(sys.argv) != 2:
+   try:
+      opts, args = getopt.getopt(sys.argv[1:], 'c:hs', ['conf-file', 'help', 'stdout'])
+   except getopt.GetoptError, err:
+      print str(err)
       usage()
-      exit(42)
-   glob_conf_file = sys.argv[1]
-   fd = open(sys.argv[1], 'r')
+      sys.exit(-1)
+      
+   has_conf = False
+   single_run = False
+   logs_path = []
+
+   for o, a in opts:
+      if o in ('-h', '--help'):
+         usage()
+         sys.exit(0)
+      if o in ('-c', '--conf-file'):
+         has_conf = True
+         glob_conf_file = a
+      if o in ('-s', '--stdout'):
+         single_run = True
+
+   if has_conf is False:
+      usage()
+      sys.exit(-1)
+   
+   fd = open(glob_conf_file, 'r')
    conf = ConfigParser()
    conf.readfp(fd)
    try:
@@ -435,30 +462,66 @@ if __name__  == '__main__':
    try:
       glob_rules_file = conf.get('nx_extract', 'rules_path')
    except:
-      print "No rules path in conf file ! Using default (/etc/nginx/sec-rules/core.rules)"
+      print "No rules path in conf file ! Using default (/etc/nginx/naxsi_core.rules)"
+      glob_rules_file = "/etc/nginx/naxsi_core.rules"
 
    try:
       glob_user = conf.get('nx_extract', 'username')
    except:
       print 'No username for web access ! Nx_extract will exit.'
-      exit(-1)
+      sys.exit(-1)
+
+   try:
+      log_path = conf.get('nx_extract', 'log_path')
+   except:
+      print 'No log_path provided, using stdout.'
+      log_path = sys.stdout
+
+   try:
+      data_path = conf.get('nx_extract', 'data_path')
+   except:
+      print 'No data_path provided ! Nx_extract will exit..'
+      sys.exit(-1)
+
+   try:
+      pid_path = conf.get('nx_extract', 'pid_path')
+   except:
+      print 'No pid_path provided, using /tmp/nx_extract.pid.'
+      pid_path = "/tmp/nx_extract.pid"
 
    try:
       glob_pass = conf.get('nx_extract', 'password')
    except:
       print 'No password for web access ! Nx_extract will exit.'
-      exit(-1)
+      sys.exit(-1)
    fd.close()
-
+   
+   if single_run is True:
+      #GenWhitelist
+      print GenWhitelist.render_GET(GenWhitelist(), None)
+      ##
+      pass
    credshandler = InMemoryUsernamePasswordDatabaseDontUse()  # i know there is DontUse in the name
    credshandler.addUser(glob_user, glob_pass)
    portal = Portal(HTTPRealm(), [credshandler])
    credentialFactory = DigestCredentialFactory("md5", "Naxsi-UI")
-
+   
    webroot = HTTPAuthSessionWrapper(portal, [credentialFactory])
    
    factory = Site(webroot)
-   reactor.listenTCP(port, factory)
+   # log
+   log = nxlogger(log_path, "nx_extract")
+   log.warning("Starting nx_extract.")
 
-#   daemonize(stdout = '/tmp/nx_extract_output', stderr = '/tmp/nx_extract_error')
+   try:
+      reactor.listenTCP(port, factory)
+   except:
+      log.critical ("Unable to listen on "+str(port))
+      sys.exit (-1)
+
+   # & daemonize !
+   daemon = nxdaemonizer(pid_path)
+   daemon.daemonize()
+   daemon.write_pid()
+         
    reactor.run()

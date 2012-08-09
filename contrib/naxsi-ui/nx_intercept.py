@@ -3,12 +3,17 @@ from twisted.web import http
 from twisted.internet import protocol
 from twisted.internet import reactor, threads
 from ConfigParser import ConfigParser
-from nx_parser import signature_parser
+
+#nx* imports
+from NaxsiLib.nx_parser import signature_parser
+from NaxsiLib.ordereddict import OrderedDict
+from NaxsiLib.nx_commons import nxlogger
+from NaxsiLib.nx_commons import nxdaemonizer
+from NaxsiLib.SQLWrapper import SQLWrapper
 
 import urllib
 import pprint
 import socket
-import SQLWrapper
 import getopt
 import sys
 import re
@@ -31,12 +36,11 @@ class InterceptHandler(http.Request):
         sig = self.getHeader("naxsi_sig")
         print self
         if sig is None:
-            print "no naxsi_sig header ?"
-            print self
+            log.critical("Received a request without naxsi_sig header, IGNORED.")
             self.finish()
             return
         url = sig.split('&uri=')[1].split('&')[0]
-        print "+ "+url
+        log.warning("+ "+url)
         fullstr = method + ' ' + url + ' ' + ','.join([x + ' : ' + str(args.get(x, 'No Value !')) for x in args.keys()])
         threads.deferToThread(self.background, fullstr, sig)
         self.finish()
@@ -71,8 +75,8 @@ def fill_db(files, conf_path):
 
 
     if re.match("[a-z0-9]+$", wrapper.dbname) == False:
-        print 'bad db name :)'
-        exit(-2)
+        log.critial("Invalid dbname : "+wrapper.dbname)
+        sys.exit(-1)
     
     wrapper.drop_database()
     wrapper.create_db()
@@ -80,8 +84,7 @@ def fill_db(files, conf_path):
     wrapper.select_db(wrapper.dbname)
     #wrapper.exec()
     
-    print "Filling db with %s (TABLES WILL BE DROPPED !)" %  ' '.join(files)
-#    parser = signature_parser(wrapper)
+    log.critical("Filling db with %s (TABLES WILL BE DROPPED !)" %  ' '.join(files))
     parser = signature_parser(wrapper)
     parser.wrapper.StartInsert()
     for filename in files:
@@ -108,7 +111,7 @@ if __name__ == '__main__':
     except getopt.GetoptError, err:
         print str(err)
         usage()
-        sys.exit(42)
+        sys.exit(-1)
 
     has_conf = False
     logs_path = []
@@ -120,13 +123,13 @@ if __name__ == '__main__':
         if o in ('-a', '--add-monitoring'):
             if has_conf is False:
                 print "Conf File must be specified first !"
-                exit(42)
+                sys.exit(-1)
             add_monitoring(a, conf_path)
-            exit(42)
+            sys.exit(0)
         if o in ('-l', '--log-file'):
             if has_conf is False:
                 print "Conf File must be specified first !"
-                exit(42)
+                sys.exit(-1)
             logs_path.append(a)
         if o in ('-c', '--conf-file'):
             has_conf = True
@@ -134,21 +137,53 @@ if __name__ == '__main__':
 
     if has_conf is False:
         print 'Conf file is mandatory !'
-        exit(-42)
+        sys.exit(-1)
 
     if len(logs_path) > 0:
         fill_db(logs_path, conf_path)
-        exit(0)
+        sys.exit(0)
 
-    fd = open(conf_path, 'r')     
+    try:
+        fd = open(conf_path, 'r')     
+    except:
+        print "Unable to open conf file :"+conf_path
+        sys.exit(-1)
+        
     conf = ConfigParser()
     conf.readfp(fd)
+    
     try:
-       port = int(conf.get('nx_intercept', 'port'))
+        port = int(conf.get('nx_intercept', 'port'))
     except:
-       print "No port in conf file ! Using default port (8080)"
-       port = 8080
-    fd.close()            
+        print "No port in conf file ! Using default port (8080)"
+        port = 8080
+       
+    try:
+        pid_path = conf.get('nx_intercept', 'pid_path')
+    except:
+        print "No pid_path in conf file ! Using /tmp/nx_intercept.pid"
+        pid_path = "/tmp/nx_intercept.pid"
 
-    reactor.listenTCP(port, InterceptFactory())
+    try:
+        log_path = conf.get('nx_intercept', 'log_path')
+    except:
+        print "No log_path in conf file ! Using /tmp/nx_intercept.log"
+        log_path = "/tmp/nx_intercept.log"
+       
+    fd.close()
+    # log
+    log = nxlogger(log_path, "nx_intercept")
+    log.warning("Starting nx_intercept.")
+    
+    try:
+        reactor.listenTCP(port, InterceptFactory())
+    except:
+        print "Unable to listen on "+str(port)
+        log.critical("Unable to listen on "+str(port))
+        sys.exit (-1)
+    # & daemonize
+    daemon = nxdaemonizer(pid_path)
+    daemon.daemonize()
+    daemon.write_pid()
+    
     reactor.run()

@@ -47,7 +47,7 @@ class InterceptHandler(http.Request):
         return
 
     def background(self, fullstr, sig):
-        wrapper = SQLWrapper.SQLWrapper(conf_path)
+        wrapper = SQLWrapper(conf_path)
         wrapper.connect()
         parser = signature_parser(wrapper)
         #parser.wrapper.StartInsert()
@@ -69,7 +69,7 @@ def usage():
 
 def fill_db(files, conf_path):
 
-    wrapper = SQLWrapper.SQLWrapper(conf_path)
+    wrapper = SQLWrapper(conf_path)
     wrapper.connect()
     sig = ''
 
@@ -136,7 +136,7 @@ if __name__ == '__main__':
             conf_path = a
 
     if has_conf is False:
-        print 'Conf file is mandatory !'
+        usage()
         sys.exit(-1)
 
     if len(logs_path) > 0:

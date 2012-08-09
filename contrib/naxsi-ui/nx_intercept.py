@@ -105,7 +105,9 @@ def fill_db(files, conf_path):
                     parser.sig_to_db(fullstr, sig, date=date)
     parser.wrapper.StopInsert()
 
+
 if __name__ == '__main__':
+#    global log
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'c:hl:', ['conf-file', 'help', 'log-file'])
     except getopt.GetoptError, err:
@@ -139,10 +141,6 @@ if __name__ == '__main__':
         usage()
         sys.exit(-1)
 
-    if len(logs_path) > 0:
-        fill_db(logs_path, conf_path)
-        sys.exit(0)
-
     try:
         fd = open(conf_path, 'r')     
     except:
@@ -175,6 +173,11 @@ if __name__ == '__main__':
     log = nxlogger(log_path, "nx_intercept")
     log.warning("Starting nx_intercept.")
     
+
+    if len(logs_path) > 0:
+        fill_db(logs_path, conf_path)
+        sys.exit(0)
+
     try:
         reactor.listenTCP(port, InterceptFactory())
     except:

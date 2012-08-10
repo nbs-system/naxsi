@@ -47,7 +47,7 @@ class InterceptHandler(http.Request):
         return
 
     def background(self, fullstr, sig):
-        wrapper = SQLWrapper(conf_path)
+        wrapper = SQLWrapper(conf_path, log)
         wrapper.connect()
         parser = signature_parser(wrapper, log)
         #parser.wrapper.StartInsert()
@@ -75,7 +75,7 @@ def usage():
 
 def fill_db(files, conf_path):
 
-    wrapper = SQLWrapper(conf_path)
+    wrapper = SQLWrapper(conf_path, log)
     wrapper.connect()
     sig = ''
     count = 0

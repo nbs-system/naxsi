@@ -7,11 +7,14 @@ class SQLWrapperException(Exception):
     pass
 
 class SQLWrapper(object):    
-    def __init__(self, config_file):
+    def __init__(self, config_file, log):
+        self.log = log
         try:
             fd = open(config_file)
         except IOError:
-            raise SQLWrapperException('Cannot open config file %s' % config_file)
+            self.log.critical("Cannot open config file %s" % config_file)
+            os._exit(-1)
+
         self.conf = ConfigParser()
         self.conf.readfp(fd)
         self.dbtype = self.get_config('dbtype')
@@ -25,7 +28,10 @@ class SQLWrapper(object):
         elif self.dbtype == 'mysql':
             self.DBManager = __import__('MySQLdb')
         else:
-            raise SQLWrapperException('Unhandled db type : %s' % self.get_config('dbtype'))
+            self.log.critical('Unhandled db type : %s' % self.get_config('dbtype'))
+            os._exit(-1)
+            #raise SQLWrapperException('Unhandled db type : %s' % self.get_config('dbtype'))
+    
         if self.dbtype == 'mysql':
             self.user = self.get_config('username')
             self.host = self.get_config('hostname')
@@ -36,21 +42,28 @@ class SQLWrapper(object):
         return self.conf.get('sql', key)
 
     def connect(self):
+        self.log.warning("Connecting to database.")
         if self.dbtype == 'mysql':
-#            self.
-            self.__conn = self.DBManager.connect(self.host, self.user, self.password, self.dbname)
-            self.__cursor = self.__conn.cursor(self.DBManager.cursors.DictCursor)
+            self.log.warning( "Connecting to "+self.host+" with db "+self.dbname)
+            try:
+                self.__conn = self.DBManager.connect(self.host, self.user, self.password, self.dbname)
+                self.__cursor = self.__conn.cursor(self.DBManager.cursors.DictCursor)
+            except:
+                self.log.critical("Unable to connect to database.")
+                os._exit(-1)
+        elif self.dbtype == 'sqlite':
+            self.log.warning( "connecting to "+self.dbname)
+            try:
+                self.__conn = self.DBManager.connect(self.dbpath+self.dbname)
+                self.__conn.row_factory = self.DBManager.Row
+                self.__conn.text_factory = str  # to avoid problems with encoding
+                self.__cursor = self.__conn.cursor()
+            except:
+                self.log.critical("Unable to connect to database.")
+                os._exit(-1)
         else:
-            self.__conn = self.DBManager.connect(self.dbpath+self.dbname)
-            self.__conn.row_factory = self.DBManager.Row
-            self.__conn.text_factory = str  # to avoid problems with encoding
-            self.__cursor = self.__conn.cursor()
-
-    def setRowToDict(self):
-        if self.dbtype == 'sqlite3':
-            self.__conn.row_factory = self.DBManager.Row
-        elif self.dbtype == 'mysql':
-            self.__cursor = self.__conn.cursor(self.DBManager.cursors.DictCursor)
+            self.log.critical("Unknown db type.")
+            os._exit(-1)
 
     def execute(self, query, args = None):
         if args is None:

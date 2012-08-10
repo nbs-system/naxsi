@@ -63,8 +63,14 @@ class InterceptFactory(http.HTTPFactory):
 
 
 def usage():
-    print 'Usage: python nx_intercept [-h,--help]  [-q,--quiet] [-l,--log-file /path/to/logfile] [-c, --conf-file naxsi-ui-learning.conf] '
-
+    print 'Usage: python nx_intercept -c /path/to/conf/file [-h] [-l] '
+    print '[-c, --conf-file /path/to/conf/file]'
+    print '\tMandatory, nx_intercept configuration file.'
+    print '[-l, --log-file /path/to/nginx_error.log]'
+    print '\tPerform learning from nginx error log rather than live capture.'
+    print "\tIn this mode, nx_intercept will exit after finished log file processing."
+    print '[-h : Display this help]'
+    
 
 
 def fill_db(files, conf_path):
@@ -182,6 +188,7 @@ if __name__ == '__main__':
 
     try:
         reactor.listenTCP(port, InterceptFactory())
+        log.warning("Listening on port "+str(port))
     except:
         print "Unable to listen on "+str(port)
         log.critical("Unable to listen on "+str(port))

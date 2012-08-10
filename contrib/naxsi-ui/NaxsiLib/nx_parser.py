@@ -3,13 +3,10 @@ from datetime import datetime
 import urlparse
 import pprint
 import hashlib
-#import SQLWrapper
 import itertools
 import sys
 from NaxsiLib.SQLWrapper import SQLWrapper
 
-# the signature parser needs its own mysql connection/cursor, 
-# as it makes heavy use of mysql's last_inserted_id()
 class signature_parser:
     def __init__(self, wrapper, log):
         self.log = log
@@ -18,6 +15,7 @@ class signature_parser:
             self.wrapper.execute("SELECT 1 FROM exceptions")
         except :
             self.log.warning("Unable to select, DB must be empty. Create ...")
+            self.log.warning("exception:"+str(sys.exc_info()[0]))
             self.dbcreate()
 
     def dbcreate(self):
@@ -112,9 +110,7 @@ class rules_extractor:
                         exception_id=None):
 
         tmp_rules = []
-     #self.rules_list = self.wrapper.getWhitelist()     
         self.base_rules = self.rules_list[:]
-#     pprint.pprint(self.base_rules)
 
     def transform_to_dict(self, l):
         d = {}
@@ -126,14 +122,6 @@ class rules_extractor:
         for i in d:
             d[i] = list(set(d[i]))
         return d
-
-
-   # def get_partial_match_dict(self, d, to_find):
-   #    for i, current_dict in enumerate(d):
-   #      if all(key in current_dict and current_dict[key] == val 
-   #              for key, val in to_find.iteritems()):
-   #          return i
-
 
     def opti_rules_back(self):
         # rules of requests extracting optimized whitelists, from 

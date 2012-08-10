@@ -37,6 +37,7 @@ class SQLWrapper(object):
 
     def connect(self):
         if self.dbtype == 'mysql':
+#            self.
             self.__conn = self.DBManager.connect(self.host, self.user, self.password, self.dbname)
             self.__cursor = self.__conn.cursor(self.DBManager.cursors.DictCursor)
         else:

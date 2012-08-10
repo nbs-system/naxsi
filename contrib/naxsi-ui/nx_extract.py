@@ -245,15 +245,15 @@ class HTTPRealm(object):
       return (IResource, NaxsiUI(), lambda: None)
       
 def usage():
-   print 'Usage : python nx_extract -c /path/to/conf/file [-o] [-s]'
-   print '[-o --output : Do not daemonize, output whitelists on stdout and exit.]'
-   print '[-s --status : Do not daemonize, display exceptions count on stdout and exit.]'
-   print '[-p --pages-hit : Specify pages hit limit for -o option]'
-   print '[-r --rules-hit : Specify rules hit limit for -o option]'
-   print 'nx_extract is a web service that you can use to :'
-   print '\t* Generate whitelist - using the database filled by nx_intercept'
-   print '\t* Obtain statistics - using the database filled by nx_intercept'
-
+   print 'Usage : python nx_extract -c /path/to/conf/file [-o] [-s] [-p] [-r] [-h]'
+   print '[-o --output]'
+   print '\tDo not daemonize, output whitelists on stdout and exit.'
+   print '[-s --status]'
+   print '\tDo not daemonize, display exceptions count on stdout and exit.'
+   print '[-p --pages-hit NUMBER]'
+   print '\tSpecify pages hit limit for -o option. Defaults to 10.'
+   print '[-r --rules-hit NUMBER]'
+   print '\tSpecify rules hit limit for -o option. Defaults to 10.'
 
 if __name__  == '__main__':
    try:
@@ -368,6 +368,7 @@ if __name__  == '__main__':
 
    try:
       reactor.listenTCP(port, factory)
+      log.warning("Listening on port "+str(port))
    except:
       log.critical ("Unable to listen on "+str(port))
       sys.exit (-1)

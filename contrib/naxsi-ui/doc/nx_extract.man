@@ -14,16 +14,31 @@ exceptions. It can be used both as a web server to provide whitelist/statistics 
 .SH OPTIONS
 A summary of options is included bellow:
 .br
+.B -h
+Show usage and exit
+.br
 .B -c
 .I "<configuration file>"
 mandatory
 .br
-.B -h
-Show usage and exit
-.br
-.B -s
+.B -o --output
 Display generated whitelists to stdout and exit
 .br
+.B -s --status
+Display quick stats on stdout (allows to check that DB is not empty) and exit.
+.br
+.B -p --pages-hit
+Control limit of pages hit for factorization. If a specific rule is triggered on more than "pages-hit" pages, it will try to factorize it. Usefull only with
+.B -o --output
+option.
+.br
+.B -r --rules-hit
+Control limit of rules hit for factorization. If a specific rule can represent more than "rules-hit" rules in one rule, it will be applied. Usefull only with
+.B -o --output
+option.
+.br
+
+
 
 .SH FILES
 
@@ -120,8 +135,78 @@ MySQL hostname for database if using MySQL backend
 .B data_path
 Directory of database, only revelant for SQLite
 
+.SH EXAMPLES
 
+Admitting you have been running naxsi in learning mode, and you have access to nginx's error_log,
+.br
+.B naxsi-ui.conf:
+.P
+[nx_extract]
+.br
+username = naxsi_web
+.br
+password = test
+.br
+port = 8081
+.br
+rules_path = /etc/nginx/naxsi_core.rules
+.br
+data_path = naxsi-ui-data/
+.br
+pid_path = nx_extract.pid
+.br
+log_path = nx_extract.log
+.br
+[nx_intercept]
+.br
+port = 8080
+.br
+pid_path = nx_intercept.pid
+.br
+log_path = nx_intercept.log
+.br
+[sql]
+.br
+dbtype = sqlite
+.br
+username = root
+.br
+password =
+.br
+hostname = 127.0.0.1
+.br
+dbname = naxsi_sig
+.br
+data_path = 
+.P
 
+You can then run :
+.br
+.B "python nx_intercept -c naxsi-ui.conf -l /tmp/nginx_error.log"
+
+If you take a look at 
+.B nx_intercept.log
+you should see the following :
+.br
+.B 7363 exceptions stored into database.
+
+You can then run 
+.B nx_extract
+to get your generated whitelists:
+.br
+.B "python nx_extract.py -c naxsi-test.conf  -o"
+.br
+.I "########### Optimized Rules Suggestion ##################"
+.br
+.I "# total_count:1420 (10.66%), peer_count:130 (35.62%) | mysql keyword (|)"
+.br
+.I BasicRule wl:1005 'mz:$HEADERS_VAR:cookie';
+.P
+You can as well start it as a daemon :
+.br
+.B "python nx_extract.py -c naxsi-test.conf"
+.br
+And access the webinterface (on :8081) to get access to statistics.
 
 .SH NOTES
 

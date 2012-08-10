@@ -49,7 +49,7 @@ class InterceptHandler(http.Request):
     def background(self, fullstr, sig):
         wrapper = SQLWrapper(conf_path)
         wrapper.connect()
-        parser = signature_parser(wrapper)
+        parser = signature_parser(wrapper, log)
         #parser.wrapper.StartInsert()
         parser.sig_to_db(fullstr, sig)
         parser.wrapper.StopInsert()
@@ -72,7 +72,7 @@ def fill_db(files, conf_path):
     wrapper = SQLWrapper(conf_path)
     wrapper.connect()
     sig = ''
-
+    count = 0
 
     if re.match("[a-z0-9]+$", wrapper.dbname) == False:
         log.critial("Invalid dbname : "+wrapper.dbname)
@@ -85,7 +85,7 @@ def fill_db(files, conf_path):
     #wrapper.exec()
     
     log.critical("Filling db with %s (TABLES WILL BE DROPPED !)" %  ' '.join(files))
-    parser = signature_parser(wrapper)
+    parser = signature_parser(wrapper, log)
     parser.wrapper.StartInsert()
     for filename in files:
         with open(filename, 'r') as fd:
@@ -103,6 +103,8 @@ def fill_db(files, conf_path):
                     fullstr = request_args.get('request', 'None')[2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
                 if sig != ''  and fullstr != '':
                     parser.sig_to_db(fullstr, sig, date=date)
+                    count += 1
+    log.warning(str(count)+" exceptions stored into database.")
     parser.wrapper.StopInsert()
 
 

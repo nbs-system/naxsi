@@ -218,6 +218,9 @@ class GraphView(Resource):
       else:
           self.ex.wrapper.execute('select substr(date,1, 10) as d, count(id_exception) as ex from connections join exceptions as e on (e.exception_id = id_exception) where e.rule_id >= %s and e.rule_id <= %s group by substr(date, 1, 10)', (str(id_beg), str(id_end)))
       count = self.ex.wrapper.getResults()
+      if count(count) <= 0:
+        self.log.critical("Database seems to be empty, or does not have enough exceptions.")
+        return 0, 0
       mydict = self.build_dict(count)
       total_hit = 0
       for i in count:

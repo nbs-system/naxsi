@@ -163,6 +163,11 @@ if __name__ == '__main__':
     except:
         print "No port in conf file ! Using default port (8080)"
         port = 8080
+
+    try:
+        iface = conf.get('nx_intercept', 'port')
+    except:
+        iface = ''
        
     try:
         pid_path = conf.get('nx_intercept', 'pid_path')
@@ -187,11 +192,11 @@ if __name__ == '__main__':
         sys.exit(0)
 
     try:
-        reactor.listenTCP(port, InterceptFactory())
-        log.warning("Listening on port "+str(port))
+        reactor.listenTCP(port, InterceptFactory(), interface=iface)
+        log.warning("Listening on port "+str(port)+" iface:"+iface)
     except:
         print "Unable to listen on "+str(port)
-        log.critical("Unable to listen on "+str(port))
+        log.critical("Unable to listen on "+str(port)+" iface:"+iface)
         sys.exit (-1)
     # & daemonize
     daemon = nxdaemonizer(pid_path)

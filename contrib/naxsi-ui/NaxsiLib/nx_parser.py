@@ -79,10 +79,14 @@ class signature_parser:
 
 class rules_extractor:
     def __init__(self, page_hit, rules_hit, rules_file, conf_file, log):
-        self.wrapper = SQLWrapper(conf_file)
+        self.log = log
+#        try:
+        self.wrapper = SQLWrapper(conf_file, self.log)
         self.wrapper.connect()
         self.wrapper.setRowToDict()
-        self.log = log
+#        except:
+#            self.log.critical("unable to connect to db.")
+#            return
         self.rules_list = []
         self.final_rules = []
         self.base_rules = []
@@ -91,6 +95,7 @@ class rules_extractor:
         self.core_msg = {}
         self.extract_core(rules_file)
         self.log.warning( "Rules hit setting : "+str(self.rules_hit))
+        self.rules_hit = 10
        
     def extract_core(self, rules_file):
         try:
@@ -161,6 +166,7 @@ class rules_extractor:
             self.wrapper.execute(req)
             res = self.wrapper.getResults()
             for r in res:
+                pprint.pprint(r)
                 if len(r['var_name']) > 0:
                     self.try_append({'url': r['url'], 'rule_id': r['rule_id'], 'zone': r['zone'],  'var_name': r['var_name'], 
                                      'hcount':  r['ct'], 'htotal': r['tot'], 'pcount':r['peer_count'], 'ptotal':r['ptot'],

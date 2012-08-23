@@ -229,6 +229,7 @@ class rules_extractor:
         while _i >= 0:
             i = opti_rules[_i]
             _i = _i - 1
+            pprint.pprint(i)
             r += ("# total_count:"+str(i['hcount'])+" ("+str(i['hratio'])+
                   "%), peer_count:"+str(i['pcount'])+" ("+str(i['pratio'])+"%)")
             r += " | "+self.core_msg.get(str(i['rule_id']), "?")+"\n"
@@ -240,6 +241,11 @@ class rules_extractor:
             if i['zone'] is not None and len(i['zone']) > 0:
                 if i['url']:
                     r += '|'
+                if "|NAME" in i['zone'] and i['var_name'] is not None and len(i['var_name']) > 0:
+                    i['zone'] = i['zone'].replace("|NAME", "")
+                    if i['var_name'] is None:
+                        i['var_name'] = ''
+                    i['var_name'] = i['var_name']+"|NAME"
                 r += i['zone']
             if i['var_name'] is not None and len(i['var_name']) > 0:
                 # oooh, that must be bad.

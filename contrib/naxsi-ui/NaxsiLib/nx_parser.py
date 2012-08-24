@@ -50,12 +50,12 @@ class signature_parser:
         return
     def try_log_request(self, raw_request, sig):
         if self.tab is None:
-            self.log.warning("Monitor rules are empty, skip.")
+            #self.log.warning("Monitor rules are empty, skip.")
             return
         tmpsig = re.sub("total_processed=\d+", "total_processed=0", sig)
         tmpsig = re.sub("total_blocked=\d+", "total_blocked=0", tmpsig)
         for x in self.tab:
-            print "try: "+x+" vs "+tmpsig
+#            print "try: "+x+" vs "+tmpsig
             if x in tmpsig:
                 self.log.critical("Monitoring request !")
                 self.log.critical(raw_request)
@@ -81,7 +81,7 @@ class signature_parser:
             return
         self.wrapper.execute("INSERT INTO urls (url) VALUES (%s)", (d['uri'],))
         url_id = self.wrapper.getLastId()
-        self.log.warning( "url id "+str(url_id))
+#        self.log.warning( "url id "+str(url_id))
         for i in itertools.count():
             zn = ''
             vn = ''
@@ -100,24 +100,20 @@ class signature_parser:
     
 
 class rules_extractor:
-    def __init__(self, page_hit, rules_hit, rules_file, conf_file, log):
+    def __init__(self, pages_hit, rules_hit, rules_file, conf_file, log):
         self.log = log
-#        try:
         self.wrapper = SQLWrapper(conf_file, self.log)
         self.wrapper.connect()
         self.wrapper.setRowToDict()
-#        except:
-#            self.log.critical("unable to connect to db.")
-#            return
+        self.rules_hit = self.page_hit = 10
         self.rules_list = []
         self.final_rules = []
         self.base_rules = []
-        self.page_hit = page_hit
+        self.pages_hit = pages_hit
         self.rules_hit = rules_hit
         self.core_msg = {}
         self.extract_core(rules_file)
-        self.log.warning( "Rules hit setting : "+str(self.rules_hit))
-        self.rules_hit = 10
+#        self.log.warning( "Rules hit setting : "+str(self.rules_hit))
        
     def extract_core(self, rules_file):
         try:
@@ -185,10 +181,11 @@ class rules_extractor:
             ]
       
         for req in opti_select_DESC:
+        #    print "#------------------- first set of results"
             self.wrapper.execute(req)
             res = self.wrapper.getResults()
             for r in res:
-#                print(r)
+         #       print(r)
                 if len(r['var_name']) > 0:
                     self.try_append({'url': r['url'], 'rule_id': r['rule_id'], 'zone': r['zone'],  'var_name': r['var_name'], 
                                      'hcount':  r['ct'], 'htotal': r['tot'], 'pcount':r['peer_count'], 'ptotal':r['ptot'],
@@ -208,6 +205,11 @@ class rules_extractor:
     def try_append(self, target, delmatch=False):
         count=0
         nb_rule=0
+        uurl = set()
+        
+#        print "########## TRY APPEND :"
+#        pprint.pprint(target)
+#        print "--- vs ---"
         for z in self.final_rules[:]:
             if len(target['url']) > 0 and len(z['url']) > 0 and target['url'] != z['url']:
                 continue
@@ -217,6 +219,9 @@ class rules_extractor:
                 continue
             if len(target['var_name']) > 0 and len(z['var_name']) > 0 and target['var_name'] != z['var_name']:
                 continue
+#            pprint.pprint(z)
+            #print "url:"+target['url']
+            uurl.add(z['url'])
             if delmatch is True:
                 #print(z)
                 self.final_rules.remove(z)
@@ -228,11 +233,14 @@ class rules_extractor:
         # No rules are matching this one, append.
         if not count and not nb_rule:
             self.final_rules.append(target)
-        if (target['hcount'] > count+1) or (target['hcount'] >= count and nb_rule > self.rules_hit):
-#            self.log.warning("replaced rule. New rule scores : count:"+str(target['hcount']))
-#            self.log.warning("Old rules scores : count:"+str(count)+" rules_hit: "+str(nb_rule))
+#        print "Number of unique URLS covered "+str(len(uurl))
+        if target['hcount'] >= count and len(uurl) > self.pages_hit:
             self.try_append(target, True)
-#            print "---------"
+            self.final_rules.append(target)
+            return
+            
+        if (target['hcount'] > count+1) or (target['hcount'] >= count and nb_rule > self.rules_hit):
+            self.try_append(target, True)
             self.final_rules.append(target)
             return
 

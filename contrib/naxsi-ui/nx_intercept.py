@@ -109,6 +109,7 @@ def fill_db(files, conf_path):
                 if sig != ''  and fullstr != '':
                     parser.sig_to_db(fullstr, sig, date=date, learning=learning_mode)
                     count += 1
+    print(str(count)+" exceptions stored into database.")
     log.warning(str(count)+" exceptions stored into database.")
     parser.wrapper.StopInsert()
 
@@ -183,13 +184,13 @@ if __name__ == '__main__':
             fd = open(monitor_path)
         except:
             print "Unable to open monitor_path"
+            log.critical("Unable to open monitor_path")
             sys.exit(0)
             
         for line in fd.readlines():
             monitor_tab.append(line.strip())
         fd.close()
-        print "*** monitor config ***"
-        pprint.pprint(monitor_tab)
+        log.warning("Monitor enabled.")
     except:
         monitor_tab = None
 

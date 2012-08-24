@@ -256,10 +256,12 @@ def usage():
    print '\tSpecify pages hit limit for -o option. Defaults to 10.'
    print '[-r --rules-hit NUMBER]'
    print '\tSpecify rules hit limit for -o option. Defaults to 10.'
+   print "[-n : Don't demonize]"
+
 
 if __name__  == '__main__':
    try:
-      opts, args = getopt.getopt(sys.argv[1:], 'c:hosp:r:', ['conf-file', 'help', 'output', 'status', 'pages-hit', 'rules-hit'])
+      opts, args = getopt.getopt(sys.argv[1:], 'c:hosp:r:n', ['conf-file', 'help', 'output', 'status', 'pages-hit', 'rules-hit', ''])
    except getopt.GetoptError, err:
       print str(err)
       usage()
@@ -268,7 +270,8 @@ if __name__  == '__main__':
    has_conf = single_run = stats_run = False
    logs_path = []
    rules_hit = pages_hit = 10
-   
+   daemonize = True
+
    for o, a in opts:
       if o in ('-h', '--help'):
          usage()
@@ -284,6 +287,8 @@ if __name__  == '__main__':
          pages_hit = int(a)
       if o in ('-r', '--rules-hit'):
          rules_hit = int(a)
+      if o in ('-n'):
+         daemonize = False
 
    if has_conf is False:
       usage()
@@ -382,8 +387,9 @@ if __name__  == '__main__':
       sys.exit (-1)
 
    # & daemonize !
-   daemon = nxdaemonizer(pid_path)
-   daemon.daemonize()
-   daemon.write_pid()
+   if daemonize is True:
+      daemon = nxdaemonizer(pid_path)
+      daemon.daemonize()
+      daemon.write_pid()
          
    reactor.run()

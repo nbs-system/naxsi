@@ -82,8 +82,6 @@ class SQLWrapper(object):
     def StartInsert(self):
         if self.dbtype == 'sqlite':
             self.__conn.execute("BEGIN")
-
-        pass
     def StopInsert(self):
         if self.dbtype == 'sqlite':
             self.__conn.commit()

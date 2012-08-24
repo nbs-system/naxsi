@@ -5,17 +5,20 @@ import pprint
 import hashlib
 import itertools
 import sys
+import re
 from NaxsiLib.SQLWrapper import SQLWrapper
 
+
 class signature_parser:
-    def __init__(self, wrapper, log):
+    def __init__(self, wrapper, log, tab):
+        self.tab = tab
         self.log = log
         self.wrapper = wrapper
         try:
             self.wrapper.execute("SELECT 1 FROM exceptions")
         except :
             self.log.warning("Unable to select, DB must be empty. Create ...")
-            self.log.warning("exception:"+str(sys.exc_info()[0]))
+#            self.log.warning("exception:"+str(sys.exc_info()[0]))
             self.dbcreate()
 
     def dbcreate(self):
@@ -45,21 +48,40 @@ class signature_parser:
                                 (str(exception_id), zn, vn, 
                                  d.get("id"+str(i), "")))
         return
-
-
-    def sig_to_db(self, raw_request, sig, add_capture=False, date = None):
+    def try_log_request(self, raw_request, sig):
+        if self.tab is None:
+            self.log.warning("Monitor rules are empty, skip.")
+            return
+        tmpsig = re.sub("total_processed=\d+", "total_processed=0", sig)
+        tmpsig = re.sub("total_blocked=\d+", "total_blocked=0", tmpsig)
+        for x in self.tab:
+            print "try: "+x+" vs "+tmpsig
+            if x in tmpsig:
+                self.log.critical("Monitoring request !")
+                self.log.critical(raw_request)
+                return
+        return
+    
+    def sig_to_db(self, raw_request, sig, date=None, learning=1):
         """
         Insert signature into database. returns 
         associated connection_id.
         """
+        if date is None:
+            date = datetime.now()
         d = dict(urlparse.parse_qsl(sig))
+#        pprint.pprint(d)
+#        self.log.warning("sig:"+sig)
         if not d.has_key('server'):
             d['server'] = ''
         if not d.has_key('uri'):
             d['uri'] = ''
+        self.try_log_request(raw_request, sig)
+        if learning is 0:
+            return
         self.wrapper.execute("INSERT INTO urls (url) VALUES (%s)", (d['uri'],))
         url_id = self.wrapper.getLastId()
-#        self.log.warning( "url id "+str(url_id))
+        self.log.warning( "url id "+str(url_id))
         for i in itertools.count():
             zn = ''
             vn = ''
@@ -101,7 +123,7 @@ class rules_extractor:
         try:
             fd = open(rules_file, 'r')
             for i in fd:
-                if i.startswith('MainRule'):
+                if i.startswith('MainRule') or i.startswith('#@MainRule'):
                     pos = i.find('id:')
                     pos_msg = i.find('msg:')
                     self.core_msg[i[pos + 3:i[pos + 3].find(';') - 1]] = i[pos_msg + 4:][:i[pos_msg + 4:].find('"')]
@@ -166,7 +188,7 @@ class rules_extractor:
             self.wrapper.execute(req)
             res = self.wrapper.getResults()
             for r in res:
-                pprint.pprint(r)
+#                print(r)
                 if len(r['var_name']) > 0:
                     self.try_append({'url': r['url'], 'rule_id': r['rule_id'], 'zone': r['zone'],  'var_name': r['var_name'], 
                                      'hcount':  r['ct'], 'htotal': r['tot'], 'pcount':r['peer_count'], 'ptotal':r['ptot'],
@@ -196,13 +218,16 @@ class rules_extractor:
             if len(target['var_name']) > 0 and len(z['var_name']) > 0 and target['var_name'] != z['var_name']:
                 continue
             if delmatch is True:
-                #pprint.pprint(z)
+                #print(z)
                 self.final_rules.remove(z)
             else:
                 nb_rule += 1
                 count += int(z['hcount'])
         if delmatch is True:
             return
+        # No rules are matching this one, append.
+        if not count and not nb_rule:
+            self.final_rules.append(target)
         if (target['hcount'] > count+1) or (target['hcount'] >= count and nb_rule > self.rules_hit):
 #            self.log.warning("replaced rule. New rule scores : count:"+str(target['hcount']))
 #            self.log.warning("Old rules scores : count:"+str(count)+" rules_hit: "+str(nb_rule))
@@ -229,7 +254,6 @@ class rules_extractor:
         while _i >= 0:
             i = opti_rules[_i]
             _i = _i - 1
-            pprint.pprint(i)
             r += ("# total_count:"+str(i['hcount'])+" ("+str(i['hratio'])+
                   "%), peer_count:"+str(i['pcount'])+" ("+str(i['pratio'])+"%)")
             r += " | "+self.core_msg.get(str(i['rule_id']), "?")+"\n"
@@ -238,6 +262,9 @@ class rules_extractor:
             r += 'BasicRule wl:' + str(i['rule_id']) + ' "mz:'
             if i['url'] is not None and len(i['url']) > 0:
                 r += '$URL:' + i['url']
+            if i['rule_id'] == 1 and i['zone'] == "REQUEST":
+                r += '";\n'
+                continue
             if i['zone'] is not None and len(i['zone']) > 0:
                 if i['url']:
                     r += '|'

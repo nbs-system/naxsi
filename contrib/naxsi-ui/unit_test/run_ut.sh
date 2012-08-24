@@ -19,3 +19,4 @@ for i in `ls 0* | grep -v .conf | grep -v .results` ; do
 done
 rm naxsi_sig*
 rm 0*.tmp
+rm *.log

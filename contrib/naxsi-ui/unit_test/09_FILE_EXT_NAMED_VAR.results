@@ -1,0 +1,9 @@
+BasicRule wl:1315 "mz:$URL:/recrutement|$HEADERS_VAR:cookie";
+BasicRule wl:1011 "mz:$URL:/recrutement|$HEADERS_VAR:cookie";
+BasicRule wl:1010 "mz:$URL:/recrutement|$HEADERS_VAR:cookie";
+BasicRule wl:1005 "mz:$URL:/recrutement|$HEADERS_VAR:cookie";
+BasicRule wl:1315 "mz:$URL:/recrutement|$BODY_VAR:cf_working3";
+BasicRule wl:1501 "mz:$URL:/recrutement|$BODY_VAR:cf_uploadfile3[]|FILE_EXT";
+BasicRule wl:1315 "mz:$URL:/recrutement|$BODY_VAR:cf_failure3";
+BasicRule wl:1315 "mz:$URL:/recrutement|$BODY_VAR:cf_codeerr3";
+BasicRule wl:1007 "mz:$URL:/recrutement|$BODY_VAR:cf_codeerr3";

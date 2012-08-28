@@ -70,6 +70,9 @@ class signature_parser:
         if date is None:
             date = datetime.now()
         d = dict(urlparse.parse_qsl(sig))
+        print "TO DB !"
+        pprint.pprint(d)
+        print "------"
 #        pprint.pprint(d)
 #        self.log.warning("sig:"+sig)
         if not d.has_key('server'):
@@ -276,6 +279,18 @@ class rules_extractor:
             if i['zone'] is not None and len(i['zone']) > 0:
                 if i['url']:
                     r += '|'
+
+
+
+                if "FILE_EXT" in i['zone'] and i['var_name'] is not None and len(i['var_name']) > 0:
+                    i['zone'] = i['zone'].replace("FILE_EXT", "BODY")
+                    if i['var_name'] is None:
+                        i['var_name'] = ''
+                    i['var_name'] = i['var_name']+"|FILE_EXT"
+
+
+
+#(("|FILE_EXT" in i['zone'] and i['var_name'] is not None and len(i['var_name']) > 0) or
                 if "|NAME" in i['zone'] and i['var_name'] is not None and len(i['var_name']) > 0:
                     i['zone'] = i['zone'].replace("|NAME", "")
                     if i['var_name'] is None:
@@ -284,6 +299,8 @@ class rules_extractor:
                 r += i['zone']
             if i['var_name'] is not None and len(i['var_name']) > 0:
                 # oooh, that must be bad.
+                print "i:"
+                pprint.pprint(i)
                 r = r[:-len(i['zone'])]+"$"+r[-len(i['zone']):]
                 r += "_VAR:"+i['var_name']
             r += '";\n'      

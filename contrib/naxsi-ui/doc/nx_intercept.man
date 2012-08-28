@@ -25,8 +25,8 @@ Show usage and exit
 .I "<nginx error log(s)>"
 Rather than performing live learning, nx_intercept will fill database with exceptions present into log files. Using this mode will prevent nx_intercept to run as a daemon, and it will exit as soon as it finished processing of the log file(s)
 .br
-.B -q
-Quiet, reduce verbosity
+.B -n
+Don't daemonize
 
 .SH FILES
 
@@ -48,8 +48,11 @@ port = 8080
 pid_path = /tmp/nx_intercept.pid
 .br
 log_path = /tmp/nx_intercept.log
+.br
+monitor_path = monitor.conf
+.br
+learning_mode = 0
 .P
-
 .B port
 The port the web daemon will listen to
 .br
@@ -60,6 +63,20 @@ Path to PID file, used when nx_extract is running as a daemon
 
 .B log_path
 Path to nx_extract output log file, used mainly for troubleshouting
+.br
+
+.B monitor_path
+Path to monitor rules. If an exception matches one of the monitor rules, full HTTP request will be logged for further inspection. Monitor rules are fragments of a naxsi signature, ie.
+.br
+ip=x.x.x.x&server=xxx.ro : All requests from ip x.x.x.x to server xxx.ro will be logued.
+.br
+server=xxx.ro&uri=/foo/bar : All requests to server xxx.ro on URI /foo/bar will be logued.
+.br
+.br
+
+.B learning_mode
+.br
+If learning mode is set to 1 (default), naxsi will store all exceptions for whitelist generation, and as well perform monitoring actions. If set to 0, then the exceptions will not be stored into database, and only HTTP requests matching monitoring will be used. This mode is intended to be used for troubleshouting while not in learning mode, in conjunction with post_action.
 
 
 

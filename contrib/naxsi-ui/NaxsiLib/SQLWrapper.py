@@ -38,11 +38,17 @@ class SQLWrapper(object):
             self.password = self.get_config('password')
         self.dbname = self.get_config('dbname')
 
+    def setRowToDict(self):
+        if self.dbtype == 'sqlite3':
+            self.__conn.row_factory = self.DBManager.Row
+        elif self.dbtype == 'mysql':
+            self.__cursor = self.__conn.cursor(self.DBManager.cursors.DictCursor)
+
     def get_config(self, key):
         return self.conf.get('sql', key)
 
     def connect(self):
-        self.log.warning("Connecting to database.")
+#        self.log.warning("Connecting to database.")
         if self.dbtype == 'mysql':
             self.log.warning( "Connecting to "+self.host+" with db "+self.dbname)
             try:
@@ -52,7 +58,7 @@ class SQLWrapper(object):
                 self.log.critical("Unable to connect to database.")
                 os._exit(-1)
         elif self.dbtype == 'sqlite':
-            self.log.warning( "connecting to "+self.dbname)
+#            self.log.warning( "connecting to "+self.dbname)
             try:
                 self.__conn = self.DBManager.connect(self.dbpath+self.dbname)
                 self.__conn.row_factory = self.DBManager.Row
@@ -76,8 +82,6 @@ class SQLWrapper(object):
     def StartInsert(self):
         if self.dbtype == 'sqlite':
             self.__conn.execute("BEGIN")
-
-        pass
     def StopInsert(self):
         if self.dbtype == 'sqlite':
             self.__conn.commit()

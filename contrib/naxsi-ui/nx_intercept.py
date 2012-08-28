@@ -22,6 +22,7 @@ conf_path = ''
 
 class InterceptHandler(http.Request):
     def process(self):
+        self.setResponseCode(418)
         if self.getHeader('Orig_args'):
             args = {'GET' : self.getHeader('Orig_args')}
             method = 'GET'
@@ -34,7 +35,6 @@ class InterceptHandler(http.Request):
         args['Cookie'] = self.getHeader('Cookie')
         args['Referer'] = self.getHeader('Referer')
         sig = self.getHeader("naxsi_sig")
-        print self
         if sig is None:
             log.critical("Received a request without naxsi_sig header, IGNORED.")
             self.finish()
@@ -49,9 +49,9 @@ class InterceptHandler(http.Request):
     def background(self, fullstr, sig):
         wrapper = SQLWrapper(conf_path, log)
         wrapper.connect()
-        parser = signature_parser(wrapper, log)
+        parser = signature_parser(wrapper, log, monitor_tab)
         #parser.wrapper.StartInsert()
-        parser.sig_to_db(fullstr, sig)
+        parser.sig_to_db(fullstr, sig, learning=learning_mode)
         parser.wrapper.StopInsert()
 #        parser.wrapper.close()
 
@@ -69,8 +69,7 @@ def usage():
     print '[-l, --log-file /path/to/nginx_error.log]'
     print '\tPerform learning from nginx error log rather than live capture.'
     print "\tIn this mode, nx_intercept will exit after finished log file processing."
-    print '[-h : Display this help]'
-    
+    print "[-n : Don't demonize]"
 
 
 def fill_db(files, conf_path):
@@ -91,7 +90,7 @@ def fill_db(files, conf_path):
     #wrapper.exec()
     
     log.critical("Filling db with %s (TABLES WILL BE DROPPED !)" %  ' '.join(files))
-    parser = signature_parser(wrapper, log)
+    parser = signature_parser(wrapper, log, None)
     parser.wrapper.StartInsert()
     for filename in files:
         with open(filename, 'r') as fd:
@@ -108,8 +107,9 @@ def fill_db(files, conf_path):
                         request_args[s[0]] = urllib.unquote(''.join(s[1:]))
                     fullstr = request_args.get('request', 'None')[2:-1] + ' Referer : ' + request_args.get('referrer', ' "None"')[2:-1].strip('"\n') + ',Cookie : ' + request_args.get('cookie', ' "None"')[2:-1]
                 if sig != ''  and fullstr != '':
-                    parser.sig_to_db(fullstr, sig, date=date)
+                    parser.sig_to_db(fullstr, sig, date=date, learning=learning_mode)
                     count += 1
+    print(str(count)+" exceptions stored into database.")
     log.warning(str(count)+" exceptions stored into database.")
     parser.wrapper.StopInsert()
 
@@ -117,7 +117,7 @@ def fill_db(files, conf_path):
 if __name__ == '__main__':
 #    global log
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'c:hl:', ['conf-file', 'help', 'log-file'])
+        opts, args = getopt.getopt(sys.argv[1:], 'c:hl:n', ['conf-file', 'help', 'log-file', ''])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -125,16 +125,11 @@ if __name__ == '__main__':
 
     has_conf = False
     logs_path = []
+    daemonize = True
 
     for o, a in opts:
         if o in ('-h', '--help'):
             usage()
-            sys.exit(0)
-        if o in ('-a', '--add-monitoring'):
-            if has_conf is False:
-                print "Conf File must be specified first !"
-                sys.exit(-1)
-            add_monitoring(a, conf_path)
             sys.exit(0)
         if o in ('-l', '--log-file'):
             if has_conf is False:
@@ -144,6 +139,8 @@ if __name__ == '__main__':
         if o in ('-c', '--conf-file'):
             has_conf = True
             conf_path = a
+        if o in ('-n'):
+            daemonize = False
 
     if has_conf is False:
         usage()
@@ -163,12 +160,39 @@ if __name__ == '__main__':
     except:
         print "No port in conf file ! Using default port (8080)"
         port = 8080
+
+    try:
+        learning_mode = int(conf.get('nx_intercept', 'learning_mode'))
+    except:
+        learning_mode = 1
+
+    try:
+        iface = conf.get('nx_intercept', 'interface')
+    except:
+        iface = ''
        
     try:
         pid_path = conf.get('nx_intercept', 'pid_path')
     except:
         print "No pid_path in conf file ! Using /tmp/nx_intercept.pid"
         pid_path = "/tmp/nx_intercept.pid"
+
+    try:
+        monitor_path = conf.get('nx_intercept', 'monitor_path')
+        monitor_tab = []
+        try:
+            fd = open(monitor_path)
+        except:
+            print "Unable to open monitor_path"
+            log.critical("Unable to open monitor_path")
+            sys.exit(0)
+            
+        for line in fd.readlines():
+            monitor_tab.append(line.strip())
+        fd.close()
+        log.warning("Monitor enabled.")
+    except:
+        monitor_tab = None
 
     try:
         log_path = conf.get('nx_intercept', 'log_path')
@@ -187,15 +211,17 @@ if __name__ == '__main__':
         sys.exit(0)
 
     try:
-        reactor.listenTCP(port, InterceptFactory())
-        log.warning("Listening on port "+str(port))
+        reactor.listenTCP(port, InterceptFactory(), interface=iface)
+        log.warning("Listening on port "+str(port)+" iface:"+iface)
     except:
         print "Unable to listen on "+str(port)
-        log.critical("Unable to listen on "+str(port))
+        log.critical("Unable to listen on "+str(port)+" iface:"+iface)
         sys.exit (-1)
+    
     # & daemonize
-    daemon = nxdaemonizer(pid_path)
-    daemon.daemonize()
-    daemon.write_pid()
+    if daemonize is True:
+        daemon = nxdaemonizer(pid_path)
+        daemon.daemonize()
+        daemon.write_pid()
     
     reactor.run()

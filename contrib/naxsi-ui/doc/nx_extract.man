@@ -34,8 +34,9 @@ option.
 .br
 .B -r --rules-hit
 Control limit of rules hit for factorization. If a specific rule can represent more than "rules-hit" rules in one rule, it will be applied. Usefull only with
-.B -o --output
-option.
+.br
+.B -n
+Don't daemonize. Usefull for debugging.
 .br
 
 
@@ -164,6 +165,10 @@ port = 8080
 pid_path = nx_intercept.pid
 .br
 log_path = nx_intercept.log
+.br
+monitor_path = monitor.conf
+.br
+learning_mode = 1
 .br
 [sql]
 .br

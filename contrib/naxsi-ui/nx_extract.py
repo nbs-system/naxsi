@@ -92,7 +92,7 @@ class WootMap(Resource):
          import GeoIP
          self.has_geoip = True
       except:
-         sys.critical("No GeoIP module, no map")
+         log.critical("No GeoIP module, no map")
          return
       Resource.__init__(self)
       self.ex = rules_extractor(0,0, glob_rules_file, glob_conf_file, log)
@@ -158,7 +158,7 @@ class GraphView(Resource):
          html += i
       fd.close()
       
-      array_excep, _ = self.build_js_array()
+      array_excep, array_count = self.build_js_array()
       sqli_array, sql_count = self.build_js_array(1000, 1099)
       xss_array, xss_count = self.build_js_array(1300, 1399)
       rfi_array, rfi_count = self.build_js_array(1100, 1199)
@@ -192,12 +192,13 @@ class GraphView(Resource):
    def create_js_array(self, res):
       array = '['
       for i in res:
-          
-          d = i.replace('/', '-')
-          date_begin = str(d).split('-')
-          date_begin[1] = str(int(date_begin[1]) - 1)
-          date_begin = ','.join(date_begin)
-          array += '[Date.UTC(' + date_begin  + '),' + str(res[i]).replace('/', '-') + '],'
+         if i is None:
+            continue
+         d = i.replace('/', '-')
+         date_begin = str(d).split('-')
+         date_begin[1] = str(int(date_begin[1]) - 1)
+         date_begin = ','.join(date_begin)
+         array += '[Date.UTC(' + date_begin  + '),' + str(res[i]).replace('/', '-') + '],'
       if array != '[':
          array = array[:-1] + ']'
       else:
@@ -218,13 +219,11 @@ class GraphView(Resource):
       else:
           self.ex.wrapper.execute('select substr(date,1, 10) as d, count(id_exception) as ex from connections join exceptions as e on (e.exception_id = id_exception) where e.rule_id >= %s and e.rule_id <= %s group by substr(date, 1, 10)', (str(id_beg), str(id_end)))
       count = self.ex.wrapper.getResults()
-      if count(count) <= 0:
-        self.log.critical("Database seems to be empty, or does not have enough exceptions.")
-        return 0, 0
       mydict = self.build_dict(count)
       total_hit = 0
       for i in count:
-         total_hit += i['ex']
+         if i is not None:
+            total_hit += i['ex']
       myarray = self.create_js_array(mydict)
       return myarray, total_hit
 
@@ -257,10 +256,12 @@ def usage():
    print '\tSpecify pages hit limit for -o option. Defaults to 10.'
    print '[-r --rules-hit NUMBER]'
    print '\tSpecify rules hit limit for -o option. Defaults to 10.'
+   print "[-n : Don't demonize]"
+
 
 if __name__  == '__main__':
    try:
-      opts, args = getopt.getopt(sys.argv[1:], 'c:hosp:r:', ['conf-file', 'help', 'output', 'status', 'pages-hit', 'rules-hit'])
+      opts, args = getopt.getopt(sys.argv[1:], 'c:hosp:r:n', ['conf-file', 'help', 'output', 'status', 'pages-hit', 'rules-hit', ''])
    except getopt.GetoptError, err:
       print str(err)
       usage()
@@ -269,7 +270,8 @@ if __name__  == '__main__':
    has_conf = single_run = stats_run = False
    logs_path = []
    rules_hit = pages_hit = 10
-   
+   daemonize = True
+
    for o, a in opts:
       if o in ('-h', '--help'):
          usage()
@@ -285,6 +287,8 @@ if __name__  == '__main__':
          pages_hit = int(a)
       if o in ('-r', '--rules-hit'):
          rules_hit = int(a)
+      if o in ('-n'):
+         daemonize = False
 
    if has_conf is False:
       usage()
@@ -293,6 +297,12 @@ if __name__  == '__main__':
    fd = open(glob_conf_file, 'r')
    conf = ConfigParser()
    conf.readfp(fd)
+   
+   try:
+      iface = conf.get('nx_extract', 'interface')
+   except:
+      iface = ''
+
    try:
       port = int(conf.get('nx_extract', 'port'))
    except:
@@ -370,15 +380,16 @@ if __name__  == '__main__':
    factory = Site(webroot)
 
    try:
-      reactor.listenTCP(port, factory)
-      log.warning("Listening on port "+str(port))
+      reactor.listenTCP(port, factory, interface=iface)
+      log.warning("Listening on port "+str(port)+" iface:"+iface)
    except:
-      log.critical ("Unable to listen on "+str(port))
+      log.critical ("Unable to listen on "+str(port)+" iface:"+iface)
       sys.exit (-1)
 
    # & daemonize !
-   daemon = nxdaemonizer(pid_path)
-   daemon.daemonize()
-   daemon.write_pid()
+   if daemonize is True:
+      daemon = nxdaemonizer(pid_path)
+      daemon.daemonize()
+      daemon.write_pid()
          
    reactor.run()

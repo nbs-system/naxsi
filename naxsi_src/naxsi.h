@@ -306,8 +306,8 @@ typedef struct
   ngx_array_t	*disabled_rules;
   /* counters for both processed requests and
      blocked requests, used in naxsi_fmt */
-  ngx_int_t	request_processed;
-  ngx_int_t	request_blocked;
+  size_t	request_processed;
+  size_t	request_blocked;
   ngx_int_t	error;
   ngx_array_t	*persistant_data;
   ngx_flag_t	learning:1;

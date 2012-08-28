@@ -559,7 +559,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ngx_int_t     rc, w;
   u_int		i;
   char		*fmt;
-  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&total_processed=%lld&total_blocked=%lld";
+  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&total_processed=%zu&total_blocked=%zu";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
   ngx_str_t	denied_args, tmp_uri;
   ngx_http_dummy_loc_conf_t	*cf;
@@ -579,7 +579,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   rc = snprintf(0, 0, fmt_base, r->connection->addr_text.len,
 		r->connection->addr_text.data,
 		r->headers_in.server.len, r->headers_in.server.data,
-		tmp_uri.len, tmp_uri.data,
+		tmp_uri.len, tmp_uri.data, cf->learning ? 1 : 0,
 		cf->request_processed, cf->request_blocked);
 
   
@@ -604,7 +604,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   w = snprintf(fmt, rc, fmt_base, r->connection->addr_text.len,
 	       r->connection->addr_text.data,
 	       r->headers_in.server.len, r->headers_in.server.data,
-	       tmp_uri.len, tmp_uri.data,
+	       tmp_uri.len, tmp_uri.data,  cf->learning ? 1 : 0,
 	       cf->request_processed, cf->request_blocked);
   
   char	tmp_zone[30]; 

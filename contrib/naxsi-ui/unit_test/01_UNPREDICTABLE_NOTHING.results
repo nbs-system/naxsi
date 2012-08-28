@@ -1,0 +1,1 @@
+BasicRule wl:1001 "mz:$URL://foobar|$ARGS_VAR:vulnarg";

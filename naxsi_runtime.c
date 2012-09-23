@@ -579,7 +579,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   rc = snprintf(0, 0, fmt_base, r->connection->addr_text.len,
 		r->connection->addr_text.data,
 		r->headers_in.server.len, r->headers_in.server.data,
-		tmp_uri.len, tmp_uri.data, cf->learning ? 1 : 0,
+		tmp_uri.len, tmp_uri.data, ctx->learning ? 1 : 0,
 		cf->request_processed, cf->request_blocked);
 
   
@@ -604,7 +604,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   w = snprintf(fmt, rc, fmt_base, r->connection->addr_text.len,
 	       r->connection->addr_text.data,
 	       r->headers_in.server.len, r->headers_in.server.data,
-	       tmp_uri.len, tmp_uri.data,  cf->learning ? 1 : 0,
+	       tmp_uri.len, tmp_uri.data,  ctx->learning ? 1 : 0,
 	       cf->request_processed, cf->request_blocked);
   
   char	tmp_zone[30]; 
@@ -689,15 +689,17 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     h->value.len = denied_args.len;
     h->value.data = denied_args.data;
   }
-  else if (cf->learning)
+  else if (ctx->learning)
     ngx_log_error(NGX_LOG_ERR, r->connection->log, 
 		  0, "[naxsi] no headers_in, not forwarded to learning mode.");
   
-  if (cf->learning) {
-    ngx_http_core_loc_conf_t  *clcf;
-    clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
-    clcf->post_action.data = cf->denied_url->data;
-    clcf->post_action.len = cf->denied_url->len;
+  if (ctx->learning) {
+    if (ctx->post_action) {
+      ngx_http_core_loc_conf_t  *clcf;
+      clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
+      clcf->post_action.data = cf->denied_url->data;
+      clcf->post_action.len = cf->denied_url->len;
+    }
     ngx_log_error(NGX_LOG_ERR, r->connection->log, 
 		  0, "NAXSI_FMT: %s", fmt);
     return (NGX_DECLINED);
@@ -874,11 +876,11 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
   unsigned int		i;
   char		*eq, *ev, *orig;
   int		len, full_len;
-  ngx_http_dummy_loc_conf_t	*cf;   
+  //ngx_http_dummy_loc_conf_t	*cf;   
   unsigned char			*dst, *src;
 
   
-  cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
+  //cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
     
 #ifdef spliturl_ruleset_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
@@ -892,7 +894,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       str++;
       continue;
     }
-    if (ctx->block && !cf->learning)
+    if (ctx->block && !ctx->learning)
       return (0);
     eq = strchr(str, '=');
     ev = strchr(str, '&');
@@ -1005,7 +1007,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
   unsigned int			   i, ret, z;
   ngx_int_t			   nb_match=0;
   ngx_http_custom_rule_location_t *location;
-  ngx_http_dummy_loc_conf_t	*cf;
+  //ngx_http_dummy_loc_conf_t	*cf;
   
 #ifdef basestr_ruleset_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
@@ -1020,13 +1022,13 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
     return (0);
   }
   r = rules->elts;
-  cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
+  //cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
 #ifdef basestr_ruleset_debug 
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		"XX-checking rules ..."); 
 #endif
   
-  for (i = 0; i < rules->nelts && (!ctx->block || cf->learning) ; i++) {
+  for (i = 0; i < rules->nelts && (!ctx->block || ctx->learning) ; i++) {
 #ifdef basestr_ruleset_debug 
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		  "XX-rule %d (%V=%V)", r[i].rule_id, name, value); 
@@ -1540,7 +1542,7 @@ ngx_http_dummy_uri_parse(ngx_http_dummy_main_conf_t *main_cf,
   
   if (!r->uri.len)
     return ;
-  if (ctx->block && !cf->learning)
+  if (ctx->block && !ctx->learning)
     return ;
   if (!main_cf->generic_rules && !cf->generic_rules) {
     dummy_error_fatal(ctx, r, "no generic rules ?!");
@@ -1571,7 +1573,7 @@ ngx_http_dummy_args_parse(ngx_http_dummy_main_conf_t *main_cf,
 {
   ngx_str_t			tmp;
   
-  if (ctx->block && !cf->learning)
+  if (ctx->block && !ctx->learning)
     return ;
   if (!r->args.len)
     return ;
@@ -1606,7 +1608,7 @@ ngx_http_dummy_headers_parse(ngx_http_dummy_main_conf_t *main_cf,
   if (!cf->header_rules && !main_cf->header_rules)
     return ;
   // this check may be removed, as it shouldn't be needed anymore !
-  if (ctx->block && !cf->learning)
+  if (ctx->block && !ctx->learning)
     return ;
   part = &r->headers_in.headers.part;
   h = part->elts;
@@ -1657,7 +1659,7 @@ ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx,
       //presence of body rules (POST/PUT rules)
       (cf->body_rules || main_cf->body_rules) && 
       //and the presence of data to parse
-      r->request_body && (!ctx->block || cf->learning)) 
+      r->request_body && (!ctx->block || ctx->learning)) 
     ngx_http_dummy_body_parse(ctx, r, cf, main_cf);
   ngx_http_dummy_update_current_ctx_status(ctx, cf, r);
 }

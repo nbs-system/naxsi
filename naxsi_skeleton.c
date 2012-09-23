@@ -241,12 +241,25 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   /* Go with each locations registred in the srv_conf. */
   loc_cf = main_cf->locations->elts;
   for (i = 0; i < main_cf->locations->nelts; i++) {
+    /* if (!loc_cf[i]->body_rules && !loc_cf[i]->get_rules && !loc_cf[i]->header_rules) { */
+    /*   ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,  */
+    /* 			 "naxsi: No body rules, did you forget naxsi_core.rules ?"); */
+    /* } */
+    /* precompute hash for dynamic variable look-up */
+    /* loc_cf[i].flag_disable.data = ngx_pcalloc(cf->pool, strlen(RT_DISABLE)+1); */
+    /* ngx_memcpy(loc_cf[i].flag_disable.data, RT_DISABLE, strlen(RT_DISABLE)) */
+    /* loc_cf[i].flag_disable.len = strlen(RT_DISABLE); */
+    loc_cf[i]->flag_enable_h = ngx_hash_key_lc((u_char *)RT_ENABLE, strlen(RT_ENABLE));
+    loc_cf[i]->flag_learning_h = ngx_hash_key_lc((u_char *)RT_LEARNING, strlen(RT_LEARNING));
+    loc_cf[i]->flag_post_action_h = ngx_hash_key_lc((u_char *)RT_POST_ACTION, strlen(RT_POST_ACTION));
+    
     if(ngx_http_dummy_create_hashtables_n(loc_cf[i], cf) != NGX_OK) {
       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 			 "WhiteList Hash building failed");
       return (NGX_ERROR);
     }
   }
+  
   return (NGX_OK);
 }
 
@@ -703,6 +716,13 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   ngx_http_core_loc_conf_t  *clcf;
   struct tms		 tmsstart, tmsend;
   clock_t		 start, end;
+  ngx_http_variable_value_t *lookup;
+
+
+  static ngx_str_t learning_flag = ngx_string(RT_LEARNING);
+  static ngx_str_t enable_flag = ngx_string(RT_ENABLE);
+  static ngx_str_t post_action_flag = ngx_string(RT_POST_ACTION);
+  
   
   ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
@@ -744,7 +764,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   if (!ctx) {
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_request_ctx_t));
     /* might have been set by a previous trigger */
-    if (cf->learning)	{
+    if (ctx->learning)	{
       clcf->post_action.data = 0; //cf->denied_url->data;
       clcf->post_action.len = 0; //cf->denied_url->len;
     }
@@ -752,6 +772,60 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     if (ctx == NULL)
       return NGX_ERROR;
     ngx_http_set_ctx(r, ctx, ngx_http_naxsi_module);
+    
+    //---XXX42
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : orig learning : %d", cf->learning ? 1 : 0);
+    ctx->learning = cf->learning;
+    lookup = ngx_http_get_variable(r, &learning_flag, cf->flag_learning_h);
+    if (lookup && !lookup->not_found) {
+      ctx->learning = lookup->data[0] - '0';
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "XX-dummy : override learning : %d", ctx->learning ? 1 : 0);
+    }
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : [final] learning : %d", ctx->learning ? 1 : 0);
+    
+
+    ctx->enabled = cf->enabled;
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : orig enabled : %d", ctx->enabled ? 1 : 0);
+    lookup = ngx_http_get_variable(r, &enable_flag, cf->flag_enable_h);
+    if (lookup && !lookup->not_found) {
+      ctx->enabled = lookup->data[0] - '0';
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "XX-dummy : override enable : %d", ctx->enabled ? 1 : 0);
+
+    }
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : [final] enabled : %d", ctx->enabled ? 1 : 0);
+
+    
+    if (cf->learning)
+      ctx->post_action = 1;
+    else
+      ctx->post_action = 0;
+    
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : orig post_action : %d", ctx->post_action ? 1 : 0);
+    
+    lookup = ngx_http_get_variable(r, &post_action_flag, cf->flag_post_action_h);
+    if (lookup && !lookup->not_found) {
+      ctx->post_action = lookup->data[0] - '0';
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "XX-dummy : override post_action : %d", ctx->post_action ? 1 : 0);
+
+    }
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : [final] post_action : %d", ctx->post_action ? 1 : 0);
+
+    //---
+
+    /* the module is not enabled here */
+    if (!ctx->enabled)
+      return (NGX_DECLINED);
+    
+
     if  ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) 
 	 && !ctx->ready) {
 #ifdef mechanics_debug
@@ -791,6 +865,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       ctx->ready = 1;
   }
   if (ctx && ctx->ready && !ctx->over) {
+    
     if ((start = times(&tmsstart)) == (clock_t)-1)
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : Failed to get time");

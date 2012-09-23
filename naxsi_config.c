@@ -174,69 +174,6 @@ dummy_score(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 #endif
   return (NGX_CONF_OK);
 }
-  
-  
-  
-  /*rule->sc_score = 0;
-    rule->sc_allow = 0;*/
-/*   tmp_ptr = (char *) (tmp->data + strlen(SCORE_T)); */
-/*   while (*tmp_ptr) { */
-/* #ifdef score_debug */
-/*     ngx_conf_log_error(NGX_LOG_EMERG, r, 0,  */
-/* 		       "XX-(debug) scoring rule, remains '%s'", */
-/* 		       tmp_ptr); */
-/* #endif */
-/*     if (tmp_ptr[0] == '$') { */
-/*       tmp_end = strchr(tmp_ptr, ':'); */
-/*       if (!tmp_end) */
-/* 	return (NGX_CONF_ERROR); */
-/*       len = tmp_end - tmp_ptr; */
-/*       if (len <= 0) */
-/* 	return (NGX_CONF_ERROR); */
-/*       rule->sc_tag = ngx_pcalloc(r->pool, sizeof(ngx_str_t)); */
-/*       if (!rule->sc_tag) */
-/* 	return (NGX_CONF_ERROR); */
-/*       rule->sc_tag->data = ngx_pcalloc(r->pool, len+1); */
-/*       if (!rule->sc_tag->data) */
-/* 	return (NGX_CONF_ERROR); */
-/*       //memset(rule->sc_tag->data, 0, len+1); */
-/*       memcpy(rule->sc_tag->data, tmp_ptr, len); */
-/*       rule->sc_tag->len = len; */
-/*       rule->sc_score = atoi(tmp_end+1); */
-/*       //don't check on sc_score as it can be negative :p */
-/* #ifdef score_debug */
-/*       ngx_conf_log_error(NGX_LOG_EMERG, r, 0,  */
-/* 			 "XX-(debug) special scoring rule (%s:%d)", */
-/* 			 rule->sc_tag->data, rule->sc_score); */
-/* #endif */
-/*       tmp_ptr = tmp_end+1; */
-/*       return (NGX_CONF_OK); */
-/*     } */
-/*     else if (!strcasecmp(tmp_ptr, "BLOCK")) { */
-/*       rule->block = 1; */
-/*       tmp_ptr += 5; */
-/*       return (NGX_CONF_OK); */
-/*     } */
-/*     else if (!strcasecmp(tmp_ptr, "ALLOW")) { */
-/*       rule->allow = 1; */
-/*       tmp_ptr += 5; */
-/*       return (NGX_CONF_OK); */
-/*     } */
-/*     //or maybe you just want to assign a score */
-/*     else if ( (tmp_ptr[0] >= '0' && tmp_ptr[0] <= '9') || tmp_ptr[0] == '-') { */
-/*       score = atoi((const char *)tmp->data+2); */
-/*       // I think score should be able to be negative, so remove this check. */
-/*       /\* if (score <= 0) *\/ */
-/*       /\*   return (NGX_CONF_ERROR); *\/ */
-/*       rule->score = score; */
-/*       return (NGX_CONF_OK); */
-/*     } */
-/*     else */
-/*       return (NGX_CONF_ERROR); */
-/*   } */
-/* return (NGX_CONF_ERROR); */
-/* } */
-
 
 //#define dummy_zone_debug
 void	*
@@ -520,8 +457,11 @@ ngx_http_dummy_cfg_parse_one_rule(ngx_conf_t *cf,
   ** parse basic rule
   */
   if (!ngx_strcmp(value[0].data, TOP_CHECK_RULE_T) ||
+      !ngx_strcmp(value[0].data, TOP_CHECK_RULE_N) ||
       !ngx_strcmp(value[0].data, TOP_BASIC_RULE_T) ||
-      !ngx_strcmp(value[0].data, TOP_MAIN_BASIC_RULE_T)) {
+      !ngx_strcmp(value[0].data, TOP_BASIC_RULE_N) ||
+      !ngx_strcmp(value[0].data, TOP_MAIN_BASIC_RULE_T) ||
+      !ngx_strcmp(value[0].data, TOP_MAIN_BASIC_RULE_N)) {
 #ifdef dummy_cfg_parse_one_rule_debug
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "XX-basic rule %V", &(value[1]));  
 #endif

@@ -708,6 +708,7 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 ** - check if the request should be denied
 */
 //#define mechanics_debug
+//naxsi_modifiers_debug
 static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 {
   ngx_http_request_ctx_t	*ctx;
@@ -773,52 +774,63 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       return NGX_ERROR;
     ngx_http_set_ctx(r, ctx, ngx_http_naxsi_module);
     
-    //---XXX42
+#ifdef naxsi_modifiers_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig learning : %d", cf->learning ? 1 : 0);
+#endif
     ctx->learning = cf->learning;
     lookup = ngx_http_get_variable(r, &learning_flag, cf->flag_learning_h);
     if (lookup && !lookup->not_found) {
       ctx->learning = lookup->data[0] - '0';
+#ifdef naxsi_modifiers_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override learning : %d", ctx->learning ? 1 : 0);
+#endif
     }
+#ifdef naxsi_modifiers_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] learning : %d", ctx->learning ? 1 : 0);
-    
+#endif
 
     ctx->enabled = cf->enabled;
+#ifdef naxsi_modifiers_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig enabled : %d", ctx->enabled ? 1 : 0);
+#endif
     lookup = ngx_http_get_variable(r, &enable_flag, cf->flag_enable_h);
     if (lookup && !lookup->not_found) {
       ctx->enabled = lookup->data[0] - '0';
+#ifdef naxsi_modifiers_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override enable : %d", ctx->enabled ? 1 : 0);
+#endif
 
     }
+#ifdef naxsi_modifiers_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] enabled : %d", ctx->enabled ? 1 : 0);
-
+#endif
     
     if (cf->learning)
       ctx->post_action = 1;
     else
       ctx->post_action = 0;
-    
+#ifdef naxsi_modifiers_debug    
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig post_action : %d", ctx->post_action ? 1 : 0);
-    
+#endif
     lookup = ngx_http_get_variable(r, &post_action_flag, cf->flag_post_action_h);
     if (lookup && !lookup->not_found) {
       ctx->post_action = lookup->data[0] - '0';
+#ifdef
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override post_action : %d", ctx->post_action ? 1 : 0);
-
+#endif
     }
+#ifdef naxsi_modifiers_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] post_action : %d", ctx->post_action ? 1 : 0);
-
+#endif
     //---
 
     /* the module is not enabled here */

@@ -70,9 +70,9 @@ class signature_parser:
         if date is None:
             date = datetime.now()
         d = dict(urlparse.parse_qsl(sig))
-        print "TO DB !"
-        pprint.pprint(d)
-        print "------"
+#        print "TO DB !"
+#        pprint.pprint(d)
+#        print "------"
 #        pprint.pprint(d)
 #        self.log.warning("sig:"+sig)
         if not d.has_key('server'):

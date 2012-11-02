@@ -311,6 +311,7 @@ typedef struct
   size_t	request_blocked;
   ngx_int_t	error;
   ngx_array_t	*persistant_data;
+  ngx_flag_t	extensive:1;
   ngx_flag_t	learning:1;
   ngx_flag_t	enabled:1;
   ngx_flag_t	force_disabled:1;
@@ -318,12 +319,10 @@ typedef struct
   ngx_str_t	*denied_url;
   /* precomputed hash for dynamic variable lookup, 
      variable themselves are boolean */
-  //ngx_str_t	flag_disable;
   ngx_uint_t	flag_enable_h;
-  //ngx_str_t	flag_learning;
   ngx_uint_t	flag_learning_h;
-  //ngx_str_t	flag_post_action;
   ngx_uint_t	flag_post_action_h;
+  ngx_uint_t	flag_extensive_log_h;
   
 } ngx_http_dummy_loc_conf_t;
 
@@ -374,6 +373,7 @@ typedef struct
   ngx_flag_t	learning:1;
   ngx_flag_t	enabled:1;
   ngx_flag_t	post_action:1;
+  ngx_flag_t	extensive_log:1;
   
 } ngx_http_request_ctx_t;
 
@@ -408,6 +408,7 @@ typedef struct
 
 /* name of hardcoded variables to 
    change behavior of naxsi at runtime */
+#define RT_EXTENSIVE_LOG "naxsi_extensive_log"
 #define RT_ENABLE "naxsi_flag_enable"
 #define RT_LEARNING "naxsi_flag_learning"
 #define RT_POST_ACTION "naxsi_flag_post_action"
@@ -437,6 +438,10 @@ ngx_int_t	ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 					       ngx_http_request_t *r);
 void
 naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type);
+
+
+int naxsi_unescape(ngx_str_t *str);
+
 
 /* static ngx_int_t ngx_http_dummy_subrequest(ngx_http_request_t *r,  */
 /* 					   ngx_chain_t *in); */

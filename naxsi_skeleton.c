@@ -337,6 +337,7 @@ ngx_http_dummy_init(ngx_conf_t *cf)
     loc_cf[i]->flag_enable_h = ngx_hash_key_lc((u_char *)RT_ENABLE, strlen(RT_ENABLE));
     loc_cf[i]->flag_learning_h = ngx_hash_key_lc((u_char *)RT_LEARNING, strlen(RT_LEARNING));
     loc_cf[i]->flag_post_action_h = ngx_hash_key_lc((u_char *)RT_POST_ACTION, strlen(RT_POST_ACTION));
+    loc_cf[i]->flag_extensive_log_h = ngx_hash_key_lc((u_char *)RT_EXTENSIVE_LOG, strlen(RT_EXTENSIVE_LOG));
     
     if(ngx_http_dummy_create_hashtables_n(loc_cf[i], cf) != NGX_OK) {
       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
@@ -916,6 +917,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   static ngx_str_t learning_flag = ngx_string(RT_LEARNING);
   static ngx_str_t enable_flag = ngx_string(RT_ENABLE);
   static ngx_str_t post_action_flag = ngx_string(RT_POST_ACTION);
+  static ngx_str_t extensive_log_flag = ngx_string(RT_EXTENSIVE_LOG);
   
   
   ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
@@ -1023,6 +1025,22 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 #ifdef naxsi_modifiers_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] post_action : %d", ctx->post_action ? 1 : 0);
+#endif
+#ifdef naxsi_modifiers_debug    
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : orig extensive_log : %d", ctx->extensive_log ? 1 : 0);
+#endif
+    lookup = ngx_http_get_variable(r, &extensive_log_flag, cf->flag_extensive_log_h);
+    if (lookup && !lookup->not_found) {
+      ctx->extensive_log = lookup->data[0] - '0';
+#ifdef naxsi_modifier_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "XX-dummy : override extensive_log : %d", ctx->extensive_log ? 1 : 0);
+#endif
+    }
+#ifdef naxsi_modifiers_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : [final] extensive_log : %d", ctx->extensive_log ? 1 : 0);
 #endif
     //---
 

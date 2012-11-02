@@ -129,7 +129,8 @@ void			ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
 						  ngx_http_request_t	 *r,
 						  ngx_http_dummy_loc_conf_t *cf,
 						  ngx_http_dummy_main_conf_t *main_cf);
-
+void naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *req, ngx_http_rule_t *rule,
+			 enum DUMMY_MATCH_ZONE	zone);
 
 
 
@@ -749,11 +750,23 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
     return (0);
   if (ngx_http_dummy_is_rule_whitelisted_n(req, cf, r, name, 
 					   zone, target_name) == 1) {
-  #ifdef whitelist_light_debug
+
+#ifdef whitelist_light_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		  "rule is whitelisted.");
-  #endif  
+#endif  
     return (0);
+  }
+  //XX42
+#ifdef extensive_log_debug
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
+		"Current extensive log value: %d", ctx->extensive_log);
+#endif
+  if (ctx->extensive_log) {
+    if (target_name)
+      naxsi_log_offending(value, name, req, r, zone);
+    else
+      naxsi_log_offending(name, value, req, r, zone);
   }
   if (nb_match == 0)
     nb_match = 1;
@@ -879,11 +892,12 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 			  enum DUMMY_MATCH_ZONE	zone)
 {
   ngx_str_t	name, val;
-  unsigned int		i;
+  //unsigned int		i;
   char		*eq, *ev, *orig;
   int		len, full_len;
+  int nullbytes=0;
   //ngx_http_dummy_loc_conf_t	*cf;   
-  unsigned char			*dst, *src;
+  //unsigned char			*dst, *src;
 
   
   //cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
@@ -952,21 +966,15 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       name.len = eq - str - 1;
     }
     if (val.len || name.len) {
-      //start
-      dst = val.data;
-      src = val.data;
-      
-      naxsi_unescape_uri(&src, &dst,
-			 val.len, 0);      
-      val.len =  src - val.data;
-      //tmp hack fix, avoid %00 & co (null byte) encoding :p
-      for (i = 0; i < val.len; i++)
-	if (val.data[i] == 0x0)
-	  {
-	    ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, req, &name, &val, zone, 1, 0);
-	    val.data[i] = '0';
-	  }
-      //end
+      //XX42 : todo, tag name as correct zone
+      nullbytes = naxsi_unescape(&name);
+      if (nullbytes > 0) {
+	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, req, &name, &val, zone, 1, 1);
+      }
+      nullbytes = naxsi_unescape(&val);
+      if (nullbytes > 0) {
+	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, req, &name, &val, zone, 1, 0);
+      }
 #ifdef spliturl_ruleset_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		    "XX-extract  [%V]=[%V]", &(name), &(val));
@@ -1063,6 +1071,11 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 			  "XX-apply rulematch!! [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
 #endif
+	    
+	    /* if (ctx->extensive_log) { */
+	    /*   naxsi_log_offending(name, value, req, &(r[i]), zone); */
+	    /* } */
+	    
 	    ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);	    
 	  }
 	  
@@ -1075,6 +1088,10 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 			    "XX-apply rulematch[in name] [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
 #endif
+	      /* if (ctx->extensive_log) { */
+	      /* 	naxsi_log_offending(name, value, req, &(r[i]), zone); */
+	      /* } */
+
 	      ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, name, zone, nb_match, 1);
 	    }
 	  }
@@ -1114,6 +1131,10 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		      "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 #endif
+	/* if (ctx->extensive_log) { */
+	/*   naxsi_log_offending(name, value, req, &(r[i]), zone); */
+	/* } */
+
 	ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);
       }
     
@@ -1130,6 +1151,10 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 			"XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 #endif
+	  /* if (ctx->extensive_log) { */
+	  /*   naxsi_log_offending(name, value, req, &(r[i]), zone); */
+	  /* } */
+
 	  ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 1);
 	}
       }
@@ -1160,7 +1185,7 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
   char				*boundary, *varn_start, *varn_end;
   char				*filen_start, *filen_end;
   char				*end, *line_end;
-  u_int				boundary_len, varn_len, varc_len, idx;
+  u_int				boundary_len, varn_len, varc_len, idx, nullbytes;
   ngx_http_dummy_loc_conf_t		*cf;
   ngx_http_dummy_main_conf_t		*main_cf;
   
@@ -1171,7 +1196,7 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		"XX-multipart/form-data");
 #endif
-  /* So far, I have noticed to correct ways of putting the boundary in a multipart post :
+  /* So far, I have noticed two correct ways of putting the boundary in a multipart post :
   ** 1: in the content-type header, after multipart/form-data
   ** 2: at the very begining of the body. */
   /*extract boundary*/
@@ -1326,6 +1351,16 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
       final_var.len = varn_len;
       final_data.data = (unsigned char *)filen_start;
       final_data.len = filen_end - filen_start;
+      //XX42 : todo, tag name as correct zone
+      nullbytes = naxsi_unescape(&final_var);
+      if (nullbytes > 0) {
+	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, r, &final_var, &final_data, BODY, 1, 1);
+      }
+      nullbytes = naxsi_unescape(&final_data);
+      if (nullbytes > 0) {
+	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, r, &final_var, &final_data, BODY, 1, 0);
+      }
+      
 #ifdef post_heavy_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		    "[POST] checking filename [%V] = [%V]",
@@ -1339,7 +1374,7 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
       else
 	/* here we got val name + val content !*/	      
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		      "No local body rules ?!");
+		      "[POST] No local body rules");
 #endif
 		
       if (main_cf->body_rules)
@@ -1349,7 +1384,7 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
       else
 	/* here we got val name + val content !*/	      
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		      "No main body rules ?!");
+		      "[POST] No main body rules");
 #endif
       
       idx += (u_char *) end - (src+idx);
@@ -1361,6 +1396,16 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 	final_var.len = varn_len;
 	final_data.data = src+idx;
 	final_data.len = varc_len;
+	//XX42 : todo, tag name as correct zone
+	nullbytes = naxsi_unescape(&final_var);
+	if (nullbytes > 0) {
+	  ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, r, &final_var, &final_data, BODY, 1, 1);
+	}
+	nullbytes = naxsi_unescape(&final_data);
+	if (nullbytes > 0) {
+	  ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, r, &final_var, &final_data, BODY, 1, 0);
+	}
+	
 #ifdef post_heavy_debug
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		      "[POST] [%V]=[%V]",
@@ -1402,7 +1447,7 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 
 }
 
-    //#define dummy_body_parse_debug
+//#define dummy_body_parse_debug
 
 void	
 ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx, 

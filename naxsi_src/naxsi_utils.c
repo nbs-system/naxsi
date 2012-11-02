@@ -80,6 +80,28 @@ strfaststr(unsigned char *haystack, unsigned int hl,
   return (NULL);
 }
 
+/* unescape routine, returns number of nullbytes present */
+int naxsi_unescape(ngx_str_t *str) {
+  u_char *dst, *src;
+  u_int nullbytes = 0, i;
+  
+  dst = str->data;
+  src = str->data;
+      
+  naxsi_unescape_uri(&src, &dst,
+		     str->len, 0);      
+  str->len =  src - str->data;
+  //tmp hack fix, avoid %00 & co (null byte) encoding :p
+  for (i = 0; i < str->len; i++)
+    if (str->data[i] == 0x0)
+      {
+	nullbytes++;
+	str->data[i] = '0';
+      }
+  return (nullbytes);
+}
+
+
 /*
 ** Patched ngx_unescape_uri : 
 ** The original one does not care if the character following % is in valid range.
@@ -690,3 +712,67 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
   return (NGX_OK);
 }
 
+/*
+  function used for intensive log if dynamic flag is set.
+  Output format :
+  ip=<ip>&server=<server>&uri=<uri>&id=<id>&zone=<zone>&content=<content>
+ */
+
+static char *dummy_match_zones[] = {
+  "HEADERS",
+  "URL",
+  "ARGS",
+  "BODY",
+  "FILE_EXT",
+  "UNKNOWN",
+  NULL
+};
+
+
+void naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *req, ngx_http_rule_t *rule,
+			 enum DUMMY_MATCH_ZONE	zone) {
+  ngx_str_t			tmp_uri, tmp_val, tmp_name;
+  ngx_str_t			empty=ngx_string("");
+  
+  //encode uri
+  tmp_uri.len = req->uri.len + (2 * ngx_escape_uri(NULL, req->uri.data, req->uri.len,
+						   NGX_ESCAPE_ARGS));
+  tmp_uri.data = ngx_pcalloc(req->pool, tmp_uri.len+1);
+  if (tmp_uri.data == NULL)
+    return ;
+  ngx_escape_uri(tmp_uri.data, req->uri.data, req->uri.len, NGX_ESCAPE_ARGS);
+  //encode val
+  if (val->len <= 0)
+    tmp_val = empty;
+  else {
+    tmp_val.len = val->len + (2 * ngx_escape_uri(NULL, val->data, val->len,
+						 NGX_ESCAPE_ARGS));
+    tmp_val.data = ngx_pcalloc(req->pool, tmp_val.len+1);
+    if (tmp_val.data == NULL)
+      return ;
+    ngx_escape_uri(tmp_val.data, val->data, val->len, NGX_ESCAPE_ARGS);
+  }
+  //encode name
+  if (name->len <= 0)
+    tmp_name = empty;
+  else {
+    tmp_name.len = name->len + (2 * ngx_escape_uri(NULL, name->data, name->len,
+						   NGX_ESCAPE_ARGS));
+    tmp_name.data = ngx_pcalloc(req->pool, tmp_name.len+1);
+    if (tmp_name.data == NULL)
+      return ;
+    ngx_escape_uri(tmp_name.data, name->data, name->len, NGX_ESCAPE_ARGS);
+  }
+  
+  ngx_log_debug(NGX_LOG_ERR, req->connection->log, 0, 
+		"NAXSI_EXLOG: ip=%V&server=%V&uri=%V&id=%d&zone=%s&var_name=%V&content=%V", 
+		&(req->connection->addr_text), &(req->headers_in.server),
+		&(tmp_uri), rule->rule_id, dummy_match_zones[zone], &(tmp_name), &(tmp_val));
+  if (tmp_val.len > 0)
+    ngx_pfree(req->pool, tmp_val.data);
+  if (tmp_name.len > 0)
+    ngx_pfree(req->pool, tmp_name.data);
+  if (tmp_uri.len > 0)
+    ngx_pfree(req->pool, tmp_uri.data);
+  
+}

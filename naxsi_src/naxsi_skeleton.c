@@ -901,8 +901,8 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 ** - check our context struct (with scores & stuff) against custom check rules
 ** - check if the request should be denied
 */
-//#define mechanics_debug
-//naxsi_modifiers_debug
+//#define mechanics_debug 1
+//#define naxsi_modifiers_debug 1
 static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 {
   ngx_http_request_ctx_t	*ctx;
@@ -939,8 +939,26 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   if (!cf) 
     return (NGX_ERROR);
   /* the module is not enabled here */
-  if (!cf->enabled || cf->force_disabled)
+  /* if enable directive is not present at all in the location, 
+     don't try to do dynamic lookup for "live" enabled
+     naxsi, this would be very rude. */
+  if (!cf->enabled)
     return (NGX_DECLINED);
+  /* On the other hand, if naxsi has been explicitly disabled 
+     in this location (using naxsi directive), user is probably
+     trying to do something.  */
+  if (cf->force_disabled) {
+    /* Look if the user did not try to enable naxsi dynamically */
+    lookup = ngx_http_get_variable(r, &enable_flag, cf->flag_enable_h);
+    if (lookup && !lookup->not_found && lookup->len > 0) {
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "live enable is present %d", lookup->data[0] - '0');
+      if (lookup->data[0] - '0' != 1) {
+	return (NGX_DECLINED);}
+    }
+    else
+      return (NGX_DECLINED);
+  }
   /* don't process internal requests. */
   if (r->internal) {
 #ifdef mechanics_debug
@@ -973,13 +991,18 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig learning : %d", cf->learning ? 1 : 0);
 #endif
+    /* it seems that nginx will - in some cases - 
+     have a variable with empty content but with lookup->not_found set to 0,
+    so check len as well */
     ctx->learning = cf->learning;
     lookup = ngx_http_get_variable(r, &learning_flag, cf->flag_learning_h);
-    if (lookup && !lookup->not_found) {
+    if (lookup && !lookup->not_found && lookup->len > 0) {
+      
       ctx->learning = lookup->data[0] - '0';
 #ifdef naxsi_modifiers_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		    "XX-dummy : override learning : %d", ctx->learning ? 1 : 0);
+		    "XX-dummy : override learning : %d (raw=%d)", 
+		    ctx->learning ? 1 : 0, lookup->len);
 #endif
     }
 #ifdef naxsi_modifiers_debug
@@ -993,7 +1016,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 		  "XX-dummy : orig enabled : %d", ctx->enabled ? 1 : 0);
 #endif
     lookup = ngx_http_get_variable(r, &enable_flag, cf->flag_enable_h);
-    if (lookup && !lookup->not_found) {
+    if (lookup && !lookup->not_found && lookup->len > 0) {
       ctx->enabled = lookup->data[0] - '0';
 #ifdef naxsi_modifiers_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -1015,7 +1038,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 		  "XX-dummy : orig post_action : %d", ctx->post_action ? 1 : 0);
 #endif
     lookup = ngx_http_get_variable(r, &post_action_flag, cf->flag_post_action_h);
-    if (lookup && !lookup->not_found) {
+    if (lookup && !lookup->not_found && lookup->len > 0) {
       ctx->post_action = lookup->data[0] - '0';
 #ifdef naxsi_modifier_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -1031,7 +1054,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 		  "XX-dummy : orig extensive_log : %d", ctx->extensive_log ? 1 : 0);
 #endif
     lookup = ngx_http_get_variable(r, &extensive_log_flag, cf->flag_extensive_log_h);
-    if (lookup && !lookup->not_found) {
+    if (lookup && !lookup->not_found && lookup->len > 0) {
       ctx->extensive_log = lookup->data[0] - '0';
 #ifdef naxsi_modifier_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,

@@ -49,8 +49,9 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /foobar HTTP/1.0\r
+"POST /foobar HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
@@ -101,14 +102,14 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /index.html HTTP/1.0\r
+"POST /index.html HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
 Accept-Encoding: gzip, deflate\r
 Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
-Proxy-Connection: keep-alive\r
 Referer: http://127.0.0.1/index.html\r
 Content-Type: multipart/form-data; boundary=---------------------------85477017311078916741744433009\r
 Content-Length: 3264\r
@@ -150,14 +151,14 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /index.html HTTP/1.0\r
+"POST /index.html HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
 Accept-Encoding: gzip, deflate\r
 Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
-Proxy-Connection: keep-alive\r
 Referer: http://127.0.0.1/index.html\r
 Content-Type: multipart/form-data; boundary=---------------------------50033619112485582381293259069\r
 Content-Length: 3253\r
@@ -201,14 +202,14 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /index.html HTTP/1.0\r
+"POST /index.html HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
 Accept-Encoding: gzip, deflate\r
 Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
-Proxy-Connection: keep-alive\r
 Referer: http://127.0.0.1/index.html\r
 Content-Type: multipart/form-data; boundary=---------------------------210801732320936925511223486236\r
 Content-Length: 3272\r
@@ -252,14 +253,14 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /index.html HTTP/1.0\r
+"POST /index.html HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
 Accept-Encoding: gzip, deflate\r
 Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
-Proxy-Connection: keep-alive\r
 Referer: http://127.0.0.1/index.html\r
 Content-Type: multipart/form-data; boundary=---------------------------210801732320936925511223486236\r
 Content-Length: 3272\r
@@ -305,14 +306,14 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /index.html HTTP/1.0\r
+"POST /index.html HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
 Accept-Encoding: gzip, deflate\r
 Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
-Proxy-Connection: keep-alive\r
 Referer: http://127.0.0.1/index.html\r
 Content-Type: multipart/form-data; boundary=---------------------------85477017311078916741744433009\r
 Content-Length: 3264\r
@@ -358,14 +359,14 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /index.html HTTP/1.0\r
+"POST /index.html HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
 Accept-Encoding: gzip, deflate\r
 Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
-Proxy-Connection: keep-alive\r
 Referer: http://127.0.0.1/index.html\r
 Content-Type: multipart/form-data; boundary=---------------------------85477017311078916741744433009\r
 Content-Length: 3264\r
@@ -411,14 +412,14 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /index.html HTTP/1.0\r
+"POST /index.html HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
 Accept-Encoding: gzip, deflate\r
 Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
-Proxy-Connection: keep-alive\r
 Referer: http://127.0.0.1/index.html\r
 Content-Type: multipart/form-data; boundary=---------------------------85477017311078916741744433009\r
 Content-Length: 3264\r
@@ -464,14 +465,14 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /index.html HTTP/1.0\r
+"POST /index.html HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
 Accept-Encoding: gzip, deflate\r
 Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
-Proxy-Connection: keep-alive\r
 Referer: http://127.0.0.1/index.html\r
 Content-Type: multipart/form-data; boundary=---------------------------85477017311078916741744433009\r
 Content-Length: 3264\r
@@ -518,14 +519,14 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /index.html HTTP/1.0\r
+"POST /index.html HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
 Accept-Encoding: gzip, deflate\r
 Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
-Proxy-Connection: keep-alive\r
 Referer: http://127.0.0.1/index.html\r
 Content-Type: multipart/form-data; boundary=---------------------------85477017311078916741744433009\r
 Content-Length: 3264\r
@@ -571,14 +572,14 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /index.html HTTP/1.0\r
+"POST /index.html HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
 Accept-Encoding: gzip, deflate\r
 Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
-Proxy-Connection: keep-alive\r
 Referer: http://127.0.0.1/index.html\r
 Content-Type: multipart/form-data; boundary=---------------------------85477017311078916741744433009\r
 Content-Length: 3264\r
@@ -625,14 +626,14 @@ location /RequestDenied {
 	 return 412;
 }
 --- raw_request eval
-"POST /index.html HTTP/1.0\r
+"POST /index.html HTTP/1.1\r
 Host: 127.0.0.1\r
+Connection: Close\r
 User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
 Accept-Language: en-us,en;q=0.5\r
 Accept-Encoding: gzip, deflate\r
 Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
-Proxy-Connection: keep-alive\r
 Referer: http://127.0.0.1/index.html\r
 Content-Type: multipart/form-data; boundary=---------------------------85477017311078916741744433009\r
 Content-Length: 3264\r

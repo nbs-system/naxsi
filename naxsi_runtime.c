@@ -139,7 +139,7 @@ void naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *re
 ** does : apply the rule on the string, return 1 if matched, 
 **	  0 else and -1 on error
 */
-int	
+int
 ngx_http_process_basic_rule_buffer(ngx_str_t *str,
 				   ngx_http_rule_t *rl,
 				   ngx_int_t	*nb_match)
@@ -250,7 +250,7 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
 */
 
 //#define whitelist_debug
-/* #define whitelist_heavy_debug */
+//#define whitelist_heavy_debug
 
 int
 ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
@@ -267,6 +267,10 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
   /* FILE_EXT zone is just a hack, as it indeed targets BODY */
   if (zone == FILE_EXT)
     zone = BODY;
+#ifdef whitelist_debug
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "Possible whitelist ... check...");
+#endif
+
   /* if whitelist targets arg name, but the rules hit content*/
   if (b->target_name && !target_name)
     {
@@ -352,6 +356,36 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
 
 //#define whitelist_debug
 
+ngx_http_whitelist_rule_t *
+nx_find_wl_in_hash(ngx_str_t *mstr,
+		   ngx_http_dummy_loc_conf_t *cf,
+		   enum DUMMY_MATCH_ZONE zone) {
+  
+  ngx_int_t			k;
+  ngx_http_whitelist_rule_t	*b = NULL;
+
+  k = ngx_hash_key_lc(mstr->data, mstr->len);
+  if ((zone == BODY || zone == FILE_EXT) && cf->wlr_body_hash && cf->wlr_body_hash->size > 0)
+    b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_body_hash, k, 
+						   (u_char*) mstr->data, 
+						   mstr->len);
+  else if (zone == HEADERS && cf->wlr_headers_hash && 
+	   cf->wlr_headers_hash->size > 0)
+    b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_headers_hash, k, 
+						   (u_char*) mstr->data, 
+						   mstr->len);
+  else if (zone == URL && cf->wlr_url_hash && cf->wlr_url_hash->size > 0)
+    b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_url_hash, k, 
+						   (u_char*) mstr->data, 
+						   mstr->len);
+  else if (zone == ARGS && cf->wlr_args_hash && cf->wlr_args_hash->size > 0)
+    b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_args_hash, k, 
+						   (u_char*) mstr->data, 
+						   mstr->len);
+  return (b);
+}
+
+
 int	
 ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req, 
 				     ngx_http_dummy_loc_conf_t *cf, 
@@ -380,9 +414,6 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   if (cf->disabled_rules) {
     dr = cf->disabled_rules->elts;
     for (i = 0; i < cf->disabled_rules->nelts; i++) {
-#ifdef whitelist_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "id:%d", i);
-#endif
       for (z = 0; dr[i]->wl_id[z] >= 0; z++) {
 	/* if it's the same ID or that the WL id is 0 (which means ALL RULES), it's whitelisted ! */
 	/* TODO : test case for WL on rule_id 0 */
@@ -423,43 +454,43 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   }
 #ifdef whitelist_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		"hashing (varname)[%V]", name);
+		"hashing varname [%V]", name);
 #endif
+  /*
+  ** First, check for whitelists targetting ARG name,
+  ** and check as well ARGS_VAR:x|NAME whitelists.
+  */
   if (name->len > 0) {
     /* lower case the var name before checking it against hash tables */
-    /* TODO : should do the same with uri ? but it's case sensitive ... */
     for (i = 0; i < name->len; i++)
       name->data[i] = tolower(name->data[i]);
-    /* search if there is WL on this ARGS name */
-    k = ngx_hash_key_lc(name->data, name->len);
-    if (cf->wlr_args_hash && cf->wlr_args_hash->size > 0 && zone == ARGS)
-      b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_args_hash, k, 
-						     (u_char*) name->data, 
-						     name->len);
-    else
-      /* search if there is WL on this BODY name */
-      if (cf->wlr_body_hash && cf->wlr_body_hash->size > 0 && (zone == BODY || zone == FILE_EXT))
-	b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_body_hash, k, 
-						       (u_char*) name->data, 
-						       name->len); 
-      else
-	/* or if there is a WL on this HEADER name */
-	if (cf->wlr_headers_hash && cf->wlr_headers_hash->size > 0 && zone == HEADERS)
-	  b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_headers_hash, k, 
-							 (u_char*) name->data, 
-							 name->len); 
+    b = nx_find_wl_in_hash(name, cf, zone);
+    if (!b) {
+      /*prefix hash with '#', to find whitelists that would be done only on ARGS_VAR:X|NAME */
+      tmp_hashname.len = name->len+1;
+      tmp_hashname.data = ngx_pcalloc(req->pool, tmp_hashname.len+1);
+      tmp_hashname.data[0] = '#';
+      memcpy(tmp_hashname.data+1, name->data, name->len);
+      b = nx_find_wl_in_hash(&tmp_hashname, cf, zone);
+    }
   }
-  if (b)
+  if (b) {
+#ifdef whitelist_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		  "potential match on name [%V]", name);
+#endif
     if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, NAME_ONLY, target_name))
       return (1);
+  }
+  /*XXXX- URI only whitelists */
 #ifdef whitelist_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		"hashing (uri) [%V]", &(req->uri));
 #endif
-  k = ngx_hash_key_lc(req->uri.data, req->uri.len);
-    
+  
   /* check the URL no matter what zone we're in */
   if (cf->wlr_url_hash && cf->wlr_url_hash->size > 0) {
+    k = ngx_hash_key_lc(req->uri.data, req->uri.len);
     /* check if the rule was not whitelisted */  
 #ifdef whitelist_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
@@ -473,31 +504,12 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
       if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, URI_ONLY, target_name))
 	return (1);
   }
-  /* check URL against every hashlist, as $URL:bla|ARGS will be put in the ARGS 
-     whitelist, and so on. */
-  if (cf->wlr_args_hash && cf->wlr_args_hash->size > 0 && zone == ARGS)
-    b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_args_hash, k, 
-						   (u_char*) req->uri.data, 
-						   req->uri.len);
-  else 
-    /* search if there is WL on this BODY name */
-    if (cf->wlr_body_hash && cf->wlr_body_hash->size > 0 && (zone == BODY || zone == FILE_EXT))
-      b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_body_hash, k, 
-						     (u_char*) req->uri.data, 
-						     req->uri.len); 
-    else
-      /* or if there is a WL on this HEADER name */
-      if (cf->wlr_headers_hash && cf->wlr_headers_hash->size > 0 && zone == HEADERS)
-	b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_headers_hash, k, 
-						       (u_char*) req->uri.data, 
-						       req->uri.len); 
-    
-    
+  b = nx_find_wl_in_hash(&(req->uri), cf, zone);
   if (b)
     if (ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, URI_ONLY, target_name))
       return (1);
   
-  /* maybe it was $URL+$VAR ? */
+  /*XXXXX- maybe it was $URL+$VAR ? */
   if (!b) {
     tmp_hashname.len = req->uri.len + 1 + name->len;
     /* one extra byte for target_name '#' */
@@ -519,24 +531,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		  "hashing [%V]", &tmp_hashname);
 #endif
-    k = ngx_hash_key_lc(tmp_hashname.data, tmp_hashname.len);
-    if ((zone == BODY || zone == FILE_EXT) && cf->wlr_body_hash && cf->wlr_body_hash->size > 0)
-      b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_body_hash, k, 
-						     (u_char*) tmp_hashname.data, 
-						     tmp_hashname.len);
-    else if (zone == HEADERS && cf->wlr_headers_hash && 
-	     cf->wlr_headers_hash->size > 0)
-      b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_headers_hash, k, 
-						     (u_char*) tmp_hashname.data, 
-						     tmp_hashname.len);
-    else if (zone == URL && cf->wlr_url_hash && cf->wlr_url_hash->size > 0)
-      b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_url_hash, k, 
-						     (u_char*) tmp_hashname.data, 
-						     tmp_hashname.len);
-    else if (zone == ARGS && cf->wlr_args_hash && cf->wlr_args_hash->size > 0)
-      b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_args_hash, k, 
-						     (u_char*) tmp_hashname.data, 
-						     tmp_hashname.len);
+    b = nx_find_wl_in_hash(&(tmp_hashname), cf, zone);
   }
   
   if (b)
@@ -1726,10 +1721,6 @@ ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx,
   unsigned int	i, z, matched;
   ngx_http_check_rule_t		*cr;
   ngx_http_special_score_t	*sc;
-  /* ngx_http_whitelist_rule_t	*b; */
-  /* //ngx_http_whitelist_location_t	*cl; */
-  /* ngx_int_t			k; */
-  //ngx_int_t			*tmp_ptr;
 
 #ifdef custom_score_debug
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,

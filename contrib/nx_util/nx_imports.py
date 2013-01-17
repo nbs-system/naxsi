@@ -4,6 +4,8 @@ import datetime
 import pprint
 import gzip
 import glob
+import logging
+
 
 class NxReader():
     """ Feeds the given injector from logfiles """
@@ -23,7 +25,7 @@ class NxReader():
         count = 0
         for lfile in self.files:
             success = fail = 0
-            print "Importing file "+lfile,
+            print "Importing file "+lfile
             try:
                 if lfile.endswith(".gz"):
                     fd = gzip.open(lfile, "rb")
@@ -31,11 +33,12 @@ class NxReader():
                     fd = open(lfile, "r")
             except:
                 print "Unable to open file : "+lfile
+                logging.warning("Unable to open file '"+lfile+"' for import.")
                 return 1
             for line in fd:
-                count += 1
                 if self.injector.acquire_nxline(line) == 0:
                     success += 1
+                    count += 1
                 else:
                     fail += 1
                 if count == self.step:
@@ -43,7 +46,11 @@ class NxReader():
                     count = 0
             fd.close()
         self.injector.commit()
-        print "Counts : success:"+str(success)+", fail:"+str(fail)
+        print "Committing to db ..."
+        self.injector.wrapper.StopInsert()
+        print "Count (lines) success:"+str(success)+", fail:"+str(fail)
+        print str(self.injector.total_objs)+" valid lines, "
+        print str(self.injector.total_commits)+" injected objs in DB."
     
 class NxInject():
     """ Transforms naxsi error log into dicts """
@@ -51,9 +58,11 @@ class NxInject():
         self.naxsi_keywords = [" NAXSI_FMT: ", " NAXSI_EXLOG: "]
         self.wrapper = wrapper
         self.dict_buf = []
+        self.total_objs = 0
+        self.total_commits = 0
     def commit(self):
         """Process dicts of dict (yes) and push them to DB """
-        print "Commiting "+str(len(self.dict_buf))+" items"
+        self.total_objs += len(self.dict_buf)
         count = 0
         for entry in self.dict_buf:
             if not entry.has_key('uri'):
@@ -93,7 +102,9 @@ class NxInject():
                     if 'id' + str(i) in entry.keys():
                         rn = entry['id' + str(i)]
                     else:
-                        print "Error: No id at pos:"+str(i)+","+str(entry)
+                        print "Error: Invalid/truncated line. No id at pos:"+str(i)+". (see logs)"
+                        logging.warning("Invalid (or truncated) line. No id at post:"+str(i))
+                        logging.warning("Object: "+str(entry))
                         break
                     self.wrapper.execute('INSERT INTO exceptions (zone, var_name, rule_id, content) VALUES '
                                          '(?,?,?,?)', (zn, vn, rn, ''))
@@ -101,7 +112,7 @@ class NxInject():
                 self.wrapper.execute('INSERT INTO connections (peer_ip, host, url_id, id_exception,date) '
                                      'VALUES (?,?,?,?,?)', (entry['ip'], entry['server'], str(url_id), 
                                                             str(exception_id), str(entry['date'])))
-        print "Inserted "+str(count)+" entries in DB."
+        self.total_commits += count
         # Real clearing of dict.
         del self.dict_buf[0:len(self.dict_buf)]
     def exception_to_dict(self, line):

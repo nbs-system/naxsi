@@ -1177,7 +1177,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 ** [XXX] : this function sucks ! I don't parse bigger-than-body-size posts that 
 **	   are partially stored in files, TODO ;)
 */
-#define post_heavy_debug
+//#define post_heavy_debug
 
 
 /*
@@ -1328,7 +1328,6 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 	  ngx_strncmp(src+idx+2, boundary, boundary_len) ||
 	  ngx_strncmp(src+idx+boundary_len+2, "--", 2)) {
 	/* bad closing boundary ?*/
-	//dummy_error_fatal(ctx, r, "POST data is malformed (%s)", src+idx);
 	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_boundary, ctx, r, NULL, NULL, BODY, 1, 0);
 	return ;
       } else
@@ -1344,9 +1343,6 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 	src[idx+boundary_len+2] != '\r' || src[idx+boundary_len+3] != '\n') {
       /* bad boundary */
       ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_boundary, ctx, r, NULL, NULL, BODY, 1, 0);
-      dummy_error_fatal(ctx, r, "POST data is malformed (%s)", src+idx);
-      dummy_error_fatal(ctx, r, "POST data is malformed (%d/%d)", src[idx+2+boundary_len+1], src[idx+2+boundary_len+2]);
-      
       return ;
     }
     idx += boundary_len + 4;

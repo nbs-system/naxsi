@@ -1170,6 +1170,112 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 */
 //#define post_heavy_debug
 
+
+/*
+** Parse content-disposition line.
+*/
+int	nx_content_disposition_parse(unsigned char *str, unsigned char *line_end,
+				     unsigned char **fvarn_start, unsigned char **fvarn_end,
+				     unsigned char **ffilen_start, unsigned char **ffilen_end,
+				     ngx_http_request_t *r) {
+  
+  unsigned char *varn_start = NULL, *varn_end = NULL, 
+    *filen_start = NULL, *filen_end = NULL;
+  /* we have two cases :
+  ** ---- file upload
+  ** Content-Disposition: form-data; name="somename"; filename="NetworkManager.conf"\r\n
+  ** Content-Type: application/octet-stream\r\n\r\n
+  ** <DATA>
+  ** ---- normal post var
+  ** Content-Disposition: form-data; name="lastname"\r\n\r\n
+  ** <DATA>
+  */
+  
+  
+  while (str < line_end) {
+    
+    while (str < line_end && *str && (*str == ' ' || *str == '\t'))
+      str++;
+    if (str < line_end && *str && *str == ';')
+      str++;
+    while (str < line_end && *str && (*str == ' ' || *str == '\t'))
+      str++;
+    
+    if (!ngx_strncmp(str, "name=\"", 6)) {
+      varn_end = varn_start = str + 6;
+      do {
+	varn_end = (unsigned char *) ngx_strchr(varn_end, '"');
+	if (varn_end && *(varn_end - 1) != '\\')
+	  break;
+	varn_end++;
+      } while (varn_end && varn_end < line_end);
+      if (!varn_end   || !*varn_end)
+	return (NGX_ERROR);
+      str = varn_end;
+      if (str < line_end+1)
+	str++;
+      else
+	return (NGX_ERROR);
+      *fvarn_start = varn_start;
+      *fvarn_end = varn_end;
+    }
+    else if (!ngx_strncmp(str, "filename=\"", 10)) {
+      filen_end = filen_start = str + 10;
+      do {
+	filen_end = (unsigned char *) ngx_strchr(filen_end, '"');
+	if (filen_end && *(filen_end - 1) != '\\')
+	  break;
+	filen_end++;
+      } while (filen_end && filen_end < line_end);
+      if (!filen_end)
+	return (NGX_ERROR);
+      str = filen_end;
+      if (str < line_end+1)
+	str++;
+      else
+	return (NGX_ERROR);
+      *ffilen_end = filen_end;
+      *ffilen_start = filen_start;
+    }
+    else if (str == line_end -1)
+      break;
+    else {
+      /* gargabe is present ?*/
+#ifdef post_heavy_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		    "extra data in content-disposition ? end:%p, str:%p, diff=%d", line_end, str, line_end-str);
+#endif
+      return (NGX_ERROR);
+    }
+  }
+  /* tssk tssk */
+  if (filen_end > line_end || varn_end > line_end)
+    return (NGX_ERROR);
+  return (NGX_OK);
+}
+
+int	nx_content_type_parse(ngx_http_request_t *r,
+			      unsigned char **boundary,
+			      unsigned int *boundary_len) {
+  unsigned char *h;
+  unsigned char *end;
+  
+  h = r->headers_in.content_type->value.data + strlen("multipart/form-data;");
+  end = r->headers_in.content_type->value.data + r->headers_in.content_type->value.len;
+  /* skip potential whitespace/tabs */
+  while (h < end && *h && (*h == ' ' || *h == '\t'))
+    h++;
+  if (strncmp((const char *) h, "boundary=", 9))
+    return (NGX_ERROR);
+  h += 9;
+  *boundary_len = end - h;
+  *boundary = h;
+  /* RFC 1867 says 70 char max */
+  if (*boundary_len > 70)
+    return (NGX_ERROR);
+  return (NGX_OK);
+}
+
 //#define dummy_body_parse_debug
 void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx, 
 				       ngx_http_request_t	 *r,
@@ -1177,9 +1283,9 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 				       u_int			 len)
 {
   ngx_str_t				final_var, final_data;
-  char				*boundary, *varn_start, *varn_end;
-  char				*filen_start, *filen_end;
-  char				*end, *line_end;
+  u_char				*boundary, *varn_start, *varn_end;
+  u_char				*filen_start, *filen_end;
+  u_char				*end, *line_end;
   u_int				boundary_len, varn_len, varc_len, idx, nullbytes;
   ngx_http_dummy_loc_conf_t		*cf;
   ngx_http_dummy_main_conf_t		*main_cf;
@@ -1191,21 +1297,11 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		"XX-multipart/form-data");
 #endif
-  /* So far, I have noticed two correct ways of putting the boundary in a multipart post :
-  ** 1: in the content-type header, after multipart/form-data
-  ** 2: at the very begining of the body. */
   /*extract boundary*/
-  boundary = ngx_strstr(src, "boundary=");
-  if (!boundary)
-    boundary = ngx_strstr(r->headers_in.content_type->value.data, "boundary=");
-  if (!boundary)
-    {
-      dummy_error_fatal(ctx, r, "no boundary present in POST data ?");
-      return ;
-    }
-  boundary += 9; //strlen ("boundary=")
-  boundary_len = strlen(boundary);
-   
+  if (nx_content_type_parse(r, (unsigned char **) &boundary, &boundary_len) != NGX_OK) {
+    ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
+    return ;
+  }
   /* fetch every line starting with boundary */
   idx = 0;
   while (idx < len) {
@@ -1213,7 +1309,6 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		  "XX-POST data : (%s)", src+idx);
 #endif
-    //dummy_error_fatal(ctx, r, "POST data : (%s)", src+idx);
     /* if we've reached the last boundary '--' + boundary + '--' + '\r\n'*/
     if (idx+boundary_len+6 >= len)
       {
@@ -1236,6 +1331,7 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
       return ;
     }
     idx += boundary_len + 4;
+	  /* ---- */
     /* we have two cases :
     ** ---- file upload
     ** Content-Disposition: form-data; name="somename"; filename="NetworkManager.conf"\r\n
@@ -1254,47 +1350,20 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
       return ;
     }
     idx += 30;
-    line_end = ngx_strchr(src+idx, '\n');
+    line_end = (u_char *) ngx_strchr(src+idx, '\n');
     if (!line_end) {
       ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
       dummy_error_fatal(ctx, r, "POST data : malformed boundary line");
       return ;
     }
-    // seek for name="<var>" and filename="<var>" in the current line
-    // verify that the name/filename tag founds are present
-    varn_end = filen_end = NULL;
-    varn_start = ngx_strstr(src+idx, "name=\"");
-    if (varn_start && varn_start < line_end) {
-      varn_start += 6;
-      varn_end = ngx_strchr(varn_start, '"');
+
+    
+    varn_start = varn_end = filen_start = filen_end = NULL;
+    if (nx_content_disposition_parse(src+idx, line_end, &varn_start, &varn_end,
+				     &filen_start, &filen_end, r) != NGX_OK) {
+      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
+      return ;
     }
-    else
-      varn_start = NULL;
-    filen_start = ngx_strstr(src+idx, "filename=\"");
-    if (filen_start && filen_start < line_end) {
-      filen_start += 10;
-      /* avoid being bypassed by filenames like bla\"aa.php */
-      filen_end = filen_start;
-      do {
-	filen_end = ngx_strchr(filen_end, '"');
-	if (*(filen_end - 1) != '\\')
-	  break;
-	filen_end++;
-      } while (filen_end < line_end);
-      /* here add support :
-      ** - when a file is here, the line bellow 'content-disposition' is content-type.
-      ** - skip this line. we should probably parse it ... to make regex on it :D
-      */
-      line_end = ngx_strchr(line_end+1, '\n');
-      if (!line_end) {
-	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
-	dummy_error_fatal(ctx, r, "POST data : malformed 'filename' field");
-	return ;
-      }
-    }
-    else
-      filen_start = NULL;
-	  
     // check that var name is present and not malformed
     if (!varn_start || !varn_end || varn_end <= varn_start) {
       ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
@@ -1302,25 +1371,36 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
       return ;
     }
     varn_len = varn_end - varn_start;
+    
+    /* If there is a filename, it is followed by a "content-type" line, skip it */
+    if (filen_start && filen_end) {
+      line_end = (u_char *) ngx_strchr(line_end+1, '\n');
+      if (!line_end) {
+	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
+	dummy_error_fatal(ctx, r, "POST data : malformed filename (no content-type ?)");
+	return ;
+	
+      }
+    }
     // now idx point to the end of the
     // content-disposition: form-data; filename="" name=""
     idx += (u_char *)line_end - (src+idx) + 1;
     if (src[idx] != '\r' || src[idx+1] != '\n') {
       ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
-      dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
+      dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line [%d.%d.%d]", src+idx);
       return ;
     }
     idx += 2;
     // seek the end of the data too
     end = NULL;
     while (idx < len) {
-      end = ngx_strstr(src+idx, "\r\n--");
+      end = (u_char *) ngx_strstr(src+idx, "\r\n--");
       /* file data can contain \x0 */
       while (!end) {
 	idx += strlen((const char *)src+idx);
 	if (idx < len - 2) {
 	  idx++;
-	  end = ngx_strstr(src+idx, "\r\n--");
+	  end = (u_char *) ngx_strstr(src+idx, "\r\n--");
 	}
 	else
 	  break;
@@ -1437,9 +1517,9 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
     if (!ngx_strncmp(end, "\r\n", 2))
       idx += 2;
   }
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		"(multipart) : OVER");
-
+  /*ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+    "(multipart) : OVER");*/
+  
 }
 
 //#define dummy_body_parse_debug

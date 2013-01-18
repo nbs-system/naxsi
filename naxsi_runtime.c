@@ -1322,11 +1322,11 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 		  "Remaining Len:%d (boundary len:%d)", len - idx, boundary_len);
 #endif
     
-    if (idx+boundary_len+6 == len) {
+    /* Authorize requests that don't have the leading \r\n */
+    if (idx+boundary_len+6 == len || idx+boundary_len+4 == len) {
       if (ngx_strncmp(src+idx, "--", 2) ||
 	  ngx_strncmp(src+idx+2, boundary, boundary_len) ||
-	  ngx_strncmp(src+idx+boundary_len+2, "--", 2) ||
-	  ngx_strncmp(src+idx+boundary_len+2+2, "\r\n", 2)) {
+	  ngx_strncmp(src+idx+boundary_len+2, "--", 2)) {
 	/* bad closing boundary ?*/
 	//dummy_error_fatal(ctx, r, "POST data is malformed (%s)", src+idx);
 	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_boundary, ctx, r, NULL, NULL, BODY, 1, 0);

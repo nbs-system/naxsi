@@ -1460,7 +1460,7 @@ Content-Length: 42
 --- request eval
 use URI::Escape;
 "POST /\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nMyName\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"married\"\r\n\r\nnot single\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"male\"\r\n\r\nyes\r\n-----------------------------103832778631715--\r\n"
---- error_code: 200
+--- error_code: 412
 === TEST 26.1: Testing MULTIPART POSTs (BAD CONTENT LEN)
 #nginx changed his way, no data is cut to content lenght header, so this test is obsolete
 --- user_files
@@ -1527,7 +1527,7 @@ Content-Length: 42
 --- request eval
 use URI::Escape;
 "POST /\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nMy<aaaaa>Name\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"married\"\r\n\r\nnot single\r\n-----------------------------103832778631715\r\nContent-Disposition: form-data; name=\"male\"\r\n\r\ny<alert>es\r\n-----------------------------103832778631715--\r\n"
---- error_code: 200
+--- error_code: 412
 === TEST 27: Obvious POST XSS (multipart)
 --- user_files
 >>> foobar

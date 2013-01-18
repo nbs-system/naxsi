@@ -94,6 +94,15 @@ ngx_http_rule_t nx_int__uncommon_post_format = {/*type*/ 0, /*whitelist flag*/ 0
 						/*lnk_to & from*/ 0, 0,
 						/*br ptrs*/ NULL};
 
+ngx_http_rule_t nx_int__uncommon_post_boundary = {/*type*/ 0, /*whitelist flag*/ 0, 
+						   /*wl_id ptr*/ NULL, /*rule_id*/ 13,
+						   /*log_msg*/ NULL, /*score*/ 0, 
+						   /*sscores*/ NULL,
+						   /*sc_block*/ 1,  /*sc_allow*/ 0, 
+						   /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
+						   /*lnk_to & from*/ 0, 0,
+						   /*br ptrs*/ NULL};
+
 
 ngx_http_rule_t nx_int__big_request = {/*type*/ 0, /*whitelist flag*/ 0, 
 				       /*wl_id ptr*/ NULL, /*rule_id*/ 2,
@@ -1168,7 +1177,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 ** [XXX] : this function sucks ! I don't parse bigger-than-body-size posts that 
 **	   are partially stored in files, TODO ;)
 */
-//#define post_heavy_debug
+#define post_heavy_debug
 
 
 /*
@@ -1299,26 +1308,25 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 #endif
   /*extract boundary*/
   if (nx_content_type_parse(r, (unsigned char **) &boundary, &boundary_len) != NGX_OK) {
-    ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
+    ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_boundary, ctx, r, NULL, NULL, BODY, 1, 0);
     return ;
   }
   /* fetch every line starting with boundary */
   idx = 0;
   while (idx < len) {
-#ifdef post_heavy_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		  "XX-POST data : (%s)", src+idx);
-#endif
-    /* if we've reached the last boundary '--' + boundary + '--' + '\r\n'*/
-    if (idx+boundary_len+6 >= len)
-      {
-#ifdef post_heavy_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		      "XX-reached end, not enough len");
-#endif
+    /* if we've reached the last boundary '--' + boundary + '--' + '\r\n'$END */
+    if (idx+boundary_len+6 == len) {
+      if (ngx_strncmp(src+idx, "--", 2) ||
+	  ngx_strncmp(src+idx+2, boundary, boundary_len) ||
+	  ngx_strncmp(src+idx+boundary_len+2, "--", 2) ||
+	  ngx_strncmp(src+idx+boundary_len+2+2, "\r\n", 2)) {
+	/* bad closing boundary ?*/
+	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_boundary, ctx, r, NULL, NULL, BODY, 1, 0);
+	return ;
+      } else
 	break;
-      }
-    //check if line starts with -- (pre-boundary stuff) 
+    }
+    /* --boundary\r\n : New var */
     if (src[idx] != '-' || src[idx+1] != '-' || 
 	//and if it's really followed by a boundary
 	ngx_strncmp(src+idx+2, boundary, boundary_len) || 
@@ -1326,12 +1334,12 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 	idx+boundary_len + 2 + 2  >= len ||  
 	//and if it's followed by \r\n
 	src[idx+boundary_len+2] != '\r' || src[idx+boundary_len+3] != '\n') {
-      
+      /* bad boundary */
+      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_boundary, ctx, r, NULL, NULL, BODY, 1, 0);
       dummy_error_fatal(ctx, r, "POST data is malformed (%s)", src+idx);
       return ;
     }
     idx += boundary_len + 4;
-	  /* ---- */
     /* we have two cases :
     ** ---- file upload
     ** Content-Disposition: form-data; name="somename"; filename="NetworkManager.conf"\r\n
@@ -1356,15 +1364,14 @@ void	ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
       dummy_error_fatal(ctx, r, "POST data : malformed boundary line");
       return ;
     }
-
-    
+    /* Parse content-disposition, extract name / filename */
     varn_start = varn_end = filen_start = filen_end = NULL;
     if (nx_content_disposition_parse(src+idx, line_end, &varn_start, &varn_end,
 				     &filen_start, &filen_end, r) != NGX_OK) {
       ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
       return ;
     }
-    // check that var name is present and not malformed
+    /* var name is mandatory */
     if (!varn_start || !varn_end || varn_end <= varn_start) {
       ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
       dummy_error_fatal(ctx, r, "POST data : no 'name' in POST var");

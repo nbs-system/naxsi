@@ -79,4 +79,4 @@ MainRule negative "rx:multipart/form-data|application/x-www-form-urlencoded" "ms
 #############################
 ## File uploads: 1500-1600 ##
 #############################
-MainRule "rx:.ph*|.asp*" "msg:asp/php file upload!" "mz:FILE_EXT" "s:$UPLOAD:8" id:1500;
+MainRule "rx:.ph*|.asp*|.htac*" "msg:asp/php file upload!" "mz:FILE_EXT" "s:$UPLOAD:8" id:1500;

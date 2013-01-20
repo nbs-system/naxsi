@@ -38,14 +38,15 @@
 #include <sys/times.h>
 #include <ctype.h>
 
-    /* ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "TOP READ CONF %V %V",  */
-    /* 		       &(value[0]), &(value[1]));   */
 /*
 ** Macro used to print incorrect configuration lines
 */
 #define ngx_http_dummy_line_conf_error(cf, value) do {	\
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Naxsi-Config : Incorrect line %V %V (%s/%d)...", &(value[0]), &(value[1]), __FILE__, __LINE__); \
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, \
+		       "Naxsi-Config : Incorrect line %V %V (%s/%d)...", \
+		       &(value[0]), &(value[1]), __FILE__, __LINE__);	\
   } while (0)
+
 
 /*
 ** Module's registred function/handlers.
@@ -59,7 +60,6 @@ static char		*ngx_http_dummy_read_conf(ngx_conf_t *cf,
 						  ngx_command_t *cmd,
 						  void *conf);
 
-//ngx_http_naxsi_cr_loc_conf,
 static char		*ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, 
 						    ngx_command_t *cmd,
 						    void *conf);
@@ -275,8 +275,8 @@ ngx_http_dummy_create_loc_conf(ngx_conf_t *cf)
 
 /* merge loc conf */
 /* NOTE/WARNING : This function wasn't tested correctly. 
- Actually, we shouldn't merge anything, as configuration is 
- specific 'per' location ? */
+   Actually, we shouldn't merge anything, as configuration is 
+   specific 'per' location ? */
 static char *
 ngx_http_dummy_merge_loc_conf(ngx_conf_t *cf, void *parent, 
 			      void *child)
@@ -317,23 +317,17 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   if (cmcf == NULL || 
       main_cf == NULL)
     return (NGX_ERROR);
+  
   /* Register for access phase */
-  //h = ngx_array_push(&cmcf->phases[NGX_HTTP_ACCESS_PHASE].handlers);
   h = ngx_array_push(&cmcf->phases[NGX_HTTP_REWRITE_PHASE].handlers);
   if (h == NULL) 
     return (NGX_ERROR);
+  
   *h = ngx_http_dummy_access_handler;
   /* Go with each locations registred in the srv_conf. */
   loc_cf = main_cf->locations->elts;
+  
   for (i = 0; i < main_cf->locations->nelts; i++) {
-    /* if (!loc_cf[i]->body_rules && !loc_cf[i]->get_rules && !loc_cf[i]->header_rules) { */
-    /*   ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,  */
-    /* 			 "naxsi: No body rules, did you forget naxsi_core.rules ?"); */
-    /* } */
-    /* precompute hash for dynamic variable look-up */
-    /* loc_cf[i].flag_disable.data = ngx_pcalloc(cf->pool, strlen(RT_DISABLE)+1); */
-    /* ngx_memcpy(loc_cf[i].flag_disable.data, RT_DISABLE, strlen(RT_DISABLE)) */
-    /* loc_cf[i].flag_disable.len = strlen(RT_DISABLE); */
     loc_cf[i]->flag_enable_h = ngx_hash_key_lc((u_char *)RT_ENABLE, strlen(RT_ENABLE));
     loc_cf[i]->flag_learning_h = ngx_hash_key_lc((u_char *)RT_LEARNING, strlen(RT_LEARNING));
     loc_cf[i]->flag_post_action_h = ngx_hash_key_lc((u_char *)RT_POST_ACTION, strlen(RT_POST_ACTION));
@@ -355,7 +349,6 @@ ngx_http_dummy_init(ngx_conf_t *cf)
 ** does : top level parsing config function, 
 **	  see foo_cfg_parse.c for stuff
 */
-//#define readconf_debug
 static char *
 ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd, 
 			 void *conf)
@@ -735,19 +728,6 @@ ngx_http_naxsi_flags_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	return (NGX_CONF_ERROR);
 }
 
-/* static char * */
-/* ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,  */
-/* 			      void *conf) */
-/* { */
-  
-/* } */
-
-//static char *
-//ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd, 
-//			 void *conf)
-
-
-
 //#define main_conf_debug
 static char *
 ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd, 
@@ -758,8 +738,10 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   ngx_http_rule_t		rule, *rule_r;
   ngx_http_custom_rule_location_t	*location;
   unsigned int	i;
+  
   if (!alcf || !cf)
     return (NGX_CONF_ERROR);  /* alloc a new rule */
+  
   value = cf->args->elts;
   /* parse the line, fill rule struct  */
 #ifdef main_conf_debug

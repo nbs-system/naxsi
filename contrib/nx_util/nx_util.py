@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Injection :
 # -l --log logfile1, logfile2 ... : Inject logfile1 et logfile2. If logfile is '-', logs are read from stdin
 # -g --glob "/var/log/nginx/*/*foobar*.error.log*" : Inject all files with name matching "*rx*" that are contained in directory "/path/" (recursive)
@@ -24,6 +25,7 @@ from optparse import OptionParser
 from nx_imports import NxReader, NxInject 
 from SQLWrapper import SQLWrapper, SQLWrapperException
 from nx_whitelists import NxWhitelistExtractor
+from nx_report import NxReport
 import logging
 #from terminal import render
 
@@ -72,9 +74,9 @@ nginx/naxsi log parser, whitelist and report generator.
 	logging.basicConfig(filename='nx_utils.log',level=logging.DEBUG)
 
 	# This should be rewritten once we have new wrapper
-	sql = SQLWrapper("naxsi-ui.conf", None)
-	sql.create_db()
-	sql.create_all_tables()
+	sql = SQLWrapper()
+#	sql.create_db()
+#	sql.create_all_tables()
 	
 	if options.logfiles is not None and len(options.logfiles) > 0:
 		# Create injector
@@ -92,6 +94,7 @@ nginx/naxsi log parser, whitelist and report generator.
 		r = wl.format_rules_output(wl.final_rules)
 		print r
 	elif options.dst_dir is not None:
+		report = NxReport(options.dest_dir)
 		print "Outputing HTML ..."
 	else:
 		parser.print_help()

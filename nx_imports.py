@@ -21,6 +21,7 @@ class NxReader():
             for regex in lglob:
                 self.files.extend(glob.glob(regex))
         print "List of imported files :"+str(self.files)
+
     def read_files(self):
         count = 0
         for lfile in self.files:
@@ -60,6 +61,7 @@ class NxInject():
         self.dict_buf = []
         self.total_objs = 0
         self.total_commits = 0
+
     def commit(self):
         """Process dicts of dict (yes) and push them to DB """
         self.total_objs += len(self.dict_buf)
@@ -69,8 +71,7 @@ class NxInject():
                 entry['uri'] = ''
             if not entry.has_key('server'):
                 entry['server'] = ''
-            self.wrapper.execute("INSERT INTO urls (url) VALUES (?)", (entry['uri'],))
-            url_id = self.wrapper.getLastId()
+            url_id = self.wrapper.insert(url = entry['uri'], table='urls')()
             if not entry.has_key('content'):
                 entry['content'] = ''
             # NAXSI_EXLOG lines only have one triple (zone,id,var_name), but has non-empty content
@@ -78,13 +79,13 @@ class NxInject():
                 count += 1
                 if 'var_name' not in entry.keys():
                     entry['var_name'] = ''
-                self.wrapper.execute('INSERT INTO exceptions (zone, var_name, rule_id, content) '
-                                     'VALUES (?,?,?,?)', (entry['zone'], entry['var_name'], 
-                                                          entry['id'], entry['content']))
-                exception_id  = self.wrapper.getLastId()
-                self.wrapper.execute('INSERT INTO connections (peer_ip, host, url_id, id_exception,date) '
-                                     'VALUES (?,?,?,?,?)', (entry['ip'], entry['server'], str(url_id), 
-                                                            str(exception_id), str(entry['date'],)))
+                exception_id = self.wrapper.insert(zone=entry['zone'], var_name=entry['var_name'], rule_id=entry['id'], content=entry['content'], table='exceptions')
+#                exception_id  = self.wrapper.getLastId()
+                self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
+                                    date=str(entry['date']), table = 'connections')()[1].force_commit()
+#                self.wrapper.execute('INSERT INTO connections (peer_ip, host, url_id, id_exception,date) '
+#                                     'VALUES (?,?,?,?,?)', (entry['ip'], entry['server'], str(url_id), 
+#                                                            str(exception_id), str(entry['date'],)))
             # NAXSI_FMT can have many (zone,id,var_name), but does not have content
             # we iterate over triples.
             elif 'zone0' in entry.keys():
@@ -106,12 +107,14 @@ class NxInject():
                         logging.warning("Invalid (or truncated) line. No id at post:"+str(i))
                         logging.warning("Object: "+str(entry))
                         break
-                    self.wrapper.execute('INSERT INTO exceptions (zone, var_name, rule_id, content) VALUES '
-                                         '(?,?,?,?)', (zn, vn, rn, ''))
-                exception_id  = self.wrapper.getLastId()
-                self.wrapper.execute('INSERT INTO connections (peer_ip, host, url_id, id_exception,date) '
-                                     'VALUES (?,?,?,?,?)', (entry['ip'], entry['server'], str(url_id), 
-                                                            str(exception_id), str(entry['date'])))
+                    exception_id = self.wrapper.insert(zone = zn, var_name = vn, rule_id = rn, content = '', table = 'exceptions')()
+#                exception_id  = self.wrapper.getLastId()
+                self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
+                                    date=str(entry['date']), table = 'connections')()
+#                self.wrapper.force_commit()
+#                self.wrapper.execute('INSERT INTO connections (peer_ip, host, url_id, id_exception,date) '
+#                                     'VALUES (?,?,?,?,?)', (entry['ip'], entry['server'], str(url_id), 
+#                                                            str(exception_id), str(entry['date'])))
         self.total_commits += count
         # Real clearing of dict.
         del self.dict_buf[0:len(self.dict_buf)]

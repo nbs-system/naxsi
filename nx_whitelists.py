@@ -80,8 +80,8 @@ class NxWhitelistExtractor:
             ]
       
         for req in opti_select_DESC:
-            self.wrapper.execute(req)
-            res = self.wrapper.getResults()
+            res = self.wrapper.execute(req)
+#            res = self.wrapper.getResults()
             for r in res:
                 if len(r['var_name']) > 0:
                     self.try_append({'url': r['url'], 'rule_id': r['rule_id'], 'zone': r['zone'],  'var_name': r['var_name'], 
@@ -175,8 +175,8 @@ class NxWhitelistExtractor:
             
         if first is False:
             req = find_back+" HAVING "+append
-        self.wrapper.execute(req, tuple(args))
-        res = self.wrapper.getResults()
+        res = self.wrapper.execute(req, tuple(args))
+#        res = self.wrapper.getResults()
         return res
     
     def format_rules_output(self, opti_rules):

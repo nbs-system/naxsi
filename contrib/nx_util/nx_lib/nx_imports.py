@@ -5,14 +5,20 @@ import pprint
 import gzip
 import glob
 import logging
-
+import sys
+from nx_lib.nx_filter import NxFilter
+from select import select
 
 class NxReader():
     """ Feeds the given injector from logfiles """
-    def __init__(self, injector, stdin=False, lglob=[], step=50):
+    def __init__(self, injector, stdin=False, lglob=[], step=50,
+                 stdin_timeout=5, date_filters=[["", ""]]):
         self.injector = injector
         self.step = step
         self.files = []
+        self.date_filters = date_filters
+        self.timeout = stdin_timeout
+        self.stdin = False
         if stdin is not False:
             print "Using stdin."
             self.stdin = True
@@ -22,7 +28,25 @@ class NxReader():
                 self.files.extend(glob.glob(regex))
         print "List of imported files :"+str(self.files)
 
+    def read_stdin(self):
+        rlist, _, _ = select([sys.stdin], [], [], self.timeout)
+        if rlist:
+            s = sys.stdin.readline()
+            if s == '':
+                return False
+            self.injector.acquire_nxline(s)
+            return True
+        else:
+            return False
     def read_files(self):
+        if self.stdin is True:
+            ret = ""
+            while self.read_stdin() is True:
+                pass
+            self.injector.commit()
+            print "Committing to db ..."
+            self.injector.wrapper.StopInsert()
+            return 0
         count = 0
         for lfile in self.files:
             success = fail = 0
@@ -52,15 +76,18 @@ class NxReader():
         print "Count (lines) success:"+str(success)+", fail:"+str(fail)
         print str(self.injector.total_objs)+" valid lines, "
         print str(self.injector.total_commits)+" injected objs in DB."
-    
+        return 0
+
 class NxInject():
     """ Transforms naxsi error log into dicts """
-    def __init__(self, wrapper):
+    # din_fmt and fil_fmt are format of dates from logs and from user-supplied filters
+    def __init__(self, wrapper, filters=[]):
         self.naxsi_keywords = [" NAXSI_FMT: ", " NAXSI_EXLOG: "]
         self.wrapper = wrapper
         self.dict_buf = []
         self.total_objs = 0
         self.total_commits = 0
+        self.filters = filters
 
     def commit(self):
         """Process dicts of dict (yes) and push them to DB """
@@ -80,12 +107,8 @@ class NxInject():
                 if 'var_name' not in entry.keys():
                     entry['var_name'] = ''
                 exception_id = self.wrapper.insert(zone=entry['zone'], var_name=entry['var_name'], rule_id=entry['id'], content=entry['content'], table='exceptions')
-#                exception_id  = self.wrapper.getLastId()
                 self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
                                     date=str(entry['date']), table = 'connections')()[1].force_commit()
-#                self.wrapper.execute('INSERT INTO connections (peer_ip, host, url_id, id_exception,date) '
-#                                     'VALUES (?,?,?,?,?)', (entry['ip'], entry['server'], str(url_id), 
-#                                                            str(exception_id), str(entry['date'],)))
             # NAXSI_FMT can have many (zone,id,var_name), but does not have content
             # we iterate over triples.
             elif 'zone0' in entry.keys():
@@ -108,13 +131,8 @@ class NxInject():
                         logging.warning("Object: "+str(entry))
                         break
                     exception_id = self.wrapper.insert(zone = zn, var_name = vn, rule_id = rn, content = '', table = 'exceptions')()
-#                exception_id  = self.wrapper.getLastId()
                 self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
                                     date=str(entry['date']), table = 'connections')()
-#                self.wrapper.force_commit()
-#                self.wrapper.execute('INSERT INTO connections (peer_ip, host, url_id, id_exception,date) '
-#                                     'VALUES (?,?,?,?,?)', (entry['ip'], entry['server'], str(url_id), 
-#                                                            str(exception_id), str(entry['date'])))
         self.total_commits += count
         # Real clearing of dict.
         del self.dict_buf[0:len(self.dict_buf)]

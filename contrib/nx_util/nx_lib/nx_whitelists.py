@@ -1,7 +1,7 @@
 import pprint
 
 class NxWhitelistExtractor:
-    def __init__(self, cursor, rules_file, conf_file, pages_hit=10, rules_hit=20, exlog_max=5):
+    def __init__(self, cursor, rules_file, pages_hit=10, rules_hit=20, exlog_max=5):
         self.wrapper = cursor
         self.rules_list = []
         self.final_rules = []

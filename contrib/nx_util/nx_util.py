@@ -3,7 +3,7 @@
 # -l --log logfile1, logfile2 ... : Inject logfile1 et logfile2. If logfile is '-', logs are read from stdin
 # -g --glob "/var/log/nginx/*/*foobar*.error.log*" : Inject all files with name matching "*rx*" that are contained in directory "/path/" (recursive)
 
-# Sauvegarde :
+# Save :
 # -s --save db_name : Save db under the name db_name
 # -r --recover db_name : Recover db from db_name
 
@@ -22,16 +22,16 @@
 # --config config_file : Use this config file. Defaults to naxsi-utils.conf
 
 from optparse import OptionParser
-from nx_imports import NxReader, NxInject 
-from SQLWrapper import SQLWrapper, SQLWrapperException
-from nx_whitelists import NxWhitelistExtractor
-from nx_report import NxReport
-import logging
-#from terminal import render
-
+from nx_lib.nx_imports import NxReader, NxInject 
+from nx_lib.SQLWrapper import SQLWrapper, SQLWrapperException
+from nx_lib.nx_whitelists import NxWhitelistExtractor
+from nx_lib.nx_report import NxReportGen
+from nx_lib.nx_tools import NxConfig
+#import logging
+import sys
+# Did you see how bad I am ?
 
 # optparse needs this, argsparse is for > 2.7 only. 
-# death to slow packagers
 def cb(option, opt_str, value, parser):
         args=[]
         for arg in parser.rargs:
@@ -45,20 +45,22 @@ def cb(option, opt_str, value, parser):
         setattr(parser.values, option.dest, args)
 
 
+	
+
 if __name__ == "__main__":
 	usage = """
-%prog [-l /var/log/*mysite*error.log] [-o] [-H dir/] [-s db] [-r db]
+%prog [-l /var/log/*mysite*error.log] [-o] [-H dir/] [-d dbname] [-c config]
 nginx/naxsi log parser, whitelist and report generator.
 """
 	parser = OptionParser(usage=usage)
 	# Save/Recover options
-	parser.add_option("-s", "--save", dest="db_dst",
-			  help="Save exceptions to db", type="string")
-	parser.add_option("-r", "--recover", dest="db_src",
-			  help="Load exceptions from db", type="string")
+	parser.add_option("-d", "--dbname", dest="db",
+			  help="db (sqlite3) name", type="string",
+			  default="naxsi_sig")
 	# Outputing options
 	parser.add_option("-H", "--html-out", dest="dst_dir",
-			  help="Generate HTML report to directory.", type="string")
+			  help="Generate HTML report to directory", 
+			  type="string")
 	parser.add_option("-o", "--out", dest="output_whitelist", 
 			  action="store_true", default=False,
 			  help="Generate whitelists, outputs on stdout")
@@ -66,35 +68,46 @@ nginx/naxsi log parser, whitelist and report generator.
 	parser.add_option("-l", "--log", dest="logfiles",
 			  help="Parse logfile(s) matching regex, ie. /var/log/nginx/*myproj*error.log", 
 			  action="callback", callback=cb)
-	# Filtering options ## TBD
-	# ....
+	
+	# Configuration
+	parser.add_option("-c", "--config", dest="conf_path",
+			  help="Path to configuration (defaults to ./nx_util.conf)", 
+			  type="string", default="nx_util.conf")
+
+	# Filtering options should go here :)
 	
 	(options, args) = parser.parse_args()
-	# Setup debug log.
-	logging.basicConfig(filename='nx_utils.log',level=logging.DEBUG)
-
-	# This should be rewritten once we have new wrapper
-	sql = SQLWrapper()
-#	sql.create_db()
-#	sql.create_all_tables()
 	
-	if options.logfiles is not None and len(options.logfiles) > 0:
+	if options.dst_dir is None and options.output_whitelist is False and options.logfiles is None:
+		parser.print_help()
+		sys.exit (-1)
+	
+	config = NxConfig(options.conf_path)
+	if config.parse() == 0:
+		print "Unable to parse configuration ["+options.conf_path+"]"
+		sys.exit(-1)
+	sql = SQLWrapper(options.db)
+	if options.logfiles is not None:
 		# Create injector
 		inject = NxInject(sql)
-		# Imports
-		logfiles = []
-		logfiles.extend(options.logfiles)
-		reader = NxReader(inject, lglob=logfiles)
-		reader.read_files()
-	elif options.output_whitelist is not False:
-		wl = NxWhitelistExtractor(sql, "/etc/nginx/naxsi_core.rules", "naxsi-ui.conf", None)
+		if len(options.logfiles) == 0:
+			reader = NxReader(inject, stdin=True)
+			reader.read_files()
+		else:
+			# Imports
+			logfiles = []
+			logfiles.extend(options.logfiles)
+			reader = NxReader(inject, lglob=logfiles)
+			reader.read_files()
+	if options.output_whitelist is not False:
+		wl = NxWhitelistExtractor(sql, config.core_rules)
 		wl.gen_basic_rules()
 		base_rules, opti_rules = wl.opti_rules_back()
 		opti_rules.sort(lambda a,b: (b['hratio']+(b['pratio']*3)) < (a['hratio']+(a['pratio']*3)))
 		r = wl.format_rules_output(wl.final_rules)
 		print r
-	elif options.dst_dir is not None:
-		report = NxReport(options.dest_dir)
-		print "Outputing HTML ..."
-	else:
-		parser.print_help()
+	if options.dst_dir is not None:
+		print "Outputing HTML report to directory ["+options.dst_dir+"]"
+		report = NxReportGen(options.dst_dir, config.data_dir, sql)
+		report.write()
+		print "Done!"

@@ -106,7 +106,7 @@ class NxInject():
                 if 'var_name' not in entry.keys():
                     entry['var_name'] = ''
                     #try:
-                exception_id = self.wrapper.insert(zone=entry['zone'], var_name=entry['var_name'], rule_id=entry['id'], content=entry['content'], table='exceptions')
+                exception_id = self.wrapper.insert(zone=entry['zone'], var_name=entry['var_name'], rule_id=entry['id'], content=entry['content'], table='exceptions')()
                 self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
                                     date=str(entry['date']), table = 'connections')()#[1].force_commit()
                 # except:

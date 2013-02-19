@@ -195,7 +195,7 @@ class NxWhitelistExtractor:
             r += " | "+self.core_msg.get(str(i['rule_id']), "?")+"\n"
             res = self.lookup_exlog(i)
             for exlog in res:
-                r += "#exemple (from exlog) : '"+res[0][4]+"'\n"
+                r += "#exemple (from exlog) : '"+str(res[4][0][4])+"'\n"
                 exlog_count += 1
                 if exlog_count > self.exlog_max:
                     break

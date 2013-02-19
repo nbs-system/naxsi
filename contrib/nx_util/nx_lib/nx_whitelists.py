@@ -22,7 +22,7 @@ class NxWhitelistExtractor:
                     self.core_msg[i[pos + 3:i[pos + 3].find(';') - 1]] = i[pos_msg + 4:][:i[pos_msg + 4:].find('"')]
             fd.close()
         except:
-            logging.warning ("Unable to open rules file :"+rules_file)
+            print "Unable to open rules file :"+rules_file
             pass
 
     def gen_basic_rules(self,url=None, srcip=None, dsthost=None,

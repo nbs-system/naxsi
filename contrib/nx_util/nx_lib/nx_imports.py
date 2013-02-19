@@ -58,7 +58,6 @@ class NxReader():
                     fd = open(lfile, "r")
             except:
                 print "Unable to open file : "+lfile
-                logging.warning("Unable to open file '"+lfile+"' for import.")
                 return 1
             for line in fd:
                 if self.injector.acquire_nxline(line) == 0:
@@ -106,9 +105,14 @@ class NxInject():
                 count += 1
                 if 'var_name' not in entry.keys():
                     entry['var_name'] = ''
+                    #try:
                 exception_id = self.wrapper.insert(zone=entry['zone'], var_name=entry['var_name'], rule_id=entry['id'], content=entry['content'], table='exceptions')
                 self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
-                                    date=str(entry['date']), table = 'connections')()[1].force_commit()
+                                    date=str(entry['date']), table = 'connections')()#[1].force_commit()
+                # except:
+                #     print "Unable to insert (EXLOG) entry (malformed ?)"
+                #     pprint.pprint(entry)
+                    
             # NAXSI_FMT can have many (zone,id,var_name), but does not have content
             # we iterate over triples.
             elif 'zone0' in entry.keys():
@@ -127,8 +131,6 @@ class NxInject():
                         rn = entry['id' + str(i)]
                     else:
                         print "Error: Invalid/truncated line. No id at pos:"+str(i)+". (see logs)"
-                        logging.warning("Invalid (or truncated) line. No id at post:"+str(i))
-                        logging.warning("Object: "+str(entry))
                         break
                     exception_id = self.wrapper.insert(zone = zn, var_name = vn, rule_id = rn, content = '', table = 'exceptions')()
                 self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),

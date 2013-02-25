@@ -2,7 +2,7 @@
 .SH NAME 
 nx_util \- A tool to parse & analyze naxsi logs
 .SH SYNOPSIS 
-.B nx_util [-ho] [-l
+.B nx_util [-hoi] [-l
 .I FILE
 .B ] [-H 
 .I DIR
@@ -20,12 +20,16 @@ the scope of the html reports.
 nx_util supports options for the three different functions : 
 .br
 
-.B Importing events
+.B Importing filtered events
 (from logs, gzipped logs or stdin), 
 .br
-.B generating whitelists
-from events, generating 
+generating
+.B naxsi whitelists
+from events, 
+.br
+generating 
 .B "html reports"
+representing activity over the specified period.
 
 .br
 \&	nx_util -d mysite -l
@@ -49,17 +53,23 @@ from database mysite.
 .br
 
 This tell nx_util to generate a html report of events from mysite,
-outputing the resulting files to directory.
+outputing the resulting files to the directory
 .I mysite.report
 
-\&	nx_util -l /var/log/nginx/*error*log*
 
-
-This tell nx_util to parse the nginx-naxsi error log 
-.I /var/log/nginx/mysite.error.log
-, extract NAXSI_FMT and NAXSI_EXLOG events, 
-and store them into the sqlite database 'mysite'.
+\&	nx_util -l /var/log/nginx/*error*log* -f "country = FR"
 .br
+
+nx_util will import events from all files matching the
+.I /var/log/nginx/*error*log*
+string,
+.br
+but will only import events for which originating country is France.
+
+You can find detailed notes about filters in the
+.B FILTERS
+section below.
+
 
 
 .IP "-l FILES"
@@ -79,8 +89,10 @@ Specify one or multiple filters to apply to events
 .br
 The 
 .B ip,uri,date,server,zone,var_name,content,country
-keywords can be used, along with the operators 
-.B = != =~
+keywords can be used,
+.br
+along with the operators 
+.B = != =~ (and >,>,<= and >= for dates)
 .br
 .br
 Note that the
@@ -101,3 +113,119 @@ in the current directory.
 .IP "-c config-file"
 .br
 Configuration file specifies directories for sqlite databases and static files used to generate reports. It as well provides path to naxsi rules, to embellish whitelists output.
+
+.SH FILTERS
+
+nx_util's offers a very
+.B primtive
+language for filtering events that aims at 
+.br
+.B Lower
+false-positive rate when doing learning (by restricting events on country, periods etc.)
+.br
+Provide
+.B focused
+reports whenever you whish to investigate a specific event.
+.br
+
+Filters need to be supplied with
+.B -f
+argument, are quoted, and support various keywords : 
+.B ip, date, server, uri, zone, var_name, content, country
+.br
+As well as some simple operators :
+.B = != <= >= =~
+
+.B \&		Support keywords
+.br
+
+.B ip
+is a string representation of the client ip, and supports =, !=, =~ operators :
+.br
+\&	-f 'ip = 8.8.8.8' :
+.B Only events from IP 8.8.8.8 will be analyzed.
+.br
+\&	-f 'ip =~ 8.*' :
+.B Only events from IPs starting by a '8' will be analyzed.
+.br
+\&	-f 'ip != 1.1.1.1' :
+.B Events from 1.1.1.1 will not be analyzed.
+.br
+
+.B date
+is a string representation of the date, in the format YYYY-MM-DD HH:MM:SS.
+.br
+Note that
+.B lastweek
+and
+.B lastmonth
+values can be used as shortcuts for now() - (60*60*24*7) and now() - (60*60*24*30).
+.br
+As well, date supports the > and < operators :
+.br
+\&	-f 'date > lastmonth and date < lastweek'
+will select events that are newer than 30 days and older than 7 days.
+.br
+
+\&	When using a full date for comparisons, it needs to be quoted :
+.br
+\&	-f 'date >= "2013-01-01 00:00:00"'
+will select events newer than 1s Jan of 2013.
+.br
+
+.B server
+correspond to the "Host" http header.
+.br
+
+.B uri
+correspond to the requested uri.
+.br
+\&	-f 'uri =~ /.*foo$' will select events whith an url starting with a '/' and ending with 'foo'.
+.br
+
+.B zone
+correspond to the zone in which the event happened. It can be usefull when troubleshooting specific events,
+.br
+\&	-f "zone = BODY" Will only select events that happened in a POST/PUT body.
+.br
+
+.B var_name
+correspond to the variable name in which the event occured.
+.br
+
+.B content
+can only be used when importing naxsi_exlog events. Content refers to offending data captured from the http request.
+.br
+
+.B country
+is the two-letter country code representation of the client's IP. It requires GeoIP module to be used :
+.br
+\&	-f "country = FR" Will only select events coming from France.
+
+.SH EXAMPLES
+.br
+cat foobar.log | nx_util -l  -o -H test1
+.br
+\&	nx_util reads events from stdin, then generate whitelists to stdout
+.B (-o)
+and html report to directory "test1"
+.B (-H) 
+.br
+
+nx_util -l /var/log/nginx/*error.log -H test1 -f "date > lastweek"
+.br
+\&	nx_util will read all log files from
+.I /var/log/nginx directory
+, and create a html report of
+.B last week
+events to directory "test1"
+.br
+
+nx_util -d allsites -i -l /var/log/nginx/*error.log -H test1 -f "date > lastweek"
+.br
+\&	nx_util will
+.B append
+last week events from all files in
+.I /var/log/nginx/*error.log
+to the database
+.B allsites

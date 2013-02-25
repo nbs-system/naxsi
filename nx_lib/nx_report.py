@@ -180,7 +180,7 @@ class WorldMap():
                 bycn[country] = {'count': int(ip['c']), 'coords': ''}
                 fd.seek(0)
                 for cn in fd:
-                    if country in cn:
+                    if cn.startswith(country+":"):
                         bycn[country]['coords'] = cn[len(country)+1:-1]
                         break
                 if len(bycn[country]['coords']) < 1:

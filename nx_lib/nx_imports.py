@@ -19,7 +19,8 @@ class NxImportFilter():
         self.res_op = []
         self.kw = {
             "ip" : {"methods" : "=,!=,=~"},
-            "date" : {"methods" : "=,!=,=~,>,<"},
+            "date" : {"methods" : "=,!=,=~,>,<,>=,<=",
+                      "match_method" : self.date_cmp},
             "server" : {"methods" : "=,!=,=~"},
             "uri" : {"methods" : "=,!=,=~"},
             "zone" : {"methods" : "=,!="},
@@ -30,17 +31,27 @@ class NxImportFilter():
         try:
             import GeoIP
             self.gi = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
-            print "oh ay !"
         except:
             print """Python's GeoIP module is not present.
             'World Map' reports won't work,
             and you can't use per-country filters."""
+    # returns an integer less than, equal to or greater than zero
+    # if date1 is < date2, date1 == date2 or date1 > date2
+    def date_cmp(self, date1, date2):
+        d1s = time.strptime(date1, "%Y-%m-%d %H:%M:%S")
+        d2s = time.strptime(date2, "%Y-%m-%d %H:%M:%S")
+        if date1 > date2:
+            return 1
+        if date1 == date2:
+            return 0
+        if date1 < date2:
+            return -1
     def word(self, w, res):
         if w not in self.kw.keys():
             return -1
         res.append(w)
         return 1
-
+            
     def check(self, w, res):
         if w not in self.kw[res[-1]]["methods"].split(","):
             print "operator "+w+" not allowed for var "+res[-1]
@@ -49,6 +60,16 @@ class NxImportFilter():
         return 2
 
     def checkval(self, w, res):
+        # for checks on date, we allow a specialy trick :
+        # lastweek => now() - 7days
+        # lastmonth = now() - 1 month
+        if res[-2] == "date":
+            if w == "lastweek":
+                mnow = time.gmtime(time.time() - (60*60*24*7))
+                w = time.strftime("%Y-%m-%d %H:%M:%S", mnow)
+            if w == "lastmonth":
+                mnow = time.gmtime(time.time() - (60*60*24*30))
+                w = time.strftime("%Y-%m-%d %H:%M:%S", mnow)
         res.append(w)
         return 3
 
@@ -61,9 +82,16 @@ class NxImportFilter():
     def filter_build(self, instr):
         words = instr.split(' ')
         res_op = []
-        # -1 : err, 0 : var, 1 : check, 2 : syntax (and/or), 3 : value
+        # -1 : err, 0 : var, 1 : check, 2 : syntax (and/or), 3 : value, 4 : in quoted string
         state = 0
+        tmp_word = ""
         for w in words:
+            # wut, quoted string ?
+            # and YES, not \ handling, booh
+            if w.startswith("'") or w.startswith('"'):
+                tmp_word = w[1:]
+                state = 4
+                continue
             if state == 0:
                 state = self.word(w, res_op)
             elif state == 1:
@@ -72,6 +100,12 @@ class NxImportFilter():
                 state = self.checkval(w, res_op)
             elif state == 3:
                 state = self.synt(w, res_op)
+            elif state == 4:
+                if w.endswith("'") or w.endswith('"'):
+                    tmp_word = tmp_word + " " + w[:-1]
+                    state = self.checkval(tmp_word, res_op)
+                else:
+                    tmp_word = tmp_word + " " +w
             if state == -1:
                 print "Unable to build filter, check you syntax at '"+w+"'"
                 return False
@@ -91,6 +125,24 @@ class NxImportFilter():
             return True
         elif sub[1] == "=~" and re.match(filval, srcval):
             return True
+        elif sub[1].startswith(">") or sub[1].startswith("<"):
+            if sub[0] not in self.kw or "match_method" not in self.kw[sub[0]]:
+                print "Unable to apply operator </>/<=/>= without method"
+                pprint.pprint(self.kw[sub[0]])
+                return False
+            # if date1 is < date2, date1 == date2 or date1 > date2
+            if sub[1] == ">" or sub[1] == ">=":
+                if self.kw[sub[0]]["match_method"](srcval, filval) == 1:
+                    #print srcval+">="+filval
+                    return True
+            if sub[1] == "<" or sub[1] == "<=":
+                if self.kw[sub[0]]["match_method"](srcval, filval) == -1:
+                    #print srcval+"<="+filval
+                    return True
+            if sub[1] == ">=" or sub[1] == "<=":
+                if self.kw[sub[0]]["match_method"](srcval, filval) == 0:
+                    return True
+            return False
         return False
 
     def dofilter(self, src):
@@ -106,9 +158,7 @@ class NxImportFilter():
             filters = filters[3:]
             if len(filters) == 0:
                 last = True
-#            print "test vs:"+str(sub)+"",
             result = self.subfil(src, sub)
- #           print "==>"+str(result)
             # Final check
             if last is True:
                 # if last keyword was or, we can have a fail on last test
@@ -119,11 +169,14 @@ class NxImportFilter():
             # if this test succeed with a OR, we can fail next.
             if result is True and filters[0] == "or":
                 return True
+            if result is False and filters[0] == "or":
+                ok_fail = True
+                filters = filters[1:]
+                continue
             if result is False and filters[0] == "and":
                 return False
             # remove and/or
             filters = filters[1:]
-            ok_fail = False
         return True
         
 class NxReader():
@@ -147,6 +200,7 @@ class NxReader():
 
     def read_stdin(self):
         rlist, _, _ = select([sys.stdin], [], [], self.timeout)
+        success = discard = not_nx = malformed = 0
         if rlist:
             s = sys.stdin.readline()
             if s == '':
@@ -379,6 +433,7 @@ class NxInject():
             return 2
         # if input filters on country were used, forced geoip XXX
         if self.filt_engine is None or self.filt_engine.dofilter(md) is True:
+#            print "Appending =>"+str(md)
             self.dict_buf.append(md)
             return 0
         return 1

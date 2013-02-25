@@ -1,0 +1,103 @@
+.TH nx_util 1 LOCAL 
+.SH NAME 
+nx_util \- A tool to parse & analyze naxsi logs
+.SH SYNOPSIS 
+.B nx_util [-ho] [-l
+.I FILE
+.B ] [-H 
+.I DIR
+.B ] [-f 
+.I filter
+.B ] 
+.SH DESCRIPTION 
+.B nx_util
+processes nginx-naxsi log files, to generate white-lists or html reports.
+It stores NAXSI_FMT/NAXSI_EXLOG events to a sqlite databse, and use it to
+generate both white-lists and reports.
+The user can supply filters to reduce false positives or reduce 
+the scope of the html reports.
+.SH OPTIONS
+nx_util supports options for the three different functions : 
+.br
+
+.B Importing events
+(from logs, gzipped logs or stdin), 
+.br
+.B generating whitelists
+from events, generating 
+.B "html reports"
+
+.br
+\&	nx_util -d mysite -l
+.I /var/log/nginx/mysite.error.log
+.br
+
+This tell nx_util to parse the nginx-naxsi error log 
+.I /var/log/nginx/mysite.error.log
+, extract NAXSI_FMT and NAXSI_EXLOG events, 
+and store them into the sqlite database 'mysite'.
+.br
+
+\&	nx_util -d mysite -o
+.br
+
+This tell nx_util to display to stdout generated whitelists
+from database mysite.
+
+\&	nx_util -d mysite -H 
+.I mysite.report
+.br
+
+This tell nx_util to generate a html report of events from mysite,
+outputing the resulting files to directory.
+.I mysite.report
+
+\&	nx_util -l /var/log/nginx/*error*log*
+
+
+This tell nx_util to parse the nginx-naxsi error log 
+.I /var/log/nginx/mysite.error.log
+, extract NAXSI_FMT and NAXSI_EXLOG events, 
+and store them into the sqlite database 'mysite'.
+.br
+
+
+.IP "-l FILES"
+Process supplied nginx-naxsi log files.
+.br
+Space-separated lists of files and regular expressions as well.
+If no file name is specified, stdin is used to read log line.
+.IP "-H DIR"
+.br
+Outputs a HTML static report to the directory.
+.br
+The python-geoip is required for the world-map section.
+
+.IP "-f FILTER"
+.br
+Specify one or multiple filters to apply to events
+.br
+The 
+.B ip,uri,date,server,zone,var_name,content,country
+keywords can be used, along with the operators 
+.B = != =~
+.br
+.br
+Note that the
+.I python-geoip
+is required for country-filters.
+.IP "-o"
+.br
+Outputs generated whitelists to stdout.
+.br
+If NAXSI_EXLOG datas are present, they will be integrated to output.
+
+.IP "-d db_name"
+.br
+Specify the name of the sqlite3 database to use.
+.br
+By default, nx_util will append data to the database called naxsi_sig
+in the current directory.
+.IP "-c config-file"
+.br
+Configuration file specifies directories for sqlite databases and static files used to generate reports. It as well provides path to naxsi rules, to embellish whitelists output.

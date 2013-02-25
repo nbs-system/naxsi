@@ -1,7 +1,7 @@
 import pprint
 
 class NxWhitelistExtractor:
-    def __init__(self, cursor, rules_file, conf_file, pages_hit=10, rules_hit=20, exlog_max=5):
+    def __init__(self, cursor, rules_file, pages_hit=10, rules_hit=20, exlog_max=5):
         self.wrapper = cursor
         self.rules_list = []
         self.final_rules = []
@@ -22,7 +22,7 @@ class NxWhitelistExtractor:
                     self.core_msg[i[pos + 3:i[pos + 3].find(';') - 1]] = i[pos_msg + 4:][:i[pos_msg + 4:].find('"')]
             fd.close()
         except:
-            logging.warning ("Unable to open rules file :"+rules_file)
+            print "Unable to open rules file :"+rules_file
             pass
 
     def gen_basic_rules(self,url=None, srcip=None, dsthost=None,
@@ -195,7 +195,7 @@ class NxWhitelistExtractor:
             r += " | "+self.core_msg.get(str(i['rule_id']), "?")+"\n"
             res = self.lookup_exlog(i)
             for exlog in res:
-                r += "#exemple (from exlog) : '"+res[0][4]+"'\n"
+                r += "#exemple (from exlog) : '"+str(res[4][0][4])+"'\n"
                 exlog_count += 1
                 if exlog_count > self.exlog_max:
                     break

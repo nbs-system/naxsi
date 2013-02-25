@@ -119,6 +119,7 @@ class SQLWrapper(object):
     def __init__(self, dbname = 'naxsi_sig'):
         self.__dbname = dbname
         self.__dbopen = False
+        self.__connection = None
         
     def __opendb(self):
         self.__connection = sqlite3.connect(self.__dbname)
@@ -191,4 +192,6 @@ class SQLWrapper(object):
         return SQLSet(self.__sql, self.__connection).update(values)
 
     def StopInsert(self):
-        self.__connection.commit()
+        if self.__connection is not None:
+            self.__connection.commit()
+            

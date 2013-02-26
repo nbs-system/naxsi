@@ -61,19 +61,19 @@ class NxReport(object):
         self.data_dir = data_dir
     def render_topten(self):
         top_ten = self.sql.execute('select peer_ip as ip, count(id_exception) as c from connections group by peer_ip order by count(id_exception) DESC limit 10')
-        self.top_ten_html = '<table class="table table-bordered" border="1" ><thead><tr><th>IP</th><th>Rule Hits</th></tr></thead><tbody>'
+        self.top_ten_html = '</br></br><table class="table table-bordered" border="1" ><thead><tr><th>IP</th><th>Rule Hits</th></tr></thead><tbody>'
         for i in top_ten:
             self.top_ten_html += '<tr><td>' + cgi.escape(i['ip']) + ' </td><td> ' + str(i['c']) + '</td></tr>'
         self.top_ten_html += '</tbody></table>'
 
-        top_ten_page_html = ''
+#        top_ten_page_html = ''
 
         top_ten_page = self.sql.execute('select distinct u.url as url, count(id_exception) as c from connections  join urls as u on (u.url_id = connections.url_id) group by u.url order by count(id_exception) DESC limit 10;')
-        top_ten_page_html = '<table class="table table-bordered" border="1" ><thead><tr><th>URI</th><th>Exceptions Count</th></tr></thead><tbody>'
+        self.top_ten_html += '<table class="table table-bordered" border="1" ><thead><tr><th>URI</th><th>Exceptions Count</th></tr></thead><tbody>'
       
         for i in top_ten_page:
-            top_ten_page_html += '<tr><td>' + cgi.escape(i['url']).replace('\'', '\\\'') + ' </td><td> ' + str(i['c']) + '</td></tr>'
-        top_ten_page_html += '</tbody></table>'
+            self.top_ten_html += '<tr><td>' + cgi.escape(i['url']).replace('\'', '\\\'') + ' </td><td> ' + str(i['c']) + '</td></tr>'
+        self.top_ten_html += '</tbody></table>'
 
 
     def render_GET(self, render):
@@ -88,7 +88,6 @@ class NxReport(object):
         intern_array, intern_count = self.build_js_array(0, 10)
         self.render_topten()
         dict_replace = {'__TOPTEN__': self.top_ten_html, 
-                        '__TOPTENPAGE__': self.top_ten_html, 
                         '__TOTALEXCEP__': array_excep, 
                         '__SQLCOUNT__': str(sql_count),  
                         '__XSSCOUNT__': str(xss_count), 

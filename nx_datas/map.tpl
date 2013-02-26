@@ -136,7 +136,6 @@
       document.getElementById('days').setAttribute("class", "inactive");
       document.getElementById('map').setAttribute("class", "inactive");
       document.getElementById('map_canvas').innerHTML = '__TOPTEN__';
-      document.getElementById('map_canvas').innerHTML += '__TOPTENPAGE__';
       }
       
       function DisplayHome() {

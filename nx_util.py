@@ -22,6 +22,7 @@
 # --config config_file : Use this config file. Defaults to naxsi-utils.conf
 
 from optparse import OptionParser
+import os
 from nx_lib.nx_imports import NxReader, NxInject 
 from nx_lib.SQLWrapper import SQLWrapper, SQLWrapperException
 from nx_lib.nx_whitelists import NxWhitelistExtractor
@@ -57,6 +58,9 @@ nginx/naxsi log parser, whitelist and report generator.
 	parser.add_option("-d", "--dbname", dest="db",
 			  help="db (sqlite3) name", type="string",
 			  default="naxsi_sig")
+	parser.add_option("-i", "--incremental", dest="incremental",
+			  action="store_true", default=False,
+			  help="Append to database, rather than creating a news one.")
 	# Outputing options
 	parser.add_option("-H", "--html-out", dest="dst_dir",
 			  help="Generate HTML report to directory", 
@@ -90,7 +94,14 @@ nginx/naxsi log parser, whitelist and report generator.
 	if config.parse() == 0:
 		print "Unable to parse configuration ["+options.conf_path+"]"
 		sys.exit(-1)
-	sql = SQLWrapper(options.db)
+	# destroy existing database, unless incremental is set.
+	if options.incremental is False and options.logfiles is not None:
+		try:
+			print "Deleting old database :"+config.db_dir+options.db
+			os.remove(config.db_dir+options.db)
+		except: 
+			pass
+	sql = SQLWrapper(config.db_dir+options.db)
 	if options.logfiles is not None:
 		# Create injector
 		inject = NxInject(sql, filters=options.usr_filter)

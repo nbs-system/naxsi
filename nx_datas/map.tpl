@@ -2,8 +2,18 @@
 <html>
   <head>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-    <link href="bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<style>
+__CSS_BOOTSTRAP__
+</style>
+<style>
+__CSS_BOOTSTRAP_RESPONSIVE__
+</style>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript"></script>
+<script>
+__JS_BOOTSTRAP__
+__JS_HIGHCHARTS__
+</script>
     <!-- fix img bug on bootstrap + gmap -->
     <style type="text/css">
       html { height: 100% }
@@ -20,6 +30,7 @@
       document.getElementById('home').setAttribute("class", "inactive");
       document.getElementById('days').setAttribute("class", "inactive");
       document.getElementById('map').setAttribute("class", "active");
+	  document.getElementById('map_canvas').setAttribute("style", "");
       initialize();
       }
 
@@ -28,6 +39,7 @@
       document.getElementById('repartition').setAttribute("class", "inactive");
       document.getElementById('home').setAttribute("class", "inactive");
       document.getElementById('days').setAttribute("class", "active");
+	  document.getElementById('map_canvas').setAttribute("style", "");
       document.getElementById('map').setAttribute("class", "inactive");
       
       var chart = null;
@@ -80,6 +92,7 @@
       document.getElementById('home').setAttribute("class", "inactive");
       document.getElementById('days').setAttribute("class", "inactive");
       document.getElementById('map').setAttribute("class", "inactive");
+	  document.getElementById('map_canvas').setAttribute("style", "");
       var chart;
       $(document).ready(function() {
       chart = new Highcharts.Chart({
@@ -135,6 +148,7 @@
       document.getElementById('home').setAttribute("class", "inactive");
       document.getElementById('days').setAttribute("class", "inactive");
       document.getElementById('map').setAttribute("class", "inactive");
+	  document.getElementById('map_canvas').setAttribute("style", "");
       document.getElementById('map_canvas').innerHTML = '__TOPTEN__';
       }
       
@@ -144,13 +158,11 @@
       document.getElementById('home').setAttribute("class", "active");
       document.getElementById('days').setAttribute("class", "inactive");
       document.getElementById('map').setAttribute("class", "inactive");
+	  document.getElementById('map_canvas').setAttribute("style", "");
       document.getElementById('map_canvas').innerHTML = "Welcome to the NAXSI Web Interface !";
       }
       
     </script>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript"></script>
-    <script type="text/javascript" src="bootstrap/js/bootstrap.js"></script>
-    <script type="text/javascript" src="js/highcharts.js"></script>
 
     <script type="text/javascript"
 	    src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBbKJnS1H3sZ3EAAlNTtzZogOH43O2NcMo&sensor=false">
@@ -202,7 +214,7 @@
           <a class="brand" href="#">Naxsi Web Interface</a>
           <div class="nav-collapse">
             <ul class="nav">
-              <li class="active" id="home"><a href="/">Home</a></li>
+              <li id="home"><a href="#" onclick="javascript:DisplayHome()">Home</a></li>
               <li id="days" ><a href="#" onclick="javascript:DisplayDays()">Hit Per Days</a></li>
               <li id="repartition" ><a href="#"  onclick="javascript:DisplayRepartition()">Hits Repartition</a></li>
               <li id="top10" ><a href="#" onclick="javascript:DisplayTop()">Top 10</a></li>
@@ -212,7 +224,7 @@
         </div>
       </div>
     </div>
-    
+    <script>DisplayHome();</script>
     <div id="map_canvas"></div>
   </body>
 </html>

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import pprint
-import shutil
 import os
 import cgi
 import sys
@@ -44,12 +43,6 @@ class NxReportGen(object):
             dstfd.close()
         except:
             print "Unable to create dst file "+target
-            sys.exit(-1)
-        try:
-            shutil.copytree(self.data_dir+"/js", self.dst_dir+"/js")
-            shutil.copytree(self.data_dir+"/bootstrap", self.dst_dir+"/bootstrap")
-        except:
-            print "Unable to copy ressources from "+self.data_dir+" to "+self.dst_dir
             sys.exit(-1)
         
             
@@ -119,6 +112,14 @@ class NxReport(object):
                 dict_replace[x] = str(0)
         html = reduce(lambda html,(b, c): html.replace(b, c), 
                       dict_replace.items(), html)
+        required_files = [(self.data_dir+"/bootstrap.min.css", "__CSS_BOOTSTRAP__"),
+                          (self.data_dir+"/bootstrap-responsive.min.css", "__CSS_BOOTSTRAP_RESPONSIVE_"),
+                          (self.data_dir+"/bootstrap.min.js", "__JS_BOOTSTRAP__"),
+                          (self.data_dir+"/highcharts.js", "__JS_HIGHCHARTS__")]
+        for data in required_files:
+            fd = open(data[0], 'r')
+            html = html.replace(data[1], fd.read())
+            fd.close()
         return html
 
     def create_js_array(self, res):

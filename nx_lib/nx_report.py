@@ -59,11 +59,22 @@ class NxReport(object):
     def __init__(self, data_dir, sql):
         self.sql = sql
         self.data_dir = data_dir
+        self.gi = None
+        try:
+            import GeoIP
+            self.has_geoip = True
+            self.gi = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
+        except:
+            pass
     def render_topten(self):
         top_ten = self.sql.execute('select peer_ip as ip, count(id_exception) as c from connections group by peer_ip order by count(id_exception) DESC limit 10')
         self.top_ten_html = '</br></br><table class="table table-bordered" border="1" ><thead><tr><th>IP</th><th>Rule Hits</th></tr></thead><tbody>'
         for i in top_ten:
-            self.top_ten_html += '<tr><td>' + cgi.escape(i['ip']) + ' </td><td> ' + str(i['c']) + '</td></tr>'
+            if self.gi is not None:
+                country = self.gi.country_code_by_addr(i['ip'])
+            else:
+                country = "??"
+            self.top_ten_html += '<tr><td>' + cgi.escape(i['ip']) + '('+country+') </td><td> ' + str(i['c']) + '</td></tr>'
         self.top_ten_html += '</tbody></table>'
 
 #        top_ten_page_html = ''

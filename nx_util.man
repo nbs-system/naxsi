@@ -11,9 +11,9 @@ nx_util \- A tool to parse & analyze naxsi logs
 .B ] 
 .SH DESCRIPTION 
 .B nx_util
-processes nginx-naxsi log files, to generate white-lists or html reports.
-It stores NAXSI_FMT/NAXSI_EXLOG events to a sqlite databse, and use it to
-generate both white-lists and reports.
+processes nginx-naxsi log files to generate white-lists or html reports.
+It stores NAXSI_FMT/NAXSI_EXLOG events to a sqlite database, and use it to
+generate both whitelists and reports.
 The user can supply filters to reduce false positives or reduce 
 the scope of the html reports.
 .SH OPTIONS
@@ -36,7 +36,7 @@ representing activity over the specified period.
 .I /var/log/nginx/mysite.error.log
 .br
 
-This tell nx_util to parse the nginx-naxsi error log 
+This tells nx_util to parse the nginx-naxsi error log 
 .I /var/log/nginx/mysite.error.log
 , extract NAXSI_FMT and NAXSI_EXLOG events, 
 and store them into the sqlite database 'mysite'.
@@ -45,15 +45,15 @@ and store them into the sqlite database 'mysite'.
 \&	nx_util -d mysite -o
 .br
 
-This tell nx_util to display to stdout generated whitelists
+This tells nx_util to display to stdout generated whitelists
 from database mysite.
 
 \&	nx_util -d mysite -H 
 .I mysite.report
 .br
 
-This tell nx_util to generate a html report of events from mysite,
-outputing the resulting files to the directory
+This tells nx_util to generate a html report of events from mysite,
+putting the resulting files to the directory
 .I mysite.report
 
 
@@ -75,24 +75,24 @@ section below.
 .IP "-l FILES"
 Process supplied nginx-naxsi log files.
 .br
-Space-separated lists of files and regular expressions as well.
-If no file name is specified, stdin is used to read log line.
+Space-separated list of files and regular expressions as well.
+If no file name is specified, stdin is used to read log lines.
 .IP "-H DIR"
 .br
-Outputs a HTML static report to the directory.
+Outputs a html static report to the directory.
 .br
-The python-geoip is required for the world-map section.
+Python-geoip is required for the world-map section.
 
 .IP "-f FILTER"
 .br
-Specify one or multiple filters to apply to events
+Specify one or multiple filters to apply to events.
 .br
 The 
 .B ip,uri,date,server,zone,var_name,content,country
 keywords can be used,
 .br
 along with the operators 
-.B = != =~ (and >,>,<= and >= for dates)
+.B = != =~ (and >,>,<=, >= for dates)
 .br
 .br
 Note that the
@@ -112,7 +112,7 @@ By default, nx_util will append data to the database called naxsi_sig
 in the current directory.
 .IP "-c config-file"
 .br
-Configuration file specifies directories for sqlite databases and static files used to generate reports. It as well provides path to naxsi rules, to embellish whitelists output.
+config-file specifies directories for sqlite databases and static files used to generate reports. It provides path to naxsi rules as well, to embellish whitelists output.
 
 .SH FILTERS
 

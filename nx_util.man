@@ -132,23 +132,22 @@ Filters need to be supplied with
 .B -f
 argument, are quoted, and support various keywords : 
 .B ip, date, server, uri, zone, var_name, content, country
-.br
-As well as some simple operators :
+, as well as some simple operators :
 .B = != <= >= =~
 
-.B \&		Support keywords
+.B \&		Supported keywords
 .br
 
 .B ip
 is a string representation of the client ip, and supports =, !=, =~ operators :
 .br
-\&	-f 'ip = 8.8.8.8' :
+\&	-f 'ip = 8.8.8.8'  :
 .B Only events from IP 8.8.8.8 will be analyzed.
 .br
-\&	-f 'ip =~ 8.*' :
+\&	-f 'ip =~ 8.*'       :
 .B Only events from IPs starting by a '8' will be analyzed.
 .br
-\&	-f 'ip != 1.1.1.1' :
+\&	-f 'ip != 1.1.1.1'   :
 .B Events from 1.1.1.1 will not be analyzed.
 .br
 
@@ -170,43 +169,45 @@ will select events that are newer than 30 days and older than 7 days.
 \&	When using a full date for comparisons, it needs to be quoted :
 .br
 \&	-f 'date >= "2013-01-01 00:00:00"'
-will select events newer than 1s Jan of 2013.
+will select events newer than 1st Jan of 2013.
 .br
 
 .B server
-correspond to the "Host" http header.
+corresponds to the "Host" http header.
 .br
 
 .B uri
-correspond to the requested uri.
+corresponds to the requested uri.
 .br
-\&	-f 'uri =~ /.*foo$' will select events whith an url starting with a '/' and ending with 'foo'.
+\&	-f 'uri =~ ^/.*foo$' will select events whith an url starting with a '/' and ending with 'foo'.
 .br
 
 .B zone
-correspond to the zone in which the event happened. It can be usefull when troubleshooting specific events,
+corresponds to the zone in which the event happened. It can be useful when troubleshooting specific events.
 .br
-\&	-f "zone = BODY" Will only select events that happened in a POST/PUT body.
+\&	-f "zone = BODY" will only select events that happened in a POST/PUT body.
 .br
 
 .B var_name
-correspond to the variable name in which the event occured.
+corresponds to the variable name in which the event occured.
 .br
 
 .B content
-can only be used when importing naxsi_exlog events. Content refers to offending data captured from the http request.
+can only be used when importing naxsi_exlog events.
+.B Content
+refers to offending data captured from the http request.
 .br
 
 .B country
-is the two-letter country code representation of the client's IP. It requires GeoIP module to be used :
+is the two-letter country code representation of the client's IP. It requires the GeoIP module to be used :
 .br
-\&	-f "country = FR" Will only select events coming from France.
+\&	-f "country = FR" will only select events coming from France.
 
 .SH EXAMPLES
 .br
-cat foobar.log | nx_util -l  -o -H test1
+cat foobar.log | nx_util -l -o -H test1
 .br
-\&	nx_util reads events from stdin, then generate whitelists to stdout
+\&	nx_util reads events from stdin, then generates whitelists to stdout
 .B (-o)
 and html report to directory "test1"
 .B (-H) 
@@ -216,7 +217,7 @@ nx_util -l /var/log/nginx/*error.log -H test1 -f "date > lastweek"
 .br
 \&	nx_util will read all log files from
 .I /var/log/nginx directory
-, and create a html report of
+ and create a html report of
 .B last week
 events to directory "test1"
 .br
@@ -228,4 +229,4 @@ nx_util -d allsites -i -l /var/log/nginx/*error.log -H test1 -f "date > lastweek
 last week events from all files in
 .I /var/log/nginx/*error.log
 to the database
-.B allsites
+.B allsites.

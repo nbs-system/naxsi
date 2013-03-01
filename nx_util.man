@@ -88,7 +88,7 @@ Python-geoip is required for the world-map section.
 Specify one or multiple filters to apply to events.
 .br
 The 
-.B ip,uri,date,server,zone,var_name,content,country
+.B ip,uri,date,server,zone,var_name,id,content,country
 keywords can be used,
 .br
 along with the operators 
@@ -131,7 +131,7 @@ reports whenever you whish to investigate a specific event.
 Filters need to be supplied with
 .B -f
 argument, are quoted, and support various keywords : 
-.B ip, date, server, uri, zone, var_name, content, country
+.B ip, date, server, uri, zone, var_name, id, content, country
 , as well as some simple operators :
 .B = != <= >= =~
 
@@ -188,6 +188,10 @@ corresponds to the zone in which the event happened. It can be useful when troub
 \&	-f "zone = BODY" will only select events that happened in a POST/PUT body.
 .br
 
+.B id
+corresponds to the naxsi-rule ID that matched. It supports >, <, >= and <= operators.
+.br
+
 .B var_name
 corresponds to the variable name in which the event occured.
 .br
@@ -202,6 +206,48 @@ refers to offending data captured from the http request.
 is the two-letter country code representation of the client's IP. It requires the GeoIP module to be used :
 .br
 \&	-f "country = FR" will only select events coming from France.
+
+.SH WHITELISTS
+.br
+Option
+.B -o
+is used to generate whitelists from events. Typical output looks like this :
+.br
+\&	# total_count:1420 (10.66%), peer_count:130 (35.62%) | mysql keyword (|)
+.br
+\&	BasicRule wl:1005 "mz:$HEADERS_VAR:cookie";
+.br
+
+Each suggested whitelist has two line :
+.br
+
+The first one indicates the total number of times this event was triggered, its ratio amongst the total number of exceptions,
+.br
+\&	along with the number of unique peers that triggered the event, and the ratio amongst all unique peers that triggered events.
+.br
+\&	if your nx_util.conf file contains a valid path to naxsi rules, you will as well get a human readable explenation of the event.
+.br
+
+The second line is the whitelist itself, in a format that naxsi can understand.
+.br
+
+Those whitelists should be included (either directly or via nginx's include directive) to your configuration,
+.br
+directly into the location where naxsi is activated.
+.br
+
+If you enable $naxsi_extensive_log in your location, nx_util will include extra data in the whitelists, such as :
+.br
+\&	# total_count:2 (0.27%), peer_count:1 (5.0%) | , in stuff
+.br
+\&	#exemple (from exlog) : 'Korea, North'
+.br
+\&	BasicRule wl:1015 "mz:$URL:/user/register|$BODY_VAR:field_country[und]";
+.br
+
+After the original comment line, another one was added. The quoted string corresponds to the actual content
+.br
+of the variable that triggered the exception, helping you to distinguish false positives.
 
 .SH EXAMPLES
 .br
@@ -230,3 +276,7 @@ last week events from all files in
 .I /var/log/nginx/*error.log
 to the database
 .B allsites.
+
+.SH BUGS
+
+The filters mecanism is extremely primitive and might be subject to bugs if you attempt to create some complex filters.

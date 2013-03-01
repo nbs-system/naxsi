@@ -24,6 +24,8 @@ class NxImportFilter():
             "server" : {"methods" : "=,!=,=~"},
             "uri" : {"methods" : "=,!=,=~"},
             "zone" : {"methods" : "=,!="},
+            "id" : {"methods" : "=,!=,>,<,>=,<=",
+                    "match_methid" : self.int_cmp},
             "var_name" : {"methods" : "=,!=,=~"},
             "content" : {"methods" : "=,!=,=~"},
             "country" : {"methods" : "=,!="}
@@ -45,6 +47,15 @@ class NxImportFilter():
         if date1 == date2:
             return 0
         if date1 < date2:
+            return -1
+    def int_cmp(self, date1, date2):
+        int1 = int(date1)
+        int2 = int(date2)
+        if int1 > int2:
+            return 1
+        if int1 == int2:
+            return 0
+        if int1 < int2:
             return -1
     def word(self, w, res):
         if w not in self.kw.keys():

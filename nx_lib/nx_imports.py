@@ -25,7 +25,7 @@ class NxImportFilter():
             "uri" : {"methods" : "=,!=,=~"},
             "zone" : {"methods" : "=,!="},
             "id" : {"methods" : "=,!=,>,<,>=,<=",
-                    "match_methid" : self.int_cmp},
+                    "match_method" : self.int_cmp},
             "var_name" : {"methods" : "=,!=,=~"},
             "content" : {"methods" : "=,!=,=~"},
             "country" : {"methods" : "=,!="}
@@ -127,7 +127,11 @@ class NxImportFilter():
     def subfil(self, src, sub):
         if sub[0] not in src:
             print "Unable to filter : key "+sub[0]+" does not exist in dict"
+            pprint.pprint(src)
             return False
+#        else:
+#            print "is in dict "
+#            pprint.pprint(src)
         srcval = src[sub[0]]
         filval = sub[2]
         if sub[1] == "=" and srcval == filval:
@@ -286,60 +290,94 @@ class NxInject():
             if self.filt_engine.filter_build(self.filters) is False:
                 print "Unable to create filter, abort."
                 sys.exit(-1)
-
+    def demult_event(self, event):
+        demult = []
+        
+        entry = {}
+        if not event.has_key('uri'):
+            entry['uri'] = ''
+        else:
+            entry['uri'] = event['uri']
+        if not event.has_key('server'):
+            entry['server'] = ''
+        else:
+            entry['server'] = event['server']
+        if not event.has_key('content'):
+            entry['content'] = ''
+        else:
+            entry['content'] = event['content']
+        if not event.has_key('ip'):
+            entry['ip'] = ''
+        else:
+            entry['ip'] = event['ip']
+        if not event.has_key('date'):
+            entry['date'] = ''
+        else:
+            entry['date'] = event['date']
+        entry['var_name'] = ''
+#        pprint.pprint(entry)
+        # NAXSI_EXLOG lines only have one triple (zone,id,var_name), but has non-empty content
+        if 'zone' in event.keys():
+            if 'var_name' in event.keys():
+                entry['var_name'] = event['var_name']
+            entry['zone'] = event['zone']
+            entry['id'] = event['id']
+            demult.append(entry)
+            return demult
+        
+        # NAXSI_FMT can have many (zone,id,var_name), but does not have content
+        # we iterate over triples.
+        elif 'zone0' in event.keys():
+            ref = entry
+            commit = True
+            for i in itertools.count():
+                entry = ref
+                zn = ''
+                vn = ''
+                rn = ''
+                if 'var_name' + str(i) in event.keys():
+                    entry['var_name'] = event['var_name' + str(i)]
+                if 'zone' + str(i) in event.keys():
+                    entry['zone']  = event['zone' + str(i)]
+                else:
+                    commit = False
+                    break
+                if 'id' + str(i) in event.keys():
+                    entry['id'] = event['id' + str(i)]
+                else:
+                    commit = False
+                    break
+                if commit is True:
+                    demult.append(entry)
+                else:
+                    print "Malformed/incomplete event :"
+                    pprint.pprint(event)
+                    return demult
+            return demult
+        else:
+            print "Malformed/incomplete event"
+            pprint.pprint(event)
+            return demult
     def commit(self):
         """Process dicts of dict (yes) and push them to DB """
         self.total_objs += len(self.dict_buf)
         count = 0
         for entry in self.dict_buf:
-            if not entry.has_key('uri'):
-                entry['uri'] = ''
-            if not entry.has_key('server'):
-                entry['server'] = ''
             url_id = self.wrapper.insert(url = entry['uri'], table='urls')()
-            if not entry.has_key('content'):
-                entry['content'] = ''
             # NAXSI_EXLOG lines only have one triple (zone,id,var_name), but has non-empty content
-            if 'zone' in entry.keys():
+            if 'content' in entry.keys():
                 count += 1
-                if 'var_name' not in entry.keys():
-                    entry['var_name'] = ''
-                    #try:
-                exception_id = self.wrapper.insert(zone=entry['zone'], var_name=entry['var_name'], rule_id=entry['id'], content=entry['content'], table='exceptions')()
+                exception_id = self.wrapper.insert(zone=entry['zone'], var_name=entry['var_name'], 
+                                                   rule_id=entry['id'], content=entry['content'], table='exceptions')()
                 self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
                                     date=str(entry['date']), table = 'connections')()#[1].force_commit()
-                # except:
-                #     print "Unable to insert (EXLOG) entry (malformed ?)"
-                #     pprint.pprint(entry)
-                    
             # NAXSI_FMT can have many (zone,id,var_name), but does not have content
             # we iterate over triples.
-            elif 'zone0' in entry.keys():
+            else:
                 count += 1
-                for i in itertools.count():
-                    commit = True
-                    zn = ''
-                    vn = ''
-                    rn = ''
-                    if 'var_name' + str(i) in entry.keys():
-                        vn = entry['var_name' + str(i)]
-                    if 'zone' + str(i) in entry.keys():
-                        zn  = entry['zone' + str(i)]
-                    else:
-                        commit = False
-                        break
-                    if 'id' + str(i) in entry.keys():
-                        rn = entry['id' + str(i)]
-                    else:
-                        commit = False
-                        break
-                    if commit is True:
-                        exception_id = self.wrapper.insert(zone = zn, var_name = vn, rule_id = rn, content = '', table = 'exceptions')()
-                        self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
-                                            date=str(entry['date']), table = 'connections')()
-                    else:
-                        print "Malformed line."
-                        count -= 1
+                exception_id = self.wrapper.insert(zone = entry['zone'], var_name = entry['var_name'], rule_id = entry['id'], content = '', table = 'exceptions')()
+                self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
+                                    date=str(entry['date']), table = 'connections')()
         self.total_commits += count
         # Real clearing of dict.
         del self.dict_buf[0:len(self.dict_buf)]
@@ -443,8 +481,9 @@ class NxInject():
         if md is None:
             return 2
         # if input filters on country were used, forced geoip XXX
-        if self.filt_engine is None or self.filt_engine.dofilter(md) is True:
+        for entry in self.demult_event(md):
+            if self.filt_engine is None or self.filt_engine.dofilter(entry) is True:
+                self.dict_buf.append(entry)
 #            print "Appending =>"+str(md)
-            self.dict_buf.append(md)
             return 0
         return 1

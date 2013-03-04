@@ -279,4 +279,4 @@ to the database
 
 .SH BUGS
 
-The filters mecanism is extremely primitive and might be subject to bugs if you attempt to create some complex filters.
+The filters mechanism is extremely primitive and might be subject to bugs if you attempt to create some complex filters.

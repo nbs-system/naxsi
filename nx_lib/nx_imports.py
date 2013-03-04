@@ -1,4 +1,5 @@
 import urlparse
+import string
 import itertools
 import datetime
 import time
@@ -7,7 +8,6 @@ import gzip
 import glob
 import logging
 import sys
-#from nx_lib.nx_filter import NxFilter
 from select import select
 import re
 
@@ -415,32 +415,32 @@ class NxInject():
     def date_unify(self, date):
         idx = 0
         res = ""
+#        print "date=>"+date
+#Jan  8 16:48:36 
+        ref_format = "%Y-%m-%d %H:%M:%S"
         supported_formats = [
+            "%b  %d %H:%M:%S",
             "%Y/%m/%d %H:%M:%S",
             "%Y-%m-%d %H:%M:%S",
-            #2013-01-30T15:16:53+01:00
             "%Y-%m-%dT%H:%M:%S+",
             ]
-        while date[idx].isdigit() is False:
+        while date[idx] == " " or date[idx] == "\t":
             idx += 1
-        valid_datechars = ["/", " ", ":", "-", "T"]
-        while idx < len(date):
-            if date[idx].isdigit():
-                pass
-            elif date[idx] in valid_datechars:
-                pass
-            else:
+        success = 0
+        for date_format in supported_formats:
+            nb_sp = date_format.count(" ")
+            clean_date = string.join(date.split(" ")[:nb_sp+1], " ")
+            try:
+                x = time.strptime(clean_date, date_format)
+                z = time.strftime(ref_format, x)
+                success = 1
                 break
-            # hack for "2013-01-31T02:11:12+01:00" formats
-            if date[idx] == "T":
-                res = res+" "
-            else:
-                res = res+date[idx]
-            idx += 1
-        return res.replace("/", "-")
-    
-            
-            
+            except:
+                pass
+        if success == 0:
+            print "Unable to parse date format :"+date
+            sys.exit(-1)
+        return z
     # can return : 
     # 0 : ok
     # 1 : ok, but discarded by filters

@@ -420,6 +420,7 @@ class NxInject():
         ref_format = "%Y-%m-%d %H:%M:%S"
         supported_formats = [
             "%b  %d %H:%M:%S",
+            "%b %d %H:%M:%S",
             "%Y/%m/%d %H:%M:%S",
             "%Y-%m-%d %H:%M:%S",
             "%Y-%m-%dT%H:%M:%S+",
@@ -436,9 +437,10 @@ class NxInject():
                 success = 1
                 break
             except:
+                #print "'"+clean_date+"' not in format '"+date_format+"'"
                 pass
         if success == 0:
-            print "Unable to parse date format :"+date
+            print "Unable to parse date format :'"+date+"'"
             sys.exit(-1)
         return z
     # can return : 

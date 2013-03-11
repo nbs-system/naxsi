@@ -98,6 +98,7 @@ class NxWhitelistExtractor:
         return self.base_rules, self.final_rules
 
     def try_append(self, target, delmatch=False):
+#        print "ruules"+str(self.pages_hit)
         """returns true if whitelist 'target' is already handled by final_rules
         does a dummy comparison and compares the counters"""
         count=0
@@ -126,6 +127,9 @@ class NxWhitelistExtractor:
         if not count and not nb_rule:
             self.final_rules.append(target)
         # Check the number of unique URLs covered by the rule
+        # print "Number of rules covered :"+str(count)
+        # print "Number of urls covered :"+str(len(uurl))
+        # print "Number of hits  :"+str(target['hcount'])
         if target['hcount'] >= count and len(uurl) > self.pages_hit:
             self.try_append(target, True)
             self.final_rules.append(target)

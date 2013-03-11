@@ -1,25 +1,4 @@
 #!/usr/bin/env python
-# Injection :
-# -l --log logfile1, logfile2 ... : Inject logfile1 et logfile2. If logfile is '-', logs are read from stdin
-# -g --glob "/var/log/nginx/*/*foobar*.error.log*" : Inject all files with name matching "*rx*" that are contained in directory "/path/" (recursive)
-
-# Save :
-# -s --save db_name : Save db under the name db_name
-# -r --recover db_name : Recover db from db_name
-
-# Reporting :
-# --report /dir/ : Create report in directory /dir/
-
-# Whitelist :
-# -o --output : Output whitelists on stdout
-
-# Extra :
-# -i --incremental : Incremental mode, data will be appened
-# -d --date-interval [date intervals] : Include only events that are within date interval(s)
-# --src 2.2.2.2, 1.1.1.1 : Limit learning to exceptions from IP 2.2.2.2 or IP 1.1.1.1
-
-# Config :
-# --config config_file : Use this config file. Defaults to naxsi-utils.conf
 
 from optparse import OptionParser
 import os
@@ -60,7 +39,7 @@ nginx/naxsi log parser, whitelist and report generator.
 			  default="naxsi_sig")
 	parser.add_option("-i", "--incremental", dest="incremental",
 			  action="store_true", default=False,
-			  help="Append to database, rather than creating a news one.")
+			  help="Append to database, rather than creating a new one")
 	# Outputing options
 	parser.add_option("-H", "--html-out", dest="dst_dir",
 			  help="Generate HTML report to directory", 
@@ -68,6 +47,13 @@ nginx/naxsi log parser, whitelist and report generator.
 	parser.add_option("-o", "--out", dest="output_whitelist", 
 			  action="store_true", default=False,
 			  help="Generate whitelists, outputs on stdout")
+	parser.add_option("-r", "--rules-limit", default=15,
+			  help="Control the number of rules to be match in a whitelist before suggesting a wl:0",
+			  type="int", dest="wl_rlimit")
+	parser.add_option("-p", "--pages-limit", default=10,
+			  help="Number of pages an exception must happen on before suggesting a location-wide whitelist",
+			  type="int", dest="wl_plimit")
+	
 	# Input options
 	parser.add_option("-l", "--log", dest="logfiles",
 			  help="Parse logfile(s) matching regex, ie. /var/log/nginx/*myproj*error.log", 
@@ -78,7 +64,6 @@ nginx/naxsi log parser, whitelist and report generator.
 			  help="Path to configuration (defaults to ./nx_util.conf)", 
 			  type="string", default="nx_util.conf")
 	
-
 	# Filtering options should go here :)
 	parser.add_option("-f", "--filters", dest="usr_filter",
 			  help="Filter imported data",
@@ -115,7 +100,7 @@ nginx/naxsi log parser, whitelist and report generator.
 			reader = NxReader(inject, lglob=logfiles)
 			reader.read_files()
 	if options.output_whitelist is not False:
-		wl = NxWhitelistExtractor(sql, config.core_rules)
+		wl = NxWhitelistExtractor(sql, config.core_rules, pages_hit=options.wl_plimit, rules_hit=options.wl_rlimit)
 		wl.gen_basic_rules()
 		base_rules, opti_rules = wl.opti_rules_back()
 		opti_rules.sort(lambda a,b: (b['hratio']+(b['pratio']*3)) < (a['hratio']+(a['pratio']*3)))

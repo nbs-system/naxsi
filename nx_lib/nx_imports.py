@@ -349,12 +349,12 @@ class NxInject():
                     demult.append(entry)
                 else:
                     print "Malformed/incomplete event :"
-#                    pprint.pprint(event)
+                    pprint.pprint(event)
                     return demult
             return demult
         else:
             print "Malformed/incomplete event"
-#            pprint.pprint(event)
+            pprint.pprint(event)
             return demult
     def commit(self):
         """Process dicts of dict (yes) and push them to DB """

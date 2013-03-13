@@ -348,12 +348,12 @@ class NxInject():
 #                    pprint.pprint(entry)
                     demult.append(entry)
                 else:
-                    print "Malformed/incomplete event :"
+                    print "Malformed/incomplete event [missing subfield]"
                     pprint.pprint(event)
                     return demult
             return demult
         else:
-            print "Malformed/incomplete event"
+            print "Malformed/incomplete event [no zone]"
             pprint.pprint(event)
             return demult
     def commit(self):

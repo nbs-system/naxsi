@@ -1,4 +1,5 @@
 import urlparse
+import string
 import itertools
 import datetime
 import time
@@ -7,7 +8,6 @@ import gzip
 import glob
 import logging
 import sys
-#from nx_lib.nx_filter import NxFilter
 from select import select
 import re
 
@@ -24,6 +24,8 @@ class NxImportFilter():
             "server" : {"methods" : "=,!=,=~"},
             "uri" : {"methods" : "=,!=,=~"},
             "zone" : {"methods" : "=,!="},
+            "id" : {"methods" : "=,!=,>,<,>=,<=",
+                    "match_method" : self.int_cmp},
             "var_name" : {"methods" : "=,!=,=~"},
             "content" : {"methods" : "=,!=,=~"},
             "country" : {"methods" : "=,!="}
@@ -45,6 +47,15 @@ class NxImportFilter():
         if date1 == date2:
             return 0
         if date1 < date2:
+            return -1
+    def int_cmp(self, date1, date2):
+        int1 = int(date1)
+        int2 = int(date2)
+        if int1 > int2:
+            return 1
+        if int1 == int2:
+            return 0
+        if int1 < int2:
             return -1
     def word(self, w, res):
         if w not in self.kw.keys():
@@ -116,7 +127,11 @@ class NxImportFilter():
     def subfil(self, src, sub):
         if sub[0] not in src:
             print "Unable to filter : key "+sub[0]+" does not exist in dict"
+#            pprint.pprint(src)
             return False
+#        else:
+#            print "is in dict "
+#            pprint.pprint(src)
         srcval = src[sub[0]]
         filval = sub[2]
         if sub[1] == "=" and srcval == filval:
@@ -181,7 +196,7 @@ class NxImportFilter():
         
 class NxReader():
     """ Feeds the given injector from logfiles """
-    def __init__(self, injector, stdin=False, lglob=[], step=50,
+    def __init__(self, injector, stdin=False, lglob=[], step=50000,
                  stdin_timeout=5, date_filters=[["", ""]]):
         self.injector = injector
         self.step = step
@@ -233,16 +248,11 @@ class NxReader():
                 return 1
             for line in fd:
                 ret = self.injector.acquire_nxline(line)
-                if ret == 0:
-                    success += 1
-                    count += 1
-                elif ret == 1:
-                    discard += 1
-                elif ret == 2:
-                    not_nx += 1
-                elif ret == -1:
-                    malformed += 1
-                if count == self.step:
+                success += ret[0]
+                discard += ret[1]
+                malformed += ret[2]
+                count += ret[0]
+                if count >= self.step:
                     self.injector.commit()
                     count = 0
             fd.close()
@@ -276,59 +286,87 @@ class NxInject():
                 print "Unable to create filter, abort."
                 sys.exit(-1)
 
+    def demult_event(self, event):
+        demult = []
+#        import copy
+        
+        entry = {}
+        if not event.has_key('uri'):
+            entry['uri'] = ''
+        else:
+            entry['uri'] = event['uri']
+        if not event.has_key('server'):
+            entry['server'] = ''
+        else:
+            entry['server'] = event['server']
+        if not event.has_key('content'):
+            entry['content'] = ''
+        else:
+            entry['content'] = event['content']
+        if not event.has_key('ip'):
+            entry['ip'] = ''
+        else:
+            entry['ip'] = event['ip']
+        if not event.has_key('date'):
+            entry['date'] = ''
+        else:
+            entry['date'] = event['date']
+        entry['var_name'] = ''
+        # NAXSI_EXLOG lines only have one triple (zone,id,var_name), but has non-empty content
+        if 'zone' in event.keys():
+            if 'var_name' in event.keys():
+                entry['var_name'] = event['var_name']
+            entry['zone'] = event['zone']
+            entry['id'] = event['id']
+            demult.append(entry)
+            return demult
+        
+        # NAXSI_FMT can have many (zone,id,var_name), but does not have content
+        # we iterate over triples.
+        elif 'zone0' in event.keys():
+            ce = entry
+            commit = True
+            for i in itertools.count():
+                entry = ce
+                zn = ''
+                vn = ''
+                rn = ''
+                if 'var_name' + str(i) in event.keys():
+                    entry['var_name'] = event['var_name' + str(i)]
+                if 'zone' + str(i) in event.keys():
+                    entry['zone']  = event['zone' + str(i)]
+                else:
+                    commit = False
+                    break
+                if 'id' + str(i) in event.keys():
+                    entry['id'] = event['id' + str(i)]
+                else:
+                    commit = False
+                    break
+                if commit is True:
+              #      print "Adding to pusharray:"
+#                    pprint.pprint(entry)
+                    demult.append(entry)
+                else:
+                    print "Malformed/incomplete event [missing subfield]"
+                    pprint.pprint(event)
+                    return demult
+            return demult
+        else:
+            print "Malformed/incomplete event [no zone]"
+            pprint.pprint(event)
+            return demult
     def commit(self):
         """Process dicts of dict (yes) and push them to DB """
         self.total_objs += len(self.dict_buf)
         count = 0
         for entry in self.dict_buf:
-            if not entry.has_key('uri'):
-                entry['uri'] = ''
-            if not entry.has_key('server'):
-                entry['server'] = ''
             url_id = self.wrapper.insert(url = entry['uri'], table='urls')()
-            if not entry.has_key('content'):
-                entry['content'] = ''
-            # NAXSI_EXLOG lines only have one triple (zone,id,var_name), but has non-empty content
-            if 'zone' in entry.keys():
-                count += 1
-                if 'var_name' not in entry.keys():
-                    entry['var_name'] = ''
-                    #try:
-                exception_id = self.wrapper.insert(zone=entry['zone'], var_name=entry['var_name'], rule_id=entry['id'], content=entry['content'], table='exceptions')()
-                self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
-                                    date=str(entry['date']), table = 'connections')()#[1].force_commit()
-                # except:
-                #     print "Unable to insert (EXLOG) entry (malformed ?)"
-                #     pprint.pprint(entry)
-                    
-            # NAXSI_FMT can have many (zone,id,var_name), but does not have content
-            # we iterate over triples.
-            elif 'zone0' in entry.keys():
-                count += 1
-                for i in itertools.count():
-                    commit = True
-                    zn = ''
-                    vn = ''
-                    rn = ''
-                    if 'var_name' + str(i) in entry.keys():
-                        vn = entry['var_name' + str(i)]
-                    if 'zone' + str(i) in entry.keys():
-                        zn  = entry['zone' + str(i)]
-                    else:
-                        commit = False
-                        break
-                    if 'id' + str(i) in entry.keys():
-                        rn = entry['id' + str(i)]
-                    else:
-                        commit = False
-                        break
-                    if commit is True:
-                        exception_id = self.wrapper.insert(zone = zn, var_name = vn, rule_id = rn, content = '', table = 'exceptions')()
-                        self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
-                                            date=str(entry['date']), table = 'connections')()
-                    else:
-                        print "Malformed line."
-                        count -= 1
+            count += 1
+            exception_id = self.wrapper.insert(zone = entry['zone'], var_name = entry['var_name'], rule_id = entry['id'], content = entry['content']
+                                               , table = 'exceptions')()
+            self.wrapper.insert(peer_ip=entry['ip'], host = entry['server'], url_id=str(url_id), id_exception=str(exception_id),
+                                date=str(entry['date']), table = 'connections')()
         self.total_commits += count
         # Real clearing of dict.
         del self.dict_buf[0:len(self.dict_buf)]
@@ -366,39 +404,39 @@ class NxInject():
     def date_unify(self, date):
         idx = 0
         res = ""
+        ref_format = "%Y-%m-%d %H:%M:%S"
         supported_formats = [
+            "%b  %d %H:%M:%S",
+            "%b %d %H:%M:%S",
             "%Y/%m/%d %H:%M:%S",
             "%Y-%m-%d %H:%M:%S",
-            #2013-01-30T15:16:53+01:00
             "%Y-%m-%dT%H:%M:%S+",
             ]
-        while date[idx].isdigit() is False:
+        while date[idx] == " " or date[idx] == "\t":
             idx += 1
-        valid_datechars = ["/", " ", ":", "-", "T"]
-        while idx < len(date):
-            if date[idx].isdigit():
-                pass
-            elif date[idx] in valid_datechars:
-                pass
-            else:
+        success = 0
+        for date_format in supported_formats:
+            nb_sp = date_format.count(" ")
+            clean_date = string.join(date.split(" ")[:nb_sp+1], " ")
+            try:
+                x = time.strptime(clean_date, date_format)
+                z = time.strftime(ref_format, x)
+                success = 1
                 break
-            # hack for "2013-01-31T02:11:12+01:00" formats
-            if date[idx] == "T":
-                res = res+" "
-            else:
-                res = res+date[idx]
-            idx += 1
-        return res.replace("/", "-")
-    
-            
-            
-    # can return : 
-    # 0 : ok
-    # 1 : ok, but discarded by filters
-    # -1 : incomplete/malformed line 
-    # 2 : not naxsi line
+            except:
+                #print "'"+clean_date+"' not in format '"+date_format+"'"
+                pass
+        if success == 0:
+            print "Unable to parse date format :'"+date+"'"
+            sys.exit(-1)
+        return z
+    # returns an array of [success, discarded, bad_line] events counters
     def acquire_nxline(self, line, date_format='%Y/%m/%d %H:%M:%S',
                        sod_marker=[' [error] ', ' [debug] '], eod_marker=[', client: ', '']):
+        success = 0
+        discard = 0
+        bad_line = 0
+        
         line = line.rstrip('\n')
         for mark in sod_marker:
             date_end = line.find(mark)
@@ -412,13 +450,9 @@ class NxInject():
             if data_end != -1:
                 break
         if date_end == -1 or data_end == 1:
-            return -1
+            bad_line += 1
+            return [success, discard, bad_line]
         date = self.date_unify(line[:date_end])
-#        try:
-#        time.strptime(date.replace("-", "/"), date_format)
- #       except:
-  #          print "Unable to parse date '"+date+"'"
-            
         chunk = line[date_end:data_end]
         md = None
         for word in self.naxsi_keywords:
@@ -426,14 +460,19 @@ class NxInject():
             if (idx != -1):
                 md = self.exception_to_dict(chunk[idx+len(word):])
                 if md is None:
-                    return -1
+                    bad_line += 1
+                    return [success, discard, bad_line]
                 md['date'] = date
                 break
         if md is None:
-            return 2
+            bad_line += 1
+            return [success, discard, bad_line]
         # if input filters on country were used, forced geoip XXX
-        if self.filt_engine is None or self.filt_engine.dofilter(md) is True:
-#            print "Appending =>"+str(md)
-            self.dict_buf.append(md)
-            return 0
-        return 1
+        for event in self.demult_event(md):
+            if self.filt_engine is None or self.filt_engine.dofilter(event) is True:
+                self.dict_buf.append(event)
+                success += 1
+            else:
+                discard += 1
+        return [success, discard, bad_line]
+

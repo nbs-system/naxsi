@@ -29,7 +29,7 @@ def cb(option, opt_str, value, parser):
 
 if __name__ == "__main__":
 	usage = """
-%prog [-l /var/log/*mysite*error.log] [-o] [-H dir/] [-d dbname] [-c config]
+%prog [-l /var/log/*error.log] [-o] [-H file] [-d dbname] [-c config]
 nginx/naxsi log parser, whitelist and report generator.
 """
 	parser = OptionParser(usage=usage)
@@ -41,8 +41,8 @@ nginx/naxsi log parser, whitelist and report generator.
 			  action="store_true", default=False,
 			  help="Append to database, rather than creating a new one")
 	# Outputing options
-	parser.add_option("-H", "--html-out", dest="dst_dir",
-			  help="Generate HTML report to directory", 
+	parser.add_option("-H", "--html-out", dest="dst_file",
+			  help="Generate HTML report to file", 
 			  type="string")
 	parser.add_option("-o", "--out", dest="output_whitelist", 
 			  action="store_true", default=False,
@@ -61,8 +61,8 @@ nginx/naxsi log parser, whitelist and report generator.
 	
 	# Configuration
 	parser.add_option("-c", "--config", dest="conf_path",
-			  help="Path to configuration (defaults to ./nx_util.conf)", 
-			  type="string", default="nx_util.conf")
+			  help="Path to configuration (defaults to /usr/local/etc/nx_util.conf)", 
+			  type="string", default="/usr/local/etc/nx_util.conf")
 	
 	# Filtering options should go here :)
 	parser.add_option("-f", "--filters", dest="usr_filter",
@@ -71,7 +71,7 @@ nginx/naxsi log parser, whitelist and report generator.
 	
 	(options, args) = parser.parse_args()
 	
-	if options.dst_dir is None and options.output_whitelist is False and options.logfiles is None:
+	if options.dst_file is None and options.output_whitelist is False and options.logfiles is None:
 		parser.print_help()
 		sys.exit (-1)
 	
@@ -106,8 +106,8 @@ nginx/naxsi log parser, whitelist and report generator.
 		opti_rules.sort(lambda a,b: (b['hratio']+(b['pratio']*3)) < (a['hratio']+(a['pratio']*3)))
 		r = wl.format_rules_output(wl.final_rules)
 		print r
-	if options.dst_dir is not None:
-		print "Outputing HTML report to directory ["+options.dst_dir+"]"
-		report = NxReportGen(options.dst_dir, config.data_dir, sql)
+	if options.dst_file is not None:
+		print "Outputing HTML report to ["+options.dst_file+"]"
+		report = NxReportGen(options.dst_file, config.data_dir, sql)
 		report.write()
 		print "Done!"

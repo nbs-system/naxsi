@@ -10,14 +10,15 @@ from ordereddict import OrderedDict
 
 # Top level class
 class NxReportGen(object):
-    def __init__(self, dst_dir, data_dir, sql):
-        if not os.path.exists(dst_dir):
-            try:
-                os.mkdir(dst_dir)
-            except:
-                print "Unable to create dir :"+self.dst_dir
-                os.exit(-1)
-        self.dst_dir = dst_dir
+    def __init__(self, dst_file, data_dir, sql):
+        # if not os.path.exists(dst_dir):
+        #     try:
+        #         os.mkdir(dst_dir)
+        #     except:
+        #         print "Unable to create dir :"+self.dst_dir
+        #         os.exit(-1)
+        # self.dst_dir = dst_dir
+        self.dst_file = dst_file
         self.data_dir = data_dir
         self.sql = sql
         return
@@ -33,7 +34,7 @@ class NxReportGen(object):
         except:
             print "Unable to open/read tpl file :"+self.data_dir+"/map.tpl"
             sys.exit(-1)
-        target = self.dst_dir+"/index.html"
+        target = self.dst_file
         for gen in generators:
             nxr = gen(self.data_dir, self.sql)
             render = nxr.render_GET(render)

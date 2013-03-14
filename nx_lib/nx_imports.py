@@ -288,7 +288,7 @@ class NxInject():
 
     def demult_event(self, event):
         demult = []
-#        import copy
+        import copy
         
         entry = {}
         if not event.has_key('uri'):
@@ -312,6 +312,8 @@ class NxInject():
         else:
             entry['date'] = event['date']
         entry['var_name'] = ''
+        clean = entry
+
         # NAXSI_EXLOG lines only have one triple (zone,id,var_name), but has non-empty content
         if 'zone' in event.keys():
             if 'var_name' in event.keys():
@@ -324,10 +326,11 @@ class NxInject():
         # NAXSI_FMT can have many (zone,id,var_name), but does not have content
         # we iterate over triples.
         elif 'zone0' in event.keys():
-            ce = entry
             commit = True
             for i in itertools.count():
-                entry = ce
+                entry = copy.deepcopy(clean)
+#                print "DEMULT"
+ #               pprint.pprint(entry)
                 zn = ''
                 vn = ''
                 rn = ''
@@ -361,6 +364,7 @@ class NxInject():
         self.total_objs += len(self.dict_buf)
         count = 0
         for entry in self.dict_buf:
+#            pprint.pprint(entry)
             url_id = self.wrapper.insert(url = entry['uri'], table='urls')()
             count += 1
             exception_id = self.wrapper.insert(zone = entry['zone'], var_name = entry['var_name'], rule_id = entry['id'], content = entry['content']
@@ -423,7 +427,6 @@ class NxInject():
             idx = clean_date.find("+")
             if idx != -1:
                 clean_date = clean_date[:idx]
-                print "clean"+clean_date
             try:
                 x = time.strptime(clean_date, date_format)
                 z = time.strftime(ref_format, x)

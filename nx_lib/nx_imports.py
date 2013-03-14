@@ -410,7 +410,8 @@ class NxInject():
             "%b %d %H:%M:%S",
             "%Y/%m/%d %H:%M:%S",
             "%Y-%m-%d %H:%M:%S",
-            "%Y-%m-%dT%H:%M:%S+",
+            "%Y-%m-%dT%H:%M:%S"
+#            "%Y-%m-%dT%H:%M:%S+%:z"
             ]
         while date[idx] == " " or date[idx] == "\t":
             idx += 1
@@ -418,6 +419,11 @@ class NxInject():
         for date_format in supported_formats:
             nb_sp = date_format.count(" ")
             clean_date = string.join(date.split(" ")[:nb_sp+1], " ")
+            # strptime does not support numeric time zone, hack.
+            idx = clean_date.find("+")
+            if idx != -1:
+                clean_date = clean_date[:idx]
+                print "clean"+clean_date
             try:
                 x = time.strptime(clean_date, date_format)
                 z = time.strftime(ref_format, x)

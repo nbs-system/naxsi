@@ -1,0 +1,243 @@
+.TH nx_extract 1 LOCAL 
+.SH NAME 
+nx_extract - Whitelists and statistics extraction from naxsi exceptions.
+.SH SYNOPSIS 
+.B nx_extract
+[options] -c 
+.I "<configuration file>"
+.SH DESCRIPTION 
+.B nx_extract
+is used to generate statistics/whitelist from naxsi 
+.br
+exceptions. It can be used both as a web server to provide whitelist/statistics access and as a standalone script to quickly extract whitelists to stdout.
+
+.SH OPTIONS
+A summary of options is included bellow:
+.br
+.B -h
+Show usage and exit
+.br
+.B -c
+.I "<configuration file>"
+mandatory
+.br
+.B -o --output
+Display generated whitelists to stdout and exit
+.br
+.B -s --status
+Display quick stats on stdout (allows to check that DB is not empty) and exit.
+.br
+.B -p --pages-hit
+Control limit of pages hit for factorization. If a specific rule is triggered on more than "pages-hit" pages, it will try to factorize it. Usefull only with
+.B -o --output
+option.
+.br
+.B -r --rules-hit
+Control limit of rules hit for factorization. If a specific rule can represent more than "rules-hit" rules in one rule, it will be applied. Usefull only with
+.br
+.B -n
+Don't daemonize. Usefull for debugging.
+.br
+
+
+
+.SH FILES
+
+Configuration file is a mandatory parameter to nx_extract.
+Two sections are revelant when it comes to nx_extract : 
+.br
+.B [nx_extract]
+.br
+.B [sql]
+
+.br
+.B [nx_extract]
+section :
+.P
+[nx_extract]
+.br
+username = naxsi_web
+.br
+password = test
+.br
+port = 8081
+.br
+rules_path = /etc/nginx/naxsi_core.rules
+.br
+data_path = /tmp/naxsi-ui-data/
+.br
+pid_path = /tmp/nx_extract.pid
+.br
+log_path = /tmp/nx_extract.log
+.P
+
+.B username, password
+Username and password required to authenticate on the web interface
+.br
+
+.B port
+The port the web daemon will listen to
+.br
+
+.B rules_path
+Path to naxsi core rules. Used to make display of whitelist human-friendly
+.br
+
+.B data_path
+Path where are stored nx_extract js files, templates ...
+.br
+
+.B pid_path
+Path to PID file, used when nx_extract is running as a daemon
+.br
+
+.B log_path
+Path to nx_extract output log file, used mainly for troubleshouting
+
+
+
+.br
+.B [sql]
+section :
+.P
+[sql]
+.br
+dbtype = sqlite
+.br
+username = root
+.br
+password =
+.br
+hostname = 127.0.0.1
+.br
+dbname = naxsi_sig
+.br
+data_path = db/
+.P
+
+.B dbtype
+Can be either SQLite or MySQL. MySQL is more adapted to 
+.I "live learning"
+, while SQLite is more adapted to learning
+.I "from log files"
+
+.br
+.B username
+MySQL username if using MySQL backend
+
+.br
+.B password
+MySQL password if using MySQL backend
+
+.br
+.B hostname
+MySQL hostname for database if using MySQL backend
+
+.B data_path
+Directory of database, only revelant for SQLite
+
+.SH EXAMPLES
+
+Admitting you have been running naxsi in learning mode, and you have access to nginx's error_log,
+.br
+.B naxsi-ui.conf:
+.P
+[nx_extract]
+.br
+username = naxsi_web
+.br
+password = test
+.br
+port = 8081
+.br
+rules_path = /etc/nginx/naxsi_core.rules
+.br
+data_path = naxsi-ui-data/
+.br
+pid_path = nx_extract.pid
+.br
+log_path = nx_extract.log
+.br
+[nx_intercept]
+.br
+port = 8080
+.br
+pid_path = nx_intercept.pid
+.br
+log_path = nx_intercept.log
+.br
+monitor_path = monitor.conf
+.br
+learning_mode = 1
+.br
+[sql]
+.br
+dbtype = sqlite
+.br
+username = root
+.br
+password =
+.br
+hostname = 127.0.0.1
+.br
+dbname = naxsi_sig
+.br
+data_path = 
+.P
+
+You can then run :
+.br
+.B "python nx_intercept -c naxsi-ui.conf -l /tmp/nginx_error.log"
+
+If you take a look at 
+.B nx_intercept.log
+you should see the following :
+.br
+.B 7363 exceptions stored into database.
+
+You can then run 
+.B nx_extract
+to get your generated whitelists:
+.br
+.B "python nx_extract.py -c naxsi-test.conf  -o"
+.br
+.I "########### Optimized Rules Suggestion ##################"
+.br
+.I "# total_count:1420 (10.66%), peer_count:130 (35.62%) | mysql keyword (|)"
+.br
+.I BasicRule wl:1005 'mz:$HEADERS_VAR:cookie';
+.P
+You can as well start it as a daemon :
+.br
+.B "python nx_extract.py -c naxsi-test.conf"
+.br
+And access the webinterface (on :8081) to get access to statistics.
+
+.SH NOTES
+
+.B nx_extract
+relies on 
+.B nx_intercept
+database. This database can be either MySQL or SQLite.
+.br
+By default, nx_extract listens on port 
+.B "8081 (tcp)"
+, and can be accessed with your browser. 
+.P
+To access the web interface, you will have to provide the username / password from your configuration file. 
+.P
+In the web interface, you can access to :
+.P
+- Statistics (from 
+.I "World map"
+of attackers, to evolution of number of exceptions per day, ...)
+.br
+- Whitelist Generation (
+.B nx_extract
+will generate the whitelists associated to the exceptions stored into your database.
+
+.SH AUTHOR
+nx_extract is written by NBS System, as a part of the naxsi project, developped by Thibault Koechlin <tko@nbs-system.com>
+
+
+

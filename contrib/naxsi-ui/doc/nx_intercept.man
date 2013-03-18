@@ -1,0 +1,144 @@
+.TH nx_intercept 1 LOCAL 
+.SH NAME 
+nx_intercept - Interception daemon for naxsi.
+.SH SYNOPSIS 
+.B nx_intercept
+[options] -c 
+.I "<configuration file>"
+.SH DESCRIPTION 
+.B nx_intercept
+is used to intercept exceptions from naxsi.
+.br
+It can be used both as a web server to perform live learning and as a standalone script to quickly extract exceptions from nginx log files.
+
+.SH OPTIONS
+A summary of options is included bellow:
+.br
+.B -c
+.I "<configuration file>"
+mandatory
+.br
+.B -h
+Show usage and exit
+.br
+.B -l
+.I "<nginx error log(s)>"
+Rather than performing live learning, nx_intercept will fill database with exceptions present into log files. Using this mode will prevent nx_intercept to run as a daemon, and it will exit as soon as it finished processing of the log file(s)
+.br
+.B -n
+Don't daemonize
+
+.SH FILES
+
+Configuration file is a mandatory parameter to nx_intercept.
+Two sections are revelant when it comes to nx_intercept : 
+.br
+.B [nx_intercept]
+.br
+.B [sql]
+
+.br
+.B [nx_intercept]
+section :
+.P
+[nx_intercept]
+.br
+port = 8080
+.br
+pid_path = /tmp/nx_intercept.pid
+.br
+log_path = /tmp/nx_intercept.log
+.br
+monitor_path = monitor.conf
+.br
+learning_mode = 0
+.P
+.B port
+The port the web daemon will listen to
+.br
+
+.B pid_path
+Path to PID file, used when nx_extract is running as a daemon
+.br
+
+.B log_path
+Path to nx_extract output log file, used mainly for troubleshouting
+.br
+
+.B monitor_path
+Path to monitor rules. If an exception matches one of the monitor rules, full HTTP request will be logged for further inspection. Monitor rules are fragments of a naxsi signature, ie.
+.br
+ip=x.x.x.x&server=xxx.ro : All requests from ip x.x.x.x to server xxx.ro will be logued.
+.br
+server=xxx.ro&uri=/foo/bar : All requests to server xxx.ro on URI /foo/bar will be logued.
+.br
+.br
+
+.B learning_mode
+.br
+If learning mode is set to 1 (default), naxsi will store all exceptions for whitelist generation, and as well perform monitoring actions. If set to 0, then the exceptions will not be stored into database, and only HTTP requests matching monitoring will be used. This mode is intended to be used for troubleshouting while not in learning mode, in conjunction with post_action.
+
+
+
+.br
+.B [sql]
+section :
+.P
+[sql]
+.br
+dbtype = sqlite
+.br
+username = root
+.br
+password =
+.br
+hostname = 127.0.0.1
+.br
+dbname = naxsi_sig
+.br
+data_path = db/
+.P
+
+.B dbtype
+Can be either SQLite or MySQL. MySQL is more adapted to 
+.I "live learning"
+, while SQLite is more adapted to learning
+.I "from log files"
+
+.br
+.B username
+MySQL username if using MySQL backend
+
+.br
+.B password
+MySQL password if using MySQL backend
+
+.br
+.B hostname
+MySQL hostname for database if using MySQL backend
+
+.B data_path
+Directory of database, only revelant for SQLite
+
+
+
+.SH NOTES
+
+.B nx_intercept
+populates the database that will be used by
+.B nx_extract
+. This database can be either MySQL or SQLite.
+.br
+While used for live learning, nx_intercept listens on port 
+.B "8080 (tcp)"
+by default, and should be pointed by your 
+.I /RequestDenied
+location.
+
+All exceptions received by nx_intercept from naxsi will be stored into the database.
+
+nx_intercept can use naxsi (nginx) error log files as a source of exceptions as well.
+
+.SH AUTHOR
+nx_intercept is written by NBS System, as a part of the naxsi project, developped by Thibault Koechlin <tko@nbs-system.com>
+

@@ -82,8 +82,8 @@ strfaststr(unsigned char *haystack, unsigned int hl,
 
 /* unescape routine, returns number of nullbytes present */
 int naxsi_unescape(ngx_str_t *str) {
-  u_char *dst, *src, bad;
-  u_int nullbytes = 0, i;
+  u_char *dst, *src;
+  u_int nullbytes = 0, bad = 0, i;
   
   dst = str->data;
   src = str->data;

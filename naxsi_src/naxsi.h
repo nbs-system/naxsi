@@ -436,7 +436,7 @@ void		ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx,
 						  ngx_http_request_t	 *r);
 ngx_int_t	ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
 					       ngx_http_request_t *r);
-void
+int
 naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type);
 
 

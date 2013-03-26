@@ -82,14 +82,14 @@ strfaststr(unsigned char *haystack, unsigned int hl,
 
 /* unescape routine, returns number of nullbytes present */
 int naxsi_unescape(ngx_str_t *str) {
-  u_char *dst, *src;
+  u_char *dst, *src, bad;
   u_int nullbytes = 0, i;
   
   dst = str->data;
   src = str->data;
       
-  naxsi_unescape_uri(&src, &dst,
-		     str->len, 0);      
+  bad = naxsi_unescape_uri(&src, &dst,
+			   str->len, 0);      
   str->len =  src - str->data;
   //tmp hack fix, avoid %00 & co (null byte) encoding :p
   for (i = 0; i < str->len; i++)
@@ -98,7 +98,7 @@ int naxsi_unescape(ngx_str_t *str) {
 	nullbytes++;
 	str->data[i] = '0';
       }
-  return (nullbytes);
+  return (nullbytes+bad);
 }
 
 
@@ -108,10 +108,12 @@ int naxsi_unescape(ngx_str_t *str) {
 ** For example, with the original one :
 ** '%uff' -> 'uff'
 */
-void
+int
 naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
 {
     u_char  *d, *s, ch, c, decoded;
+    int bad = 0;
+    
     enum {
         sw_usual = 0,
         sw_quoted,
@@ -146,13 +148,13 @@ naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
             break;
 
         case sw_quoted:
-
+	  
             if (ch >= '0' && ch <= '9') {
                 decoded = (u_char) (ch - '0');
                 state = sw_quoted_second;
                 break;
             }
-
+	    
             c = (u_char) (ch | 0x20);
             if (c >= 'a' && c <= 'f') {
                 decoded = (u_char) (c - 'a' + 10);
@@ -161,7 +163,7 @@ naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
             }
 
             /* the invalid quoted character */
-
+	    bad++;
             state = sw_usual;
 	    *d++ = '%';
             *d++ = ch;
@@ -190,7 +192,7 @@ naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
 
                 break;
             }
-
+	    
             c = (u_char) (ch | 0x20);
             if (c >= 'a' && c <= 'f') {
                 ch = (u_char) ((decoded << 4) + c - 'a' + 10);
@@ -227,7 +229,7 @@ naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
 	    
             /* the invalid quoted character */
 	    *d++ = ch;
-
+	    bad++;
             break;
         }
     }
@@ -236,6 +238,8 @@ done:
 
     *dst = d;
     *src = s;
+    
+    return (bad);
 }
 
 //#define whitelist_heavy_debug

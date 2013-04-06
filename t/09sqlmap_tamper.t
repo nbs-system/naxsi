@@ -402,7 +402,7 @@ location /RequestDenied {
 --- error_code: 412
 
 
-=== NOT TODO: I don't know any server/interpreter decoding this ?
+=== IIS/ASP Encoding
 --- main_config
 working_directory /tmp/;
 worker_rlimit_core 25M;
@@ -427,7 +427,7 @@ location /RequestDenied {
 "GET /?a=%S%E%L%E%C%T+%F%I%E%L%D+%F%R%O%M+%T%A%B%L%E HTTP/1.0
 
 "
---- error_code: 200
+--- error_code: 412
 
 
 === TEST 1: hey 16

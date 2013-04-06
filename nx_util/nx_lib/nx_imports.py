@@ -5,6 +5,7 @@ import datetime
 import time
 import pprint
 import gzip
+import bz2
 import glob
 import logging
 import sys
@@ -238,14 +239,18 @@ class NxReader():
         for lfile in self.files:
             success = not_nx = discard = malformed = 0
             print "Importing file "+lfile
-            try:
+#            try:
+            if True:
                 if lfile.endswith(".gz"):
                     fd = gzip.open(lfile, "rb")
+                elif lfile.endswith(".bz2"):
+                    print "BZ2!"
+                    fd = bz2.BZ2File(lfile, "r")
                 else:
                     fd = open(lfile, "r")
-            except:
-                print "Unable to open file : "+lfile
-                return 1
+ #           except:
+#                print "Unable to open file : "+lfile
+ #               return 1
             for line in fd:
                 ret = self.injector.acquire_nxline(line)
                 success += ret[0]

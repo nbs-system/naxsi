@@ -337,7 +337,7 @@ dummy_str(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
     return (NGX_CONF_ERROR);
   str->data = tmp->data + strlen(STR_T);
   str->len = tmp->len - strlen(STR_T);
-  for (i = 0; i < tmp->len; i++)
+  for (i = 0; i < str->len; i++)
     str->data[i] = tolower(str->data[i]);
   rule->br->str = str;
   return (NGX_CONF_OK);

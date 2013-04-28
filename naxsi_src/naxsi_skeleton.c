@@ -269,7 +269,6 @@ ngx_http_dummy_create_loc_conf(ngx_conf_t *cf)
   conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_dummy_loc_conf_t));
   if (conf == NULL)
     return NULL;
-  dummy_lc = conf;
   return (conf);
 }
 
@@ -964,12 +963,6 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 #endif
   if (!ctx) {
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_request_ctx_t));
-    /* might have been set by a previous trigger */
-    if (ctx->learning)	{
-      clcf->post_action.data = 0; //cf->denied_url->data;
-      clcf->post_action.len = 0; //cf->denied_url->len;
-    }
-      
     if (ctx == NULL)
       return NGX_ERROR;
     ngx_http_set_ctx(r, ctx, ngx_http_naxsi_module);
@@ -982,6 +975,18 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
      have a variable with empty content but with lookup->not_found set to 0,
     so check len as well */
     ctx->learning = cf->learning;
+    
+    /* might have been set by a previous trigger */
+    if (ctx->learning)	{
+#ifdef naxsi_modifiers_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "XX-dummy : Cleaning post_action");
+#endif
+      
+      clcf->post_action.data = 0; //cf->denied_url->data;
+      clcf->post_action.len = 0; //cf->denied_url->len;
+    }
+    
     lookup = ngx_http_get_variable(r, &learning_flag, cf->flag_learning_h);
     if (lookup && !lookup->not_found && lookup->len > 0) {
       

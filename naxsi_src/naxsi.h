@@ -415,11 +415,6 @@ typedef struct
 
 
 
-
-extern ngx_http_dummy_loc_conf_t *dummy_lc;
-
-
-
 void		*ngx_http_dummy_cfg_parse_one_rule(ngx_conf_t *cf,
 						   ngx_str_t	*value,
 						   ngx_http_rule_t *rule,

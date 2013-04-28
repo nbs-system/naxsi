@@ -32,8 +32,6 @@
 
 /* used to store locations during the configuration time. 
    then, accessed by the hashtable building feature during "init" time. */
-ngx_http_dummy_loc_conf_t *dummy_lc;
-
 
 /*
 ** Static defined rules struct for internal rules.
@@ -321,12 +319,12 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
     }
     
     for (i = 0; i < b->ids->nelts; i++) {
-      if ( ((int *)b->ids->elts)[i] == r->rule_id ||
-	   ((int *)b->ids->elts)[i] == 0) {
+      if ( ((ngx_int_t *)b->ids->elts)[i] == r->rule_id ||
+	   ((ngx_int_t *)b->ids->elts)[i] == 0) {
 #ifdef whitelist_debug
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		      "WhiteListing0 rule %d on var [%V] at uri [%V] (dst id:%d)",
-		      r->rule_id, name, &(req->uri), ((int *)b->ids->elts)[i]);
+		      r->rule_id, name, &(req->uri), ((ngx_int_t *)b->ids->elts)[i]);
 #endif
 	return (1);
       }
@@ -352,14 +350,14 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
     for (i = 0; i < b->ids->nelts; i++) {
 #ifdef whitelist_heavy_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		    "wl : %d, matched rule : %d", ((int *)b->ids->elts)[i], r->rule_id);
+		    "wl : %d, matched rule : %d", ((ngx_int_t *)b->ids->elts)[i], r->rule_id);
 #endif      
-      if ( ((int *)b->ids->elts)[i] == r->rule_id || 
-	   ((int *)b->ids->elts)[i] == 0) { 
+      if ( ((ngx_int_t *)b->ids->elts)[i] == r->rule_id || 
+	   ((ngx_int_t *)b->ids->elts)[i] == 0) { 
 #ifdef whitelist_debug
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		      "WhiteListing1 rule %d/ wl[%d] = %d (wl had %d wl ids) on var [%V] at uri [%V] (zone:%s)",
-		      r->rule_id, i, ((int *)b->ids->elts)[i], b->ids->nelts, name, &(req->uri), 
+		      r->rule_id, i, ((ngx_int_t *)b->ids->elts)[i], b->ids->nelts, name, &(req->uri), 
 		      zone == HEADERS ? "HEADERS" : zone == URL ? "URL" : zone == BODY ? "BODY" :
 		      zone == ARGS ? "ARGS" : "UNKNOWN!!!!");
 #endif

@@ -288,7 +288,7 @@ ngx_http_wlr_merge(ngx_conf_t *cf, ngx_http_whitelist_rule_t *father_wl,
   
   if (!father_wl->ids)
     {
-      father_wl->ids = ngx_array_create(cf->pool, 3, sizeof(int));
+      father_wl->ids = ngx_array_create(cf->pool, 3, sizeof(ngx_int_t));
       if (!father_wl->ids)
 	return (NGX_ERROR);
     }

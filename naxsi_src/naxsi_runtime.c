@@ -575,7 +575,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 			  ngx_http_request_t *r,
 			  ngx_array_t *ostr, ngx_str_t **ret_uri)
 {
-  u_int		sz_left, sub, psub, offset = 0, seed = 0, i;
+  u_int		sz_left, sub, psub, offset = 0, seed, prev_seed, i;
   ngx_str_t	*fragment, *tmp_uri;
   const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&vers=%.*s&total_processed=%zu&total_blocked=%zu";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
@@ -651,7 +651,8 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 	  ** seed are used as link, as 2 random seeds can be 
 	  ** present per string
 	  */
-	  seed = random() % 1000;
+	  while ((seed = random() % 1000) == prev_seed)
+	    ;
 	  sub = snprintf((char *)fragment->data+offset, MAX_SEED_LEN, "&seed_start=%d", seed);
 	  fragment->len = offset+sub;
 	  fragment = ngx_array_push(ostr);
@@ -661,6 +662,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 	  if (!fragment->data)
 	    return (NGX_ERROR);
 	  sub = snprintf((char *)fragment->data, MAX_SEED_LEN, "seed_end=%d", seed);
+	  prev_seed = seed;
 	  sz_left = MAX_LINE_SIZE - sub;
 	  offset = sub;
 	  /* if it did not fit because the event itself is too big,
@@ -671,7 +673,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 			   mr[i].name->len, mr[i].name->data);
 	    offset = sz_left - 1;
 	    sz_left = 0;
-	    i++;
+	    i += 1;
 	  }
 	  continue;
 	}

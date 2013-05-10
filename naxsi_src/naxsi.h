@@ -145,11 +145,11 @@ typedef struct
 */
 typedef struct
 {
-  //ngx_http_whitelist_location_t
+  /*ngx_http_whitelist_location_t **/
   ngx_array_t			*whitelist_locations; 
-  // zone to wich the WL applies
+  /* zone to wich the WL applies */
   enum DUMMY_MATCH_ZONE		zone;
-  // if the "name" is only an url, specify it
+  /* if the "name" is only an url, specify it */
   int				uri_only:1;
   /* does the rule targets the name 
      instead of the content ?*/
@@ -364,9 +364,6 @@ typedef struct
   ngx_flag_t	wait_for_body:1;
   ngx_flag_t	ready:1;
   ngx_flag_t	over:1;
-  /* flag request */
-  ngx_flag_t	weird_request:1;
-  ngx_flag_t	big_request:1;
   /* matched rules */
   ngx_array_t	*matched;
   /* runtime flags (modifiers) */
@@ -437,9 +434,5 @@ naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type);
 
 int naxsi_unescape(ngx_str_t *str);
 
-
-/* static ngx_int_t ngx_http_dummy_subrequest(ngx_http_request_t *r,  */
-/* 					   ngx_chain_t *in); */
-//ngx_int_t ngx_http_dummy_subrequest(ngx_http_request_t *r);
 #endif
 

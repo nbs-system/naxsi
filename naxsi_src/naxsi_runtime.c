@@ -575,7 +575,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 			  ngx_http_request_t *r,
 			  ngx_array_t *ostr, ngx_str_t **ret_uri)
 {
-  u_int		/*len,*/ sz_left, sub, offset = 0, seed = 0, i;
+  u_int		sz_left, sub, psub, offset = 0, seed = 0, i;
   ngx_str_t	*fragment, *tmp_uri;
   const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&vers=%.*s&total_processed=%zu&total_blocked=%zu";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
@@ -620,7 +620,8 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   if (ctx->matched) {
     mr = ctx->matched->elts;
     sub = 0;
-    for (i = 0; i < ctx->matched->nelts; i++) {
+    i = 0;
+    do {
       memset(tmp_zone, 0, 30);
       if (mr[i].body_var) 
 	strcat(tmp_zone, "BODY");
@@ -640,32 +641,13 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
       /*
       ** This one would not fit :
       ** append a seed to the current fragment,
-      ** store it, and start a new one
+      ** and start a new one
       */
       if (sub >= sz_left)
 	{
-	  /*
-	  ** if event's len alone cannot fit in maximum size,
-	  ** truncate it. Don't even warn the user, as 
-	  ** it has no chance of being legitimate,
-	  */
-	  if (sub >= MAX_LINE_SIZE - MAX_SEED_LEN) {
-	    sub = snprintf((char *)fragment->data+offset, sz_left, 
-			   fmt_rm, i, tmp_zone, i, mr[i].rule->rule_id, i, 
-			   mr[i].name->len, mr[i].name->data);
-	    offset += (sz_left-1);
-	    sz_left = 0;
-	    /*
-	    ** if it's the only one, don't append a seed,
-	    ** this would cause fake missing lines
-	    */
-	    if (i+1 >= ctx->matched->nelts)
-	      break;
-	  }
-	  /* else, append it to next fragment. */
-	  else
-	    i--;
-	  /* not real random, just to avoid collisions,
+	  psub = sub;
+	  /* 
+	  ** not real random, just to avoid collisions,
 	  ** seed are used as link, as 2 random seeds can be 
 	  ** present per string
 	  */
@@ -681,6 +663,16 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 	  sub = snprintf((char *)fragment->data, MAX_SEED_LEN, "seed_end=%d", seed);
 	  sz_left = MAX_LINE_SIZE - sub;
 	  offset = sub;
+	  /* if it did not fit because the event itself is too big,
+	     truncate it, and append to the new fragment */
+	  if (psub > MAX_LINE_SIZE - MAX_SEED_LEN - 1) {
+	    sub = snprintf((char *)fragment->data+offset, sz_left, 
+			   fmt_rm, i, tmp_zone, i, mr[i].rule->rule_id, i, 
+			   mr[i].name->len, mr[i].name->data);
+	    offset = sz_left - 1;
+	    sz_left = 0;
+	    i++;
+	  }
 	  continue;
 	}
       sub = snprintf((char *)fragment->data+offset, sz_left, 
@@ -688,10 +680,13 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 		     mr[i].name->len, mr[i].name->data);
       sz_left -= sub;
       offset += sub;
-      
-    }
+      i += 1;
+    } while(i < ctx->matched->nelts);
+  } else {
+    ngx_log_error(NGX_LOG_ERR, r->connection->log,
+		  0, "NAXSI_FMT: NOTHING TO MATCH ?!");
   }
-  fragment->len = offset+sub;
+  fragment->len = offset;
   return (NGX_HTTP_OK);
 }
 

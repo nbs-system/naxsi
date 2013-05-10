@@ -604,7 +604,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
     return (NGX_ERROR);
   sub = offset = 0;
   /* we keep extra space for seed*/
-  sz_left = MAX_LINE_SIZE - MAX_SEED_LEN;
+  sz_left = MAX_LINE_SIZE - MAX_SEED_LEN - 1;
   
   /* 
   ** don't handle uri > 4k, string will be split
@@ -663,7 +663,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 	    return (NGX_ERROR);
 	  sub = snprintf((char *)fragment->data, MAX_SEED_LEN, "seed_end=%d", seed);
 	  prev_seed = seed;
-	  sz_left = MAX_LINE_SIZE - sub;
+	  sz_left = MAX_LINE_SIZE - MAX_SEED_LEN - sub - 1;
 	  offset = sub;
 	  /* if it did not fit because the event itself is too big,
 	     truncate it, and append to the new fragment */
@@ -671,7 +671,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 	    sub = snprintf((char *)fragment->data+offset, sz_left, 
 			   fmt_rm, i, tmp_zone, i, mr[i].rule->rule_id, i, 
 			   mr[i].name->len, mr[i].name->data);
-	    offset = sz_left - 1;
+	    offset += (sz_left - 1);
 	    sz_left = 0;
 	    i += 1;
 	  }

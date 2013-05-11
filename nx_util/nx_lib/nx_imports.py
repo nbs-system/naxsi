@@ -237,7 +237,7 @@ class NxReader():
         count = 0
         total = 0
         for lfile in self.files:
-            success = not_nx = discard = malformed = 0
+            success = not_nx = discard = malformed = fragmented = reunited = 0
             print "Importing file "+lfile
             try:
                 if lfile.endswith(".gz"):
@@ -254,6 +254,8 @@ class NxReader():
                 success += ret[0]
                 discard += ret[1]
                 malformed += ret[2]
+                fragmented = ret[3]
+                reunited = ret[4]
                 count += ret[0]
                 if count >= self.step:
                     self.injector.commit()
@@ -262,7 +264,9 @@ class NxReader():
             print "\tSuccessful events :"+str(success)
             print "\tFiltered out events :"+str(discard)
             print "\tNon-naxsi lines :"+str(not_nx)
-            print "\tMalformed/incomplete lines "+str(malformed)
+            print "\tMalformed lines :"+str(malformed)
+            print "\tIncomplete lines :"+str(fragmented)
+            print "\tReunited lines :"+str(reunited)
             total += success
         if count > 0:
             self.injector.commit()
@@ -282,6 +286,9 @@ class NxInject():
         self.total_commits = 0
         self.filters = filters
         self.filt_engine = None
+        self.multiline_buf = {}
+        self.fragmented_lines = 0
+        self.reunited_lines = 0
         
         if self.filters is not None:
             self.filt_engine = NxImportFilter(self.filters)
@@ -292,7 +299,33 @@ class NxInject():
     def demult_event(self, event):
         demult = []
         import copy
-        
+        if event.get('seed_start') and event.get('seed_end') is None:
+            #First line of a multiline naxsi fmt
+            print 'new multiline ! : ', event['seed_start']
+            self.multiline_buf[event['seed_start']] = event
+            self.fragmented_lines += 1
+            return demult
+        elif event.get('seed_start') and event.get('seed_end'):
+            # naxsi fmt is very long, at least 3 lines
+            print 'middle part of a multiline', event['seed_start'], event['seed_end']
+            self.fragmented_lines += 1
+            if self.multiline_buf.get(event['seed_end']) is None:
+                print 'WTF. Got a line with seed_end {0} and seed_start {1}, but i cant find a matching seed_start...\nLine will probably be incomplete'.format(event['seed_end'], event['seed_start'])
+                return demult
+            self.multiline_buf[event['seed_end']].update(event)
+            self.multiline_buf[event['seed_start']] = self.multiline_buf[event['seed_end']]
+            del self.multiline_buf[event['seed_end']]
+            return demult
+        elif event.get('seed_start') is None and event.get('seed_end'):
+            # last line of the naxsi_fmt, just update the dict, and parse it like a normal line
+            if self.multiline_buf.get(event['seed_end']) is None:
+                print 'WTF. Got a line with seed_end {0}, but i cant find a matching seed_start...\nLine will probably be incomplete'.format(event['seed_end'])
+                return demult
+            self.fragmented_lines += 1
+            self.reunited_lines += 1
+            self.multiline_buf[event['seed_end']].update(event)
+            event = self.multiline_buf[event['seed_end']]
+            del self.multiline_buf[event['seed_end']]
         entry = {}
         if not event.has_key('uri'):
             entry['uri'] = ''
@@ -317,6 +350,7 @@ class NxInject():
         entry['var_name'] = ''
         clean = entry
 
+
         # NAXSI_EXLOG lines only have one triple (zone,id,var_name), but has non-empty content
         if 'zone' in event.keys():
             if 'var_name' in event.keys():
@@ -325,6 +359,7 @@ class NxInject():
             entry['id'] = event['id']
             demult.append(entry)
             return demult
+
         
         # NAXSI_FMT can have many (zone,id,var_name), but does not have content
         # we iterate over triples.
@@ -463,7 +498,7 @@ class NxInject():
                 break
         if date_end == -1 or data_end == 1:
             bad_line += 1
-            return [success, discard, bad_line]
+            return [success, discard, bad_line, self.fragmented_lines, self.reunited_lines]
         date = self.date_unify(line[:date_end])
         chunk = line[date_end:data_end]
         md = None
@@ -473,12 +508,13 @@ class NxInject():
                 md = self.exception_to_dict(chunk[idx+len(word):])
                 if md is None:
                     bad_line += 1
-                    return [success, discard, bad_line]
+                    return [success, discard, bad_line, self.fragmented_lines, self.reunited_lines]
                 md['date'] = date
                 break
         if md is None:
             bad_line += 1
-            return [success, discard, bad_line]
+            return [success, discard, bad_line, self.fragmented_lines, self.reunited_lines]
+
         # if input filters on country were used, forced geoip XXX
         for event in self.demult_event(md):
             if self.filt_engine is None or self.filt_engine.dofilter(event) is True:
@@ -486,5 +522,5 @@ class NxInject():
                 success += 1
             else:
                 discard += 1
-        return [success, discard, bad_line]
+        return [success, discard, bad_line, self.fragmented_lines, self.reunited_lines]
 

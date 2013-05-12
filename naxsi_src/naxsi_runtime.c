@@ -591,7 +591,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   *ret_uri = tmp_uri;
   
   tmp_uri->len = r->uri.len + (2 * ngx_escape_uri(NULL, r->uri.data, r->uri.len,
-						 NGX_ESCAPE_ARGS));
+						  NGX_ESCAPE_ARGS));
   tmp_uri->data = ngx_pcalloc(r->pool, tmp_uri->len+1);
   ngx_escape_uri(tmp_uri->data, r->uri.data, r->uri.len, NGX_ESCAPE_ARGS);
   
@@ -647,9 +647,8 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 	{
 	  psub = sub;
 	  /* 
-	  ** not real random, just to avoid collisions,
-	  ** seed are used as link, as 2 random seeds can be 
-	  ** present per string
+	  ** avoid random collisions, as we % 1000 them,
+	  ** this is very likely to happen !
 	  */
 	  while ((seed = random() % 1000) == prev_seed)
 	    ;
@@ -684,9 +683,6 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
       offset += sub;
       i += 1;
     } while(i < ctx->matched->nelts);
-  } else {
-    ngx_log_error(NGX_LOG_ERR, r->connection->log,
-		  0, "NAXSI_FMT: NOTHING TO MATCH ?!");
   }
   fragment->len = offset;
   return (NGX_HTTP_OK);
@@ -698,8 +694,8 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 			       ngx_http_request_t *r)
 {
   u_int		i;
-  char		*fmt;
-  ngx_str_t	denied_args, *tmp_uri;
+  ngx_str_t	*tmp_uri, denied_args;
+  ngx_str_t	 empty = ngx_string("");
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_array_t	*ostr;
   
@@ -712,9 +708,14 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     ngx_log_error(NGX_LOG_ERR, r->connection->log,
 		  0, "NAXSI_FMT: %s", ((ngx_str_t *)ostr->elts)[i].data);
   }
-  fmt = ((char *) ((ngx_str_t *)ostr->elts)[0].data);
-  denied_args.data = (unsigned char *)fmt;
-  denied_args.len = ((ngx_str_t *)ostr->elts)[0].len;
+  if (ostr->nelts >= 1) {
+    denied_args.data = ((ngx_str_t *)ostr->elts)[0].data; 
+    denied_args.len = ((ngx_str_t *)ostr->elts)[0].len; 
+  }
+  else {
+    denied_args.data = empty.data;
+    denied_args.len = empty.len;
+  }
   
   /* 
   ** If we shouldn't block the request, 
@@ -762,10 +763,6 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     h->value.len = denied_args.len;
     h->value.data = denied_args.data;
   }
-  else if (ctx->learning)
-    ngx_log_error(NGX_LOG_ERR, r->connection->log, 
-		  0, "[naxsi] no headers_in, not forwarded to learning mode.");
-  
   
   if (ctx->learning) {
     if (ctx->post_action) {
@@ -778,7 +775,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   }
   else {
     ngx_http_internal_redirect(r, cf->denied_url,  
-			       &denied_args); 
+			       &empty); 
     return (NGX_HTTP_OK);
   }
   return (NGX_ERROR);

@@ -344,6 +344,9 @@ ngx_http_dummy_init(ngx_conf_t *cf)
     }
   }
   
+  /* initialize prng (used for fragmented logs) */
+  srandom(time(0) * getpid());
+  
   return (NGX_OK);
 }
 
@@ -894,7 +897,6 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   ngx_http_request_ctx_t	*ctx;
   ngx_int_t			rc;
   ngx_http_dummy_loc_conf_t	*cf;
-  ngx_http_core_loc_conf_t  *clcf;
   struct tms		 tmsstart, tmsend;
   clock_t		 start, end;
   ngx_http_variable_value_t *lookup;
@@ -909,7 +911,6 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
 
-  clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
   /* ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
   /* 		"naxsi_entry_point"); */
   
@@ -976,17 +977,6 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     so check len as well */
     ctx->learning = cf->learning;
     
-    /* might have been set by a previous trigger */
-    if (ctx->learning)	{
-#ifdef naxsi_modifiers_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		    "XX-dummy : Cleaning post_action");
-#endif
-      
-      clcf->post_action.data = 0; //cf->denied_url->data;
-      clcf->post_action.len = 0; //cf->denied_url->len;
-    }
-    
     lookup = ngx_http_get_variable(r, &learning_flag, cf->flag_learning_h);
     if (lookup && !lookup->not_found && lookup->len > 0) {
       
@@ -1021,10 +1011,13 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 		  "XX-dummy : [final] enabled : %d", ctx->enabled ? 1 : 0);
 #endif
     
-    if (cf->learning)
+    /* as we killed nx_intercept, post_action will 
+       be set off by default, but can still be enabled
+       by dynamic modifiers. */
+    /*if (cf->learning)
       ctx->post_action = 1;
-    else
-      ctx->post_action = 0;
+      else*/
+    ctx->post_action = 0;
 #ifdef naxsi_modifiers_debug    
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig post_action : %d", ctx->post_action ? 1 : 0);
@@ -1057,7 +1050,6 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] extensive_log : %d", ctx->extensive_log ? 1 : 0);
 #endif
-    //---
 
     /* the module is not enabled here */
     if (!ctx->enabled)
@@ -1089,10 +1081,8 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       }
       else
 	if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
-	  /* this debug print should be commented, but the thing is that
-	  ** according to what I read into nginx src code, it may happen
-	  ** and I haven't been abble to trigger this, so I just let it 
-	  ** here to know when this special case will be triggered
+	  /* 
+	  ** might happen but never saw it, let the debug print.
 	  */
 	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 			"XX-dummy : SPECIAL RESPONSE !!!!");

@@ -301,13 +301,13 @@ class NxInject():
         import copy
         if event.get('seed_start') and event.get('seed_end') is None:
             #First line of a multiline naxsi fmt
-            print 'new multiline ! : ', event['seed_start']
+#            print 'new multiline ! : ', event['seed_start']
             self.multiline_buf[event['seed_start']] = event
             self.fragmented_lines += 1
             return demult
         elif event.get('seed_start') and event.get('seed_end'):
             # naxsi fmt is very long, at least 3 lines
-            print 'middle part of a multiline', event['seed_start'], event['seed_end']
+#            print 'middle part of a multiline', event['seed_start'], event['seed_end']
             self.fragmented_lines += 1
             if self.multiline_buf.get(event['seed_end']) is None:
                 print 'WTF. Got a line with seed_end {0} and seed_start {1}, but i cant find a matching seed_start...\nLine will probably be incomplete'.format(event['seed_end'], event['seed_start'])

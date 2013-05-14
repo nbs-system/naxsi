@@ -388,14 +388,15 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     *bar = alcf;
     alcf->pushed = 1;
   }
-  if (!ngx_strcmp(value[0].data, TOP_BASIC_RULE_T)) {
+  if (!ngx_strcmp(value[0].data, TOP_BASIC_RULE_T) ||
+      !ngx_strcmp(value[0].data, TOP_BASIC_RULE_N)) {
 #ifdef readconf_debug
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "XX-TOP READ CONF %s", 
 		       value[0].data);  
 #endif
     memset(&rule, 0, sizeof(ngx_http_rule_t));
     if (ngx_http_dummy_cfg_parse_one_rule(cf, value, &rule, 
-					   cf->args->nelts) != NGX_CONF_OK)
+					  cf->args->nelts) != NGX_CONF_OK)
       {
 	ngx_http_dummy_line_conf_error(cf, value);
 	return (NGX_CONF_ERROR);

@@ -327,7 +327,7 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   loc_cf = main_cf->locations->elts;
   
   for (i = 0; i < main_cf->locations->nelts; i++) {
-    if (lc_cf[i]->enabled && (!loc_cf[i]->denied_url || loc_cf[i]->denied_url->len <= 0)) {
+    if (loc_cf[i]->enabled && (!loc_cf[i]->denied_url || loc_cf[i]->denied_url->len <= 0)) {
       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 			 "Missing DeniedURL, abort.");
       return (NGX_ERROR);

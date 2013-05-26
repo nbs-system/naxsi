@@ -508,3 +508,57 @@ use URI::Escape;
 
 }"
 --- error_code: 412
+=== JSON11 : Empty JSON object
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+         error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /
+{
+
+}"
+--- error_code: 200
+=== JSON12 : malformed (closing object before array) Json 
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+         error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /
+{
+\"fuu\" : [\"laul\", {\"die\" : \"nope\" ]}
+}"
+--- error_code: 412

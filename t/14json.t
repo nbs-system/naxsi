@@ -562,3 +562,116 @@ use URI::Escape;
 \"fuu\" : [\"laul\", {\"die\" : \"nope\" ]}
 }"
 --- error_code: 412
+=== JSON12 : malformed (unescaped quotes) 
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+         error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /
+{
+\"fuu\" : [\"laul\", {\"die\" : \"n\"ope\" }]
+}"
+--- error_code: 412
+
+=== JSON12 : escaped quotes 
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+location / {
+	 BasicRule wl:1001,1205;
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+         error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /
+{
+\"fuu\" : [\"laul\", {\"die\" : \"n\\\"ope\" }]
+}"
+--- error_code: 200
+=== JSON13 : concatenation attempt (ie "foo":"bar"+eval(evil)+"foo")
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+         error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /
+{
+\"fuu\" : \"oh \"+eval(evil)+\" my\"]
+}"
+--- error_code: 412
+=== JSON13 : concatenation attempt (ie "foo":"bar"+eval(evil)+"foo")
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+         error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /
+{
+\"obvious\" : \"a<a\"]
+}"
+--- error_code: 412

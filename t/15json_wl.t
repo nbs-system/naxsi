@@ -270,4 +270,76 @@ use URI::Escape;
 }
 "
 --- error_code: 412
+=== json wl 0.9 : match in varname
+--- user_files
+>>> test_uri
+eh yo
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /test_uri
+{
+  \"oh\" : [\"there\", \"is\", \"no\", \"way\"],
+  \"this\" : { \"will\" : [\"work\", \"does\"],
+  \"it\" : \"??\" },
+  \"tr<igger\" : {\"test_1234\" : [\"foobar\", \"will\", \"trigger\", \"it\"]},
+  \"foo\" : \"baar\"
+}
+"
+--- error_code: 412
+=== json wl 1.0 : match in varname + wl on varname
+--- user_files
+>>> test_uri
+eh yo
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 BasicRule wl:1302 "mz:$BODY_VAR:tr<igger|NAME";
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /test_uri
+{
+  \"oh\" : [\"there\", \"is\", \"no\", \"way\"],
+  \"this\" : { \"will\" : [\"work\", \"does\"],
+  \"it\" : \"??\" },
+  \"tr<igger\" : {\"test_1234\" : [\"foobar\", \"will\", \"trigger\", \"it\"]},
+  \"foo\" : \"baar\"
+}
+"
+--- error_code: 200
+
 

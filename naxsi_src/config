@@ -1,4 +1,0 @@
-ngx_addon_name=ngx_http_naxsi_module
-HTTP_MODULES="$HTTP_MODULES ngx_http_naxsi_module"
-NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/naxsi_runtime.c $ngx_addon_dir/naxsi_config.c $ngx_addon_dir/naxsi_utils.c $ngx_addon_dir/naxsi_skeleton.c "
-NGX_ADDON_DEPS="$NGX_ADDON_DEPS $ngx_addon_dir/naxsi.h"

@@ -1,4 +1,5 @@
 import pprint
+import logging
 
 class NxWhitelistExtractor:
     def __init__(self, cursor, rules_file, pages_hit=10, rules_hit=20, exlog_max=5):
@@ -22,7 +23,7 @@ class NxWhitelistExtractor:
                     self.core_msg[i[pos + 3:i[pos + 3].find(';') - 1]] = i[pos_msg + 4:][:i[pos_msg + 4:].find('"')]
             fd.close()
         except:
-            print "Unable to open rules file :"+rules_file
+            logging.warning("Unable to open rules file :"+rules_file)
             pass
 
     def gen_basic_rules(self,url=None, srcip=None, dsthost=None,

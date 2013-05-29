@@ -1,4 +1,5 @@
 import ConfigParser
+import logging
 
 
 
@@ -16,9 +17,6 @@ class NxConfig(object):
             self.db_dir = config.get("nx_util", "database_dir")
             self.core_rules = config.get("nx_util", "naxsi_core_rules")
         except:
-            print "Unable to parse configuration file :"+self.path
+            logging.critical("Unable to parse configuration file :"+self.path)
             return 0
         return 1
-
-        
-    

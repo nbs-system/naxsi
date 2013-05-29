@@ -35,9 +35,9 @@ class NxImportFilter():
             import GeoIP
             self.gi = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
         except:
-            print """Python's GeoIP module is not present.
+            logging.warning("""Python's GeoIP module is not present.
             'World Map' reports won't work,
-            and you can't use per-country filters."""
+            and you can't use per-country filters.""")
     # returns an integer less than, equal to or greater than zero
     # if date1 is < date2, date1 == date2 or date1 > date2
     def date_cmp(self, date1, date2):
@@ -66,7 +66,7 @@ class NxImportFilter():
             
     def check(self, w, res):
         if w not in self.kw[res[-1]]["methods"].split(","):
-            print "operator "+w+" not allowed for var "+res[-1]
+            logging.critical("operator "+w+" not allowed for var "+res[-1])
             return -1
         res.append(w)
         return 2
@@ -119,7 +119,7 @@ class NxImportFilter():
                 else:
                     tmp_word = tmp_word + " " +w
             if state == -1:
-                print "Unable to build filter, check you syntax at '"+w+"'"
+                logging.critical("Unable to build filter, check you syntax at '"+w+"'")
                 return False
 
         self.res_op = res_op
@@ -127,12 +127,8 @@ class NxImportFilter():
 
     def subfil(self, src, sub):
         if sub[0] not in src:
-            print "Unable to filter : key "+sub[0]+" does not exist in dict"
-#            pprint.pprint(src)
+            logging.critical("Unable to filter : key "+sub[0]+" does not exist in dict")
             return False
-#        else:
-#            print "is in dict "
-#            pprint.pprint(src)
         srcval = src[sub[0]]
         filval = sub[2]
         if sub[1] == "=" and srcval == filval:
@@ -143,8 +139,8 @@ class NxImportFilter():
             return True
         elif sub[1].startswith(">") or sub[1].startswith("<"):
             if sub[0] not in self.kw or "match_method" not in self.kw[sub[0]]:
-                print "Unable to apply operator </>/<=/>= without method"
-                pprint.pprint(self.kw[sub[0]])
+                logging.critical("Unable to apply operator </>/<=/>= without method")
+                logging.critical(pprint.pformat(self.kw[sub[0]]))
                 return False
             # if date1 is < date2, date1 == date2 or date1 > date2
             if sub[1] == ">" or sub[1] == ">=":
@@ -166,6 +162,7 @@ class NxImportFilter():
         if self.gi is not None:
             src['country'] = self.gi.country_code_by_addr(src['ip'])
         else:
+            logging.debug("Unable to GeoIP lookup ip "+src['ip'])
             src['country'] = "??"
         last = False
         ok_fail = False
@@ -206,14 +203,13 @@ class NxReader():
         self.timeout = stdin_timeout
         self.stdin = False
         if stdin is not False:
-            print "Using stdin."
+            logging.warning("Using stdin")
             self.stdin = True
             return
         if len(lglob) > 0:
             for regex in lglob:
                 self.files.extend(glob.glob(regex))
-        print "List of imported files :"+str(self.files)
-
+        logging.warning("List of files :"+str(self.files))
     def read_stdin(self):
         rlist, _, _ = select([sys.stdin], [], [], self.timeout)
         success = discard = not_nx = malformed = 0
@@ -231,14 +227,14 @@ class NxReader():
             while self.read_stdin() is True:
                 pass
             self.injector.commit()
-            print "Committing to db ..."
+            logging.info("Committing to db ...")
             self.injector.wrapper.StopInsert()
             return 0
         count = 0
         total = 0
         for lfile in self.files:
             success = not_nx = discard = malformed = fragmented = reunited = 0
-            print "Importing file "+lfile
+            logging.info("Importing file "+lfile)
             try:
                 if lfile.endswith(".gz"):
                     fd = gzip.open(lfile, "rb")
@@ -247,7 +243,7 @@ class NxReader():
                 else:
                     fd = open(lfile, "r")
             except:
-                print "Unable to open file : "+lfile
+                logging.critical("Unable to open file : "+lfile)
                 return 1
             for line in fd:
                 ret = self.injector.acquire_nxline(line)
@@ -261,18 +257,18 @@ class NxReader():
                     self.injector.commit()
                     count = 0
             fd.close()
-            print "\tSuccessful events :"+str(success)
-            print "\tFiltered out events :"+str(discard)
-            print "\tNon-naxsi lines :"+str(not_nx)
-            print "\tMalformed lines :"+str(malformed)
-            print "\tIncomplete lines :"+str(fragmented)
-            print "\tReunited lines :"+str(reunited)
+            logging.info("Successful events :"+str(success))
+            logging.info("Filtered out events :"+str(discard))
+            logging.info("Non-naxsi lines :"+str(not_nx))
+            logging.info("Malformed lines :"+str(malformed))
+            logging.info("Incomplete lines :"+str(fragmented))
+            logging.info("Reunited lines :"+str(reunited))
             total += success
         if count > 0:
             self.injector.commit()
-            print "End of db commit... "
+            logging.info("End of db commit... ")
             self.injector.wrapper.StopInsert()
-        print "Count (lines) success:"+str(total)
+        logging.info("Count (lines) success:"+str(total))
         return 0
 
 class NxInject():
@@ -293,7 +289,7 @@ class NxInject():
         if self.filters is not None:
             self.filt_engine = NxImportFilter(self.filters)
             if self.filt_engine.filter_build(self.filters) is False:
-                print "Unable to create filter, abort."
+                logging.critical("Unable to create filter, abort.")
                 sys.exit(-1)
 
     def demult_event(self, event):
@@ -301,7 +297,6 @@ class NxInject():
         import copy
         if event.get('seed_start') and event.get('seed_end') is None:
             #First line of a multiline naxsi fmt
-#            print 'new multiline ! : ', event['seed_start']
             self.multiline_buf[event['seed_start']] = event
             self.fragmented_lines += 1
             return demult
@@ -310,7 +305,7 @@ class NxInject():
 #            print 'middle part of a multiline', event['seed_start'], event['seed_end']
             self.fragmented_lines += 1
             if self.multiline_buf.get(event['seed_end']) is None:
-                print 'WTF. Got a line with seed_end {0} and seed_start {1}, but i cant find a matching seed_start...\nLine will probably be incomplete'.format(event['seed_end'], event['seed_start'])
+                logging.critical('Got a line with seed_end {0} and seed_start {1}, but i cant find a matching seed_start...\nLine will probably be incomplete'.format(event['seed_end'], event['seed_start']))
                 return demult
             self.multiline_buf[event['seed_end']].update(event)
             self.multiline_buf[event['seed_start']] = self.multiline_buf[event['seed_end']]
@@ -319,7 +314,7 @@ class NxInject():
         elif event.get('seed_start') is None and event.get('seed_end'):
             # last line of the naxsi_fmt, just update the dict, and parse it like a normal line
             if self.multiline_buf.get(event['seed_end']) is None:
-                print 'WTF. Got a line with seed_end {0}, but i cant find a matching seed_start...\nLine will probably be incomplete'.format(event['seed_end'])
+                logging.critical('Got a line with seed_end {0}, but i cant find a matching seed_start...\nLine will probably be incomplete'.format(event['seed_end']))
                 return demult
             self.fragmented_lines += 1
             self.reunited_lines += 1
@@ -367,8 +362,6 @@ class NxInject():
             commit = True
             for i in itertools.count():
                 entry = copy.deepcopy(clean)
-#                print "DEMULT"
- #               pprint.pprint(entry)
                 zn = ''
                 vn = ''
                 rn = ''
@@ -385,24 +378,21 @@ class NxInject():
                     commit = False
                     break
                 if commit is True:
-              #      print "Adding to pusharray:"
-#                    pprint.pprint(entry)
                     demult.append(entry)
                 else:
-                    print "Malformed/incomplete event [missing subfield]"
-                    pprint.pprint(event)
+                    logging.warning("Malformed/incomplete event [missing subfield]")
+                    logging.info(pprint.pformat(event))
                     return demult
             return demult
         else:
-            print "Malformed/incomplete event [no zone]"
-            pprint.pprint(event)
+            logging.warning("Malformed/incomplete event [no zone]")
+            logging.info(pprint.pformat(event))
             return demult
     def commit(self):
         """Process dicts of dict (yes) and push them to DB """
         self.total_objs += len(self.dict_buf)
         count = 0
         for entry in self.dict_buf:
-#            pprint.pprint(entry)
             url_id = self.wrapper.insert(url = entry['uri'], table='urls')()
             count += 1
             exception_id = self.wrapper.insert(zone = entry['zone'], var_name = entry['var_name'], rule_id = entry['id'], content = entry['content']
@@ -474,7 +464,7 @@ class NxInject():
                 #print "'"+clean_date+"' not in format '"+date_format+"'"
                 pass
         if success == 0:
-            print "Unable to parse date format :'"+date+"'"
+            logging.critical("Unable to parse date format :'"+date+"'")
             sys.exit(-1)
         return z
     # returns an array of [success, discarded, bad_line] events counters

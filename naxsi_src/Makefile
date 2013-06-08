@@ -1,4 +1,5 @@
-VERS	 :=	$(shell grep NAXSI_VERSION naxsi.h | cut -d '"' -f 2)
+CORE_VERS	 :=	$(shell grep NAXSI_VERSION naxsi.h | cut -d '"' -f 2)
+UTIL_VERS :=	$(shell grep version ../nx_util/setup.py | cut -d "'" -f2)
 MOD_PATH :=	$(shell pwd)
 
 build:
@@ -15,18 +16,22 @@ test:
 	prove -r t/*.t
 
 package: 
-	mkdir ../../naxsi-core-$(VERS)
-	mkdir ../../naxsi-ui-$(VERS)	
-	cp -R ../naxsi_src ../../naxsi-core-$(VERS)
-	cp -R ../naxsi_config ../../naxsi-core-$(VERS)
-	cp -R ../contrib/naxsi-ui ../../naxsi-ui-$(VERS)
-	cp -R ../t ../../naxsi-core-$(VERS)
-	cp ../COPYING ../../naxsi-core-$(VERS)
+	mkdir ../../naxsi-core-$(CORE_VERS)
+	mkdir ../../nx_util-$(UTIL_VERS)	
+	cp -R ../naxsi_src ../../naxsi-core-$(CORE_VERS)
+	cp -R ../naxsi_config ../../naxsi-core-$(CORE_VERS)
+	cp -R ../nx_util ../../nx_util-$(UTIL_VERS)
+	cp -R ../t ../../naxsi-core-$(CORE_VERS)
+	cp ../COPYING ../../naxsi-core-$(CORE_VERS)
 	cd ../../ ; \
-	tar --exclude-vcs -cvzf naxsi-core-$(VERS).tgz naxsi-core-$(VERS)/ ; \
-	tar --exclude-vcs -cvzf naxsi-ui-$(VERS).tgz naxsi-ui-$(VERS)/ ; \
-	md5sum naxsi-core-$(VERS).tgz > naxsi-core-$(VERS).md5 ; \
-	md5sum naxsi-ui-$(VERS).tgz > naxsi-ui-$(VERS).md5 ;
+	rm naxsi-core-$(CORE_VERS)/*~ naxsi-core-$(CORE_VERS)/\#* ; \
+	rm  nx_util-$(UTIL_VERS)/*~ nx_util-$(UTIL_VERS)/\#* ; \
+	tar --exclude-vcs -cvzf naxsi-core-$(CORE_VERS).tgz naxsi-core-$(CORE_VERS)/ ; \
+	tar --exclude-vcs -cvzf nx_util-$(UTIL_VERS).tgz nx_util-$(UTIL_VERS)/ ; \
+	md5sum naxsi-core-$(CORE_VERS).tgz > naxsi-core-$(CORE_VERS).md5 ; \
+	md5sum nx_util-$(UTIL_VERS).tgz > nx_util-$(UTIL_VERS).md5 ;
+
+
 
 re:
 	@echo "Nginx source tree : /tmp/nginx" 

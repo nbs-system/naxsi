@@ -341,5 +341,67 @@ use URI::Escape;
 }
 "
 --- error_code: 200
+=== json wl 1.1 : match (empty variable name)
+--- user_files
+>>> test_uri
+eh yo
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /test_uri
+{
+  \"\" : [\"there\", \"is\", \"no\", \"way\"]
+}
+"
+--- error_code: 200
+=== json wl 1.1 : match (no variable name)
+--- user_files
+>>> test_uri
+eh yo
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /test_uri
+{
+  [\"there\", \"is\", \"no\", \"way\"]
+}
+"
+--- error_code: 200
 
 

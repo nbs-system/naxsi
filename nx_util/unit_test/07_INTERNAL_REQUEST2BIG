@@ -1,0 +1,2 @@
+2012/08/23 19:04:58 [error] 2706#0: *1 NAXSI_FMT: ip=127.0.0.1&server=www.nbs-system.com&uri=/recrutement&total_processed=4&total_blocked=1&zone0=BODY&id0=2&var_name0=, client: 127.0.0.1, server: , request: "POST /recrutement HTTP/1.1", host: "www.nbs-system.com", referrer: "http://www.nbs-system.com/recrutement"
+

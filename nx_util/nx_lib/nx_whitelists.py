@@ -1,4 +1,5 @@
 import pprint
+import logging
 
 class NxWhitelistExtractor:
     def __init__(self, cursor, rules_file, pages_hit=10, rules_hit=20, exlog_max=5):
@@ -22,7 +23,7 @@ class NxWhitelistExtractor:
                     self.core_msg[i[pos + 3:i[pos + 3].find(';') - 1]] = i[pos_msg + 4:][:i[pos_msg + 4:].find('"')]
             fd.close()
         except:
-            print "Unable to open rules file :"+rules_file
+            logging.warning("Unable to open rules file :"+rules_file)
             pass
 
     def gen_basic_rules(self,url=None, srcip=None, dsthost=None,
@@ -70,6 +71,13 @@ class NxWhitelistExtractor:
              "from exceptions as e, urls as u, connections as c where c.url_id "
              "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, "
              "e.zone, e.rule_id HAVING (ct) > ((select count(*) from connections)/1000)"),
+            # select on zone+rule_id (mostly because of ARGS|NAME containing ie '[foo]')
+            ("select  count(*) as ct, e.rule_id, e.zone, '' as var_name, '' as url, count(distinct c.peer_ip) as peer_count, "
+             "(select count(distinct peer_ip) from connections) as ptot, "
+             "(select count(*) from connections) as tot from exceptions as e, "
+             "urls as u, connections as c where c.id_exception = "
+             "e.exception_id GROUP BY e.zone, e.rule_id HAVING (ct) > "
+             "((select count(*) from connections)/1000);"),
             # select on zone+url+var_name (unpredictable id)
             ("select  count(*) as ct, 0 as rule_id, e.zone, e.var_name, u.url, count(distinct c.peer_ip) as peer_count, "
              "(select count(distinct peer_ip) from connections) as ptot, "
@@ -114,7 +122,6 @@ class NxWhitelistExtractor:
                 continue
             if len(target['var_name']) > 0 and len(z['var_name']) > 0 and target['var_name'] != z['var_name']:
                 continue
-            #print "url:"+target['url']
             uurl.add(z['url'])
             if delmatch is True:
                 self.final_rules.remove(z)
@@ -126,16 +133,17 @@ class NxWhitelistExtractor:
         # No rules are matching this one, append.
         if not count and not nb_rule:
             self.final_rules.append(target)
+        # There is already existing rules that seem to cover this one.
+        # As rules are generated from stricter (url+zone+var_name+id) to lousier one (ie. id)
+        # Check if it's worth replacing those.
         # Check the number of unique URLs covered by the rule
-        # print "Number of rules covered :"+str(count)
-        # print "Number of urls covered :"+str(len(uurl))
-        # print "Number of hits  :"+str(target['hcount'])
         if target['hcount'] >= count and len(uurl) > self.pages_hit:
             self.try_append(target, True)
             self.final_rules.append(target)
             return
-        # Check the nimber of unique IDs covered by the rule
-        if (target['hcount'] > count+1) or (target['hcount'] >= count and nb_rule > self.rules_hit):
+        # Check the number of unique IDs covered by the rule
+        #if (target['hcount'] > count+1) or (target['hcount'] >= count and nb_rule > self.rules_hit):
+        if (target['hcount'] >= count and nb_rule > self.rules_hit):
             self.try_append(target, True)
             self.final_rules.append(target)
             return

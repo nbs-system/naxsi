@@ -9,7 +9,7 @@ __CSS_BOOTSTRAP__
 <style>
 __CSS_BOOTSTRAP_RESPONSIVE__
 </style>
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript"></script>
 <script>
 __JS_BOOTSTRAP__
 __JS_HIGHCHARTS__
@@ -165,7 +165,7 @@ __JS_HIGHCHARTS__
     </script>
 
     <script type="text/javascript"
-	    src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBbKJnS1H3sZ3EAAlNTtzZogOH43O2NcMo&sensor=false">
+	    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBbKJnS1H3sZ3EAAlNTtzZogOH43O2NcMo&sensor=false">
     </script><script>
       var citymap = {};
       __CITYMAP__

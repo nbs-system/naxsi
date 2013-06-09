@@ -799,7 +799,7 @@ location / {
 	 check_rule "$XSS >= 8" BLOCK;
   	 root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-	 BasicRule wl:1999 "mz:$URL:/foobar|$ARGS_VAR:barone";
+	 basic_rule wl:1999 "mz:$URL:/foobar|$ARGS_VAR:barone";
 	 error_page 405 = $uri;
 }
 location /RequestDenied {
@@ -866,7 +866,7 @@ location / {
 	 check_rule "$XSS >= 8" BLOCK;
   	 root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-	 BasicRule wl:1999 "mz:$URL:/foobar|$ARGS_VAR:barone";
+	 basic_rule wl:1999 "mz:$URL:/foobar|$ARGS_VAR:barone";
 	 error_page 405 = $uri;
 }
 location /RequestDenied {
@@ -933,7 +933,7 @@ location / {
 	 check_rule "$XSS >= 8" BLOCK;
   	 root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-	 BasicRule wl:1999 "mz:$URL:/foobar|$ARGS_VAR:barone";
+	 basic_rule wl:1999 "mz:$URL:/foobar|$ARGS_VAR:barone";
 	 error_page 405 = $uri;
 }
 location /RequestDenied {

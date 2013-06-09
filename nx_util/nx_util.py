@@ -7,9 +7,8 @@ from nx_lib.SQLWrapper import SQLWrapper, SQLWrapperException
 from nx_lib.nx_whitelists import NxWhitelistExtractor
 from nx_lib.nx_report import NxReportGen
 from nx_lib.nx_tools import NxConfig
-#import logging
 import sys
-# Did you see how bad I am ?
+import logging
 
 # optparse needs this, argsparse is for > 2.7 only. 
 def cb(option, opt_str, value, parser):
@@ -28,11 +27,13 @@ def cb(option, opt_str, value, parser):
 	
 
 if __name__ == "__main__":
-	usage = """
-%prog [-l /var/log/*error.log] [-o] [-H file] [-d dbname] [-c config]
-nginx/naxsi log parser, whitelist and report generator.
-"""
+	usage = "%prog [-l /var/log/*error.log] [-o] [-H file] [-d dbname] [-c config] \nnginx/naxsi log parser, whitelist and report generator."
+	##---
 	parser = OptionParser(usage=usage)
+	# General options
+	parser.add_option("-v", "--verbosity", dest="verb",
+			  help="set verbosity level, from 0 (quiet),"
+			  " to 4 (verbose). Defaults to 2", action="store", default=2)
 	# Save/Recover options
 	parser.add_option("-d", "--dbname", dest="db",
 			  help="db (sqlite3) name", type="string",
@@ -74,17 +75,28 @@ nginx/naxsi log parser, whitelist and report generator.
 	if options.dst_file is None and options.output_whitelist is False and options.logfiles is None:
 		parser.print_help()
 		sys.exit (-1)
-	
+	# basicConfig does not support ints as level.
+	log_levels = [logging.CRITICAL, logging.ERROR, 
+		      logging.WARNING, logging.INFO, logging.DEBUG]
+	# yeah, I do -vvvvvvvv too
+	options.verb = int(options.verb)
+	if options.verb > len(log_levels) - 1:
+		options.verb = len(log_levels) - 1
+	logging.basicConfig(format='%(asctime)s %(message)s', 
+			    datefmt='%m/%d/%Y %I:%M:%S',
+			    level=log_levels[options.verb])
+	# 
 	config = NxConfig(options.conf_path)
 	if config.parse() == 0:
-		print "Unable to parse configuration ["+options.conf_path+"]"
+		logging.critical("Unable to parse configuration ["+options.conf_path+"]")
 		sys.exit(-1)
 	# destroy existing database, unless incremental is set.
 	if options.incremental is False and options.logfiles is not None:
 		try:
-			print "Deleting old database :"+config.db_dir+options.db
+			logging.warning("Deleting old database :"+config.db_dir+options.db)
 			os.remove(config.db_dir+options.db)
-		except: 
+		except:
+			logging.error("Unable to delete old database :"+config.db_dir+options.db)
 			pass
 	sql = SQLWrapper(config.db_dir+options.db)
 	if options.logfiles is not None:
@@ -107,7 +119,7 @@ nginx/naxsi log parser, whitelist and report generator.
 		r = wl.format_rules_output(wl.final_rules)
 		print r
 	if options.dst_file is not None:
-		print "Outputing HTML report to ["+options.dst_file+"]"
+		logging.info("Outputing HTML report to ["+options.dst_file+"]")
 		report = NxReportGen(options.dst_file, config.data_dir, sql)
 		report.write()
-		print "Done!"
+		logging.info("Finished HTML report generation")

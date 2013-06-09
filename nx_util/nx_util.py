@@ -27,10 +27,7 @@ def cb(option, opt_str, value, parser):
 	
 
 if __name__ == "__main__":
-	usage = """
-%prog [-l /var/log/*error.log] [-o] [-H file] [-d dbname] [-c config]
-nginx/naxsi log parser, whitelist and report generator.
-"""
+	usage = "%prog [-l /var/log/*error.log] [-o] [-H file] [-d dbname] [-c config] \nnginx/naxsi log parser, whitelist and report generator."
 	##---
 	parser = OptionParser(usage=usage)
 	# General options

@@ -24,10 +24,10 @@ package:
 	cp -R ../t ../../naxsi-core-$(CORE_VERS)
 	cp ../COPYING ../../naxsi-core-$(CORE_VERS)
 	cd ../../ ; \
-	rm naxsi-core-$(CORE_VERS)/*~ naxsi-core-$(CORE_VERS)/\#* ; \
-	rm  nx_util-$(UTIL_VERS)/*~ nx_util-$(UTIL_VERS)/\#* ; \
 	tar --exclude-vcs -cvzf naxsi-core-$(CORE_VERS).tgz naxsi-core-$(CORE_VERS)/ ; \
 	tar --exclude-vcs -cvzf nx_util-$(UTIL_VERS).tgz nx_util-$(UTIL_VERS)/ ; \
+	rm -rf ../../naxsi-core-$(CORE_VERS)/ ; \
+	rm -rf ../../nx_util-$(UTIL_VERS)/ ; \
 	md5sum naxsi-core-$(CORE_VERS).tgz > naxsi-core-$(CORE_VERS).md5 ; \
 	md5sum nx_util-$(UTIL_VERS).tgz > nx_util-$(UTIL_VERS).md5 ;
 

@@ -575,7 +575,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 			  ngx_http_request_t *r,
 			  ngx_array_t *ostr, ngx_str_t **ret_uri)
 {
-  u_int		sz_left, sub, psub, offset = 0, seed, prev_seed, i;
+  u_int		sz_left, sub, psub, offset = 0, seed, prev_seed = 0, i;
   ngx_str_t	*fragment, *tmp_uri;
   const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&vers=%.*s&total_processed=%zu&total_blocked=%zu";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";

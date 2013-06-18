@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='nx_util',
-      version='2.0',
+      version='1.0',
       description='Naxsi log parser, whitelist & report generator',
       author='Naxsi Dev Team',
       author_email='thibault.koechlin@nbs-system.com',

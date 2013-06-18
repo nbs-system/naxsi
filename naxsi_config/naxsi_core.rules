@@ -1,17 +1,13 @@
 ##################################
-## INTERNAL RULES IDS:1-10      ##
+## INTERNAL RULES IDS:1-999     ##
 ##################################
-#weird_request : 1
-#big_body : 2
-#no_content_type : 3
-
-#@MainRule "msg:weird/incorrect request" id:1;
-#@MainRule "msg:big request, unparsed" id:2;
-#@MainRule "msg:uncommon hex encoding (%00 etc.)" id:10;
-#@MainRule "msg:uncommon/empty content-type in POST" id:11;
-#@MainRule "msg:uncommon/malformed URL" id:12;
-
-#MainRule "str:123FREETEXT" "msg:exemple learning test pattern"  "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:BLOCK" id:0;
+#@MainRule "msg:weird request, unable to parse" id:1;
+#@MainRule "msg:request too big, stored on disk and not parsed" id:2;
+#@MainRule "msg:invalid hex encoding, null bytes" id:10;
+#@MainRule "msg:unknown content-type" id:11;
+#@MainRule "msg:invalid formatted url" id:12;
+#@MainRule "msg:invalid POST format" id:13;
+#@MainRule "msg:invalid POST boundary" id:14;
 
 ##################################
 ## SQL Injections IDs:1000-1099 ##

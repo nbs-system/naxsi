@@ -32,8 +32,6 @@
 
 /* used to store locations during the configuration time. 
    then, accessed by the hashtable building feature during "init" time. */
-ngx_http_dummy_loc_conf_t *dummy_lc;
-
 
 /*
 ** Static defined rules struct for internal rules.
@@ -50,13 +48,13 @@ ngx_http_dummy_loc_conf_t *dummy_lc;
 
 
 ngx_http_rule_t nx_int__weird_request = {/*type*/ 0, /*whitelist flag*/ 0, 
-					 /*wl_id ptr*/ NULL, /*rule_id*/ 1,
-					 /*log_msg*/ NULL, /*score*/ 0, 
-					 /*sscores*/ NULL,
-					 /*sc_block*/ 0,  /*sc_allow*/ 0, 
-					 /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
-					 /*lnk_to & from*/ 0, 0,
-					 /*br ptrs*/ NULL};
+						/*wl_id ptr*/ NULL, /*rule_id*/ 1,
+						/*log_msg*/ NULL, /*score*/ 0, 
+						/*sscores*/ NULL,
+						/*sc_block*/ 0,  /*sc_allow*/ 0, 
+						/*block*/ 1,  /*allow*/ 0, /*log*/ 0,
+						/*lnk_to & from*/ 0, 0,
+						/*br ptrs*/ NULL};
 
 ngx_http_rule_t nx_int__uncommon_hex_encoding = {/*type*/ 0, /*whitelist flag*/ 0, 
 						 /*wl_id ptr*/ NULL, /*rule_id*/ 10,
@@ -95,13 +93,13 @@ ngx_http_rule_t nx_int__uncommon_post_format = {/*type*/ 0, /*whitelist flag*/ 0
 						/*br ptrs*/ NULL};
 
 ngx_http_rule_t nx_int__uncommon_post_boundary = {/*type*/ 0, /*whitelist flag*/ 0, 
-						   /*wl_id ptr*/ NULL, /*rule_id*/ 13,
-						   /*log_msg*/ NULL, /*score*/ 0, 
-						   /*sscores*/ NULL,
-						   /*sc_block*/ 1,  /*sc_allow*/ 0, 
-						   /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
-						   /*lnk_to & from*/ 0, 0,
-						   /*br ptrs*/ NULL};
+						  /*wl_id ptr*/ NULL, /*rule_id*/ 14,
+						  /*log_msg*/ NULL, /*score*/ 0, 
+						  /*sscores*/ NULL,
+						  /*sc_block*/ 1,  /*sc_allow*/ 0, 
+						  /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
+						  /*lnk_to & from*/ 0, 0,
+						  /*br ptrs*/ NULL};
 
 
 ngx_http_rule_t nx_int__big_request = {/*type*/ 0, /*whitelist flag*/ 0, 
@@ -321,12 +319,12 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
     }
     
     for (i = 0; i < b->ids->nelts; i++) {
-      if ( ((int *)b->ids->elts)[i] == r->rule_id ||
-	   ((int *)b->ids->elts)[i] == 0) {
+      if ( ((ngx_int_t *)b->ids->elts)[i] == r->rule_id ||
+	   ((ngx_int_t *)b->ids->elts)[i] == 0) {
 #ifdef whitelist_debug
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		      "WhiteListing0 rule %d on var [%V] at uri [%V] (dst id:%d)",
-		      r->rule_id, name, &(req->uri), ((int *)b->ids->elts)[i]);
+		      r->rule_id, name, &(req->uri), ((ngx_int_t *)b->ids->elts)[i]);
 #endif
 	return (1);
       }
@@ -352,14 +350,14 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
     for (i = 0; i < b->ids->nelts; i++) {
 #ifdef whitelist_heavy_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		    "wl : %d, matched rule : %d", ((int *)b->ids->elts)[i], r->rule_id);
+		    "wl : %d, matched rule : %d", ((ngx_int_t *)b->ids->elts)[i], r->rule_id);
 #endif      
-      if ( ((int *)b->ids->elts)[i] == r->rule_id || 
-	   ((int *)b->ids->elts)[i] == 0) { 
+      if ( ((ngx_int_t *)b->ids->elts)[i] == r->rule_id || 
+	   ((ngx_int_t *)b->ids->elts)[i] == 0) { 
 #ifdef whitelist_debug
 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		      "WhiteListing1 rule %d/ wl[%d] = %d (wl had %d wl ids) on var [%V] at uri [%V] (zone:%s)",
-		      r->rule_id, i, ((int *)b->ids->elts)[i], b->ids->nelts, name, &(req->uri), 
+		      r->rule_id, i, ((ngx_int_t *)b->ids->elts)[i], b->ids->nelts, name, &(req->uri), 
 		      zone == HEADERS ? "HEADERS" : zone == URL ? "URL" : zone == BODY ? "BODY" :
 		      zone == ARGS ? "ARGS" : "UNKNOWN!!!!");
 #endif
@@ -566,77 +564,65 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 }
 
 
-//#define output_forbidden
-ngx_int_t  
-ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
-			       ngx_http_request_t *r)
+/*
+** Create log lines, possibly splitted 
+** and linked by random numbers.
+*/
+#define MAX_LINE_SIZE (NGX_MAX_ERROR_STR - 100)
+#define MAX_SEED_LEN 17 /*seed_start=10000*/
+
+ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
+			  ngx_http_request_t *r,
+			  ngx_array_t *ostr, ngx_str_t **ret_uri)
 {
-  ngx_int_t     rc, w;
-  u_int		i;
-  char		*fmt;
-  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&total_processed=%zu&total_blocked=%zu";
+  u_int		sz_left, sub, psub, offset = 0, seed, prev_seed = 0, i;
+  ngx_str_t	*fragment, *tmp_uri;
+  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&vers=%.*s&total_processed=%zu&total_blocked=%zu";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
-  ngx_str_t	denied_args, tmp_uri;
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_http_matched_rule_t	*mr;
+  char		 tmp_zone[30];
   
-  /*
-    create output message
-  */
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
-#ifdef output_forbidden
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "#Forbidding page");
-#endif
-  tmp_uri.len = r->uri.len + (2 * ngx_escape_uri(NULL, r->uri.data, r->uri.len,
-						 NGX_ESCAPE_ARGS));
-  tmp_uri.data = ngx_pcalloc(r->pool, tmp_uri.len+1);
-  ngx_escape_uri(tmp_uri.data, r->uri.data, r->uri.len, NGX_ESCAPE_ARGS);
-  rc = snprintf(0, 0, fmt_base, r->connection->addr_text.len,
-		r->connection->addr_text.data,
-		r->headers_in.server.len, r->headers_in.server.data,
-		tmp_uri.len, tmp_uri.data, ctx->learning ? 1 : 0,
-		cf->request_processed, cf->request_blocked);
-
   
-  if (ctx->matched) {
-    mr = ctx->matched->elts;
-    for (i = 0; i < ctx->matched->nelts; i++)
-      rc += snprintf(0, 0, fmt_rm, i, 
-		     "-----BODY|ARGS|HEADERS|URL----", 
-		     i, mr[i].rule->rule_id, i, mr[i].name->len, 
-		     mr[i].name->data);
-  }
-  else {
-    if (ctx->weird_request || ctx->big_request)
-      rc += snprintf(0, 0, fmt_rm, 99, 
-		     "-----BODY|ARGS|HEADERS|URL----", 
-		     99, 99, 99, 99, 
-		     "REQUEST_LONG_LONG");
-  }
-  fmt = ngx_pcalloc(r->pool, rc+2);
-  if (!fmt)
+  tmp_uri = ngx_pcalloc(r->pool, sizeof(ngx_str_t));
+  if (!tmp_uri)
     return (NGX_ERROR);
-  w = snprintf(fmt, rc, fmt_base, r->connection->addr_text.len,
-	       r->connection->addr_text.data,
-	       r->headers_in.server.len, r->headers_in.server.data,
-	       tmp_uri.len, tmp_uri.data,  ctx->learning ? 1 : 0,
-	       cf->request_processed, cf->request_blocked);
+  *ret_uri = tmp_uri;
   
-  char	tmp_zone[30]; 
-  /*<- should be a dynamic allocation, no bof here, just mem waste
-    , but i'm lazy :) */
+  tmp_uri->len = r->uri.len + (2 * ngx_escape_uri(NULL, r->uri.data, r->uri.len,
+						  NGX_ESCAPE_ARGS));
+  tmp_uri->data = ngx_pcalloc(r->pool, tmp_uri->len+1);
+  ngx_escape_uri(tmp_uri->data, r->uri.data, r->uri.len, NGX_ESCAPE_ARGS);
+  
+  
+  fragment = ngx_array_push(ostr);
+  if (!fragment)
+    return (NGX_ERROR);
+  fragment->data = ngx_pcalloc(r->pool, MAX_LINE_SIZE+1);
+  if (!fragment->data)
+    return (NGX_ERROR);
+  sub = offset = 0;
+  /* we keep extra space for seed*/
+  sz_left = MAX_LINE_SIZE - MAX_SEED_LEN - 1;
+  
+  /* 
+  ** don't handle uri > 4k, string will be split
+  */
+  sub = snprintf((char *)fragment->data, sz_left, fmt_base, r->connection->addr_text.len,
+		 r->connection->addr_text.data,
+		 r->headers_in.server.len, r->headers_in.server.data,
+		 tmp_uri->len, tmp_uri->data, ctx->learning ? 1 : 0, strlen(NAXSI_VERSION),
+		 NAXSI_VERSION, cf->request_processed, cf->request_blocked);
+  sz_left -= sub;
+  offset += sub;
+  
   if (ctx->matched) {
     mr = ctx->matched->elts;
-    for (i = 0; i < ctx->matched->nelts; i++) {
+    sub = 0;
+    i = 0;
+    do {
       memset(tmp_zone, 0, 30);
-#ifdef output_forbidden
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		    "----"); 
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		    "zones:H:%d/U:%d/A:%d/B:%d", mr[i].headers_var ,
-		    mr[i].url, mr[i].args_var , mr[i].body_var );
-#endif
-      //zone = UNKNOWN;
       if (mr[i].body_var) 
 	strcat(tmp_zone, "BODY");
       if (mr[i].args_var) 
@@ -649,33 +635,100 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 	strcat(tmp_zone, "FILE_EXT");
       if (mr[i].target_name)
 	strcat(tmp_zone, "|NAME");
-      
-      w += snprintf(fmt+w, rc, fmt_rm, i, tmp_zone, i, 
-		    mr[i].rule->rule_id, i, mr[i].name->len, 
-		    mr[i].name->data);
-#ifdef whitelist_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		    "FMT (sub) (%d) LEN:%s", i, fmt); 
-#endif
-    }
+      sub = snprintf(0, 0, fmt_rm, i, tmp_zone, i, 
+		     mr[i].rule->rule_id, i, mr[i].name->len, 
+		     mr[i].name->data);
+      /*
+      ** This one would not fit :
+      ** append a seed to the current fragment,
+      ** and start a new one
+      */
+      if (sub >= sz_left)
+	{
+	  psub = sub;
+	  /* 
+	  ** avoid random collisions, as we % 1000 them,
+	  ** this is very likely to happen !
+	  */
+	  while ((seed = random() % 1000) == prev_seed)
+	    ;
+	  sub = snprintf((char *)fragment->data+offset, MAX_SEED_LEN, "&seed_start=%d", seed);
+	  fragment->len = offset+sub;
+	  fragment = ngx_array_push(ostr);
+	  if (!fragment)
+	    return (NGX_ERROR);
+	  fragment->data = ngx_pcalloc(r->pool, MAX_LINE_SIZE+1);
+	  if (!fragment->data)
+	    return (NGX_ERROR);
+	  sub = snprintf((char *)fragment->data, MAX_SEED_LEN, "seed_end=%d", seed);
+	  prev_seed = seed;
+	  sz_left = MAX_LINE_SIZE - MAX_SEED_LEN - sub - 1;
+	  offset = sub;
+	  /* if it did not fit because the event itself is too big,
+	     truncate it, and append to the new fragment */
+	  if (psub > MAX_LINE_SIZE - MAX_SEED_LEN - 1) {
+	    sub = snprintf((char *)fragment->data+offset, sz_left, 
+			   fmt_rm, i, tmp_zone, i, mr[i].rule->rule_id, i, 
+			   mr[i].name->len, mr[i].name->data);
+	    offset += (sz_left - 1);
+	    sz_left = 0;
+	    i += 1;
+	  }
+	  continue;
+	}
+      sub = snprintf((char *)fragment->data+offset, sz_left, 
+		     fmt_rm, i, tmp_zone, i, mr[i].rule->rule_id, i, 
+		     mr[i].name->len, mr[i].name->data);
+      sz_left -= sub;
+      offset += sub;
+      i += 1;
+    } while(i < ctx->matched->nelts);
+  }
+  fragment->len = offset;
+  return (NGX_HTTP_OK);
+}
+
+
+ngx_int_t  
+ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
+			       ngx_http_request_t *r)
+{
+  u_int		i;
+  ngx_str_t	*tmp_uri, denied_args;
+  ngx_str_t	 empty = ngx_string("");
+  ngx_http_dummy_loc_conf_t	*cf;
+  ngx_array_t	*ostr;
+  
+  cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
+  /* get array of signatures strings */
+  ostr = ngx_array_create(r->pool, 1, sizeof(ngx_str_t));
+  if (ngx_http_nx_log(ctx, r, ostr, &tmp_uri) != NGX_HTTP_OK)
+    return (NGX_ERROR);
+  for (i = 0; i < ostr->nelts; i++) {
+    ngx_log_error(NGX_LOG_ERR, r->connection->log,
+		  0, "NAXSI_FMT: %s", ((ngx_str_t *)ostr->elts)[i].data);
+  }
+  if (ostr->nelts >= 1) {
+    denied_args.data = ((ngx_str_t *)ostr->elts)[0].data; 
+    denied_args.len = ((ngx_str_t *)ostr->elts)[0].len; 
   }
   else {
-    if (ctx->weird_request)
-      w += snprintf(fmt+w, rc, fmt_rm, 0, "REQUEST", 0, 1, 0, 5, "WEIRD");
-    if (ctx->big_request)
-      w += snprintf(fmt+w, rc, fmt_rm, 0, "REQUEST", 0, 2, 0, 8, "BIG_REQUEST");
+    denied_args.data = empty.data;
+    denied_args.len = empty.len;
   }
-  denied_args.data = (unsigned char *)fmt;
-  denied_args.len = w;
   
-  if (ctx->log && !ctx->block) {
-    ngx_log_error(NGX_LOG_ERR, r->connection->log, 
-		  0, "NAXSI_FMT: %s", fmt);
+  /* 
+  ** If we shouldn't block the request, 
+  ** but a log score was reached, stop.
+  */
+  if (ctx->log && !ctx->block)
     return (NGX_DECLINED);
-  }
   
-  
-  /* add headers with original url and arguments */
+  /* 
+  ** add headers with original url 
+  ** and arguments, as well as 
+  ** the first fragment of log
+  */
   ngx_table_elt_t	    *h;
   
   
@@ -687,9 +740,9 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     memcpy(h->key.data, "orig_url", strlen("orig_url"));
 	h->lowcase_key = ngx_pcalloc(r->pool, strlen("orig_url") + 1);
     memcpy(h->lowcase_key, "orig_url", strlen("orig_url"));
-    h->value.len = tmp_uri.len;
-    h->value.data = ngx_pcalloc(r->pool, tmp_uri.len+1);
-    memcpy(h->value.data, tmp_uri.data, tmp_uri.len);
+    h->value.len = tmp_uri->len;
+    h->value.data = ngx_pcalloc(r->pool, tmp_uri->len+1);
+    memcpy(h->value.data, tmp_uri->data, tmp_uri->len);
     
     h = ngx_list_push(&(r->headers_in.headers));
     h->key.len = strlen("orig_args");
@@ -710,9 +763,6 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     h->value.len = denied_args.len;
     h->value.data = denied_args.data;
   }
-  else if (ctx->learning)
-    ngx_log_error(NGX_LOG_ERR, r->connection->log, 
-		  0, "[naxsi] no headers_in, not forwarded to learning mode.");
   
   if (ctx->learning) {
     if (ctx->post_action) {
@@ -721,15 +771,11 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
       clcf->post_action.data = cf->denied_url->data;
       clcf->post_action.len = cf->denied_url->len;
     }
-    ngx_log_error(NGX_LOG_ERR, r->connection->log, 
-		  0, "NAXSI_FMT: %s", fmt);
     return (NGX_DECLINED);
   }
   else {
-    ngx_log_error(NGX_LOG_ERR, r->connection->log, 
-		  0, "NAXSI_FMT: %s", fmt);
-    rc = ngx_http_internal_redirect(r, cf->denied_url,  
-				    &denied_args); 
+    ngx_http_internal_redirect(r, cf->denied_url,  
+			       &empty); 
     return (NGX_HTTP_OK);
   }
   return (NGX_ERROR);
@@ -1011,7 +1057,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 /*
 ** check variable + name against a set of rules, checking against 'custom' location rules too.
 */
-//#define basestr_ruleset_debug
+#define basestr_ruleset_debug
 
 int 
 ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
@@ -1627,11 +1673,15 @@ ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
       return ;
     } 
   }
-  
   /* 19 = echo -n "multipart/form-data" | wc -c */
   else if (!ngx_strncasecmp(r->headers_in.content_type->value.data, 
 			    (u_char *) "multipart/form-data", 19)) {
     ngx_http_dummy_multipart_parse(ctx, r, full_body, full_body_len);
+  }
+  /* 16 = echo -n "application/json" | wc -c */
+  else if (!ngx_strncasecmp(r->headers_in.content_type->value.data, 
+			    (u_char *) "application/json", 16)) {
+    ngx_http_dummy_json_parse(ctx, r, full_body, full_body_len); 
   }
   else {
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
@@ -1798,20 +1848,20 @@ ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx,
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		"XX-custom check rules");
 #endif
-  if (ctx->weird_request) {
-#ifdef custom_score_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		  "XX-blocking, weird_request flag set");
-#endif
-    ctx->block = 1;
-  }
-  if (ctx->big_request) {
-#ifdef custom_score_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		  "XX-blocking unexpected big request");
-#endif
-    ctx->block = 1;
-  }
+/*   if (ctx->weird_request) { */
+/* #ifdef custom_score_debug */
+/*     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
+/* 		  "XX-blocking, weird_request flag set"); */
+/* #endif */
+/*     ctx->block = 1; */
+/*   } */
+/*   if (ctx->big_request) { */
+/* #ifdef custom_score_debug */
+/*     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
+/* 		  "XX-blocking unexpected big request"); */
+/* #endif */
+/*     ctx->block = 1; */
+/*   } */
   /*cr, sc, cf, ctx*/
   if (cf->check_rules && ctx->special_scores) {
 #ifdef custom_score_debug

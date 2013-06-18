@@ -32,7 +32,7 @@
 #ifndef __FOO_H__
 #define __FOO_H__
 
-#define NAXSI_VERSION "0.50"
+#define NAXSI_VERSION "0.51"
 
 #include <nginx.h>
 #include <ngx_config.h>
@@ -46,6 +46,8 @@
 
 
 extern ngx_module_t ngx_http_naxsi_module;
+
+#define UPDATE_C(js) js->c = *(js->src + js->off)
 
 /*
 ** Here is globally how the structures are organized :
@@ -145,11 +147,11 @@ typedef struct
 */
 typedef struct
 {
-  //ngx_http_whitelist_location_t
+  /*ngx_http_whitelist_location_t **/
   ngx_array_t			*whitelist_locations; 
-  // zone to wich the WL applies
+  /* zone to wich the WL applies */
   enum DUMMY_MATCH_ZONE		zone;
-  // if the "name" is only an url, specify it
+  /* if the "name" is only an url, specify it */
   int				uri_only:1;
   /* does the rule targets the name 
      instead of the content ?*/
@@ -203,8 +205,6 @@ typedef struct
 
 /* define for RULE TYPE in rule_t */
 #define BR 1 
-//#define FR 2 UNUSED
-//#define WR 3 UNUSED
 
 /* flags used for 'custom match rules', like $XSS > 7 */
 #define SUP 1
@@ -364,9 +364,6 @@ typedef struct
   ngx_flag_t	wait_for_body:1;
   ngx_flag_t	ready:1;
   ngx_flag_t	over:1;
-  /* flag request */
-  ngx_flag_t	weird_request:1;
-  ngx_flag_t	big_request:1;
   /* matched rules */
   ngx_array_t	*matched;
   /* runtime flags (modifiers) */
@@ -376,6 +373,24 @@ typedef struct
   ngx_flag_t	extensive_log:1;
   
 } ngx_http_request_ctx_t;
+
+/*
+** this structure is used only for json parsing.
+*/
+typedef struct ngx_http_nx_json_s {
+  ngx_str_t	json;
+  u_char	*src;
+  ngx_int_t	off, len;
+  u_char	c;
+  int		depth;
+  ngx_http_request_t *r;
+  ngx_http_request_ctx_t *ctx;
+  ngx_str_t	ckey;
+  ngx_http_dummy_main_conf_t	*main_cf;
+  ngx_http_dummy_loc_conf_t	*loc_cf;
+} ngx_json_t;
+
+
 
 #define TOP_DENIED_URL_T	"DeniedUrl"
 #define TOP_LEARNING_FLAG_T	"LearningMode"
@@ -396,9 +411,7 @@ typedef struct
 
 /*possible 'tokens' in rule */
 #define ID_T "id:"
-#define TRANSFORM_T "t:"
 #define SCORE_T "s:"
-//#define PERSISTANT_SCORE_T "ps:"
 #define MSG_T "msg:"
 #define RX_T "rx:"
 #define STR_T "str:"
@@ -406,8 +419,10 @@ typedef struct
 #define WHITELIST_T "wl:"
 #define NEGATIVE_T  "negative"
 
-/* name of hardcoded variables to 
-   change behavior of naxsi at runtime */
+/* 
+** name of hardcoded variables to 
+** change behavior of naxsi at runtime 
+*/
 #define RT_EXTENSIVE_LOG "naxsi_extensive_log"
 #define RT_ENABLE "naxsi_flag_enable"
 #define RT_LEARNING "naxsi_flag_learning"
@@ -415,36 +430,82 @@ typedef struct
 
 
 
+/*
+** To avoid getting DoS'ed, define max depth
+** for JSON parser, as it is recursive
+*/
+#define JSON_MAX_DEPTH 10
 
-extern ngx_http_dummy_loc_conf_t *dummy_lc;
 
-
-
-void		*ngx_http_dummy_cfg_parse_one_rule(ngx_conf_t *cf,
-						   ngx_str_t	*value,
-						   ngx_http_rule_t *rule,
-						   ngx_int_t	nb_elem);
-char		*strfaststr(unsigned char *haystack, unsigned int hl,
-			    unsigned char *needle, unsigned int nl);
-char		*strnchr(const char *s, int c, int len);
-char		*strncasechr(const char *s, int c, int len);
-ngx_int_t	ngx_http_dummy_create_hashtables(ngx_http_dummy_loc_conf_t *dlc,
-						 ngx_conf_t *cf);
-ngx_int_t	ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
-						 ngx_conf_t *cf);
-void		ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx, 
+void			*ngx_http_dummy_cfg_parse_one_rule(ngx_conf_t *cf,
+							   ngx_str_t	*value,
+							   ngx_http_rule_t *rule,
+							   ngx_int_t	nb_elem);
+char			*strfaststr(unsigned char *haystack, unsigned int hl,
+				    unsigned char *needle, unsigned int nl);
+char			*strnchr(const char *s, int c, int len);
+char			*strncasechr(const char *s, int c, int len);
+ngx_int_t		ngx_http_dummy_create_hashtables(ngx_http_dummy_loc_conf_t *dlc,
+							 ngx_conf_t *cf);
+ngx_int_t		ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
+							   ngx_conf_t *cf);
+void			ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx, 
 						  ngx_http_request_t	 *r);
-ngx_int_t	ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
-					       ngx_http_request_t *r);
-int
-naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type);
+ngx_int_t		ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
+						       ngx_http_request_t *r);
+int			naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, 
+					   ngx_uint_t type);
 
 
-int naxsi_unescape(ngx_str_t *str);
+int			naxsi_unescape(ngx_str_t *str);
+
+void			ngx_http_dummy_json_parse(ngx_http_request_ctx_t *ctx, 
+						  ngx_http_request_t	 *r,
+						  u_char		 *src,
+						  u_int			 len);
 
 
-/* static ngx_int_t ngx_http_dummy_subrequest(ngx_http_request_t *r,  */
-/* 					   ngx_chain_t *in); */
-//ngx_int_t ngx_http_dummy_subrequest(ngx_http_request_t *r);
+/*
+** JSON parsing prototypes.
+*/
+ngx_int_t		ngx_http_nx_json_forward(ngx_json_t *js) ;
+ngx_int_t		ngx_http_nx_json_seek(ngx_json_t *js, unsigned char seek);
+ngx_int_t		ngx_http_nx_json_quoted(ngx_json_t *js, ngx_str_t *ve);
+ngx_int_t		ngx_http_nx_json_array(ngx_json_t *js);
+ngx_int_t		ngx_http_nx_json_val(ngx_json_t *js);
+ngx_int_t		ngx_http_nx_json_obj(ngx_json_t *js);
+
+
+/*
+** naxsi_runtime
+**
+*/
+
+void			ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx, 
+								 ngx_http_dummy_loc_conf_t *cf, 
+								 ngx_http_request_t *r);
+int			ngx_http_process_basic_rule_buffer(ngx_str_t *str, ngx_http_rule_t *rl, 
+							   ngx_int_t *match);
+void			ngx_http_dummy_payload_handler(ngx_http_request_t *r);
+int			ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
+						   ngx_str_t	*name,
+						   ngx_str_t	*value,
+						   ngx_array_t *rules,
+						   ngx_http_request_t *req,
+						   ngx_http_request_ctx_t *ctx,
+						   enum DUMMY_MATCH_ZONE zone);
+void			ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx, 
+						  ngx_http_request_t	 *r,
+						  ngx_http_dummy_loc_conf_t *cf,
+						  ngx_http_dummy_main_conf_t *main_cf);
+void			naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *req, 
+					    ngx_http_rule_t *rule, enum DUMMY_MATCH_ZONE zone);
+
+int			ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx, 
+						     ngx_http_request_t *req, ngx_str_t *name, 
+						     ngx_str_t *value, enum DUMMY_MATCH_ZONE zone, 
+						     ngx_int_t nb_match, ngx_int_t target_name);
+
+
 #endif
 

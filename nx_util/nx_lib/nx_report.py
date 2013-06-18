@@ -4,6 +4,7 @@ import os
 import cgi
 import sys
 from ordereddict import OrderedDict
+import logging
 # This code is dirty :)
 # This code needs to be replaced, but so far is doing its job,
 # it will be discarded when we add filters.
@@ -11,18 +12,11 @@ from ordereddict import OrderedDict
 # Top level class
 class NxReportGen(object):
     def __init__(self, dst_file, data_dir, sql):
-        # if not os.path.exists(dst_dir):
-        #     try:
-        #         os.mkdir(dst_dir)
-        #     except:
-        #         print "Unable to create dir :"+self.dst_dir
-        #         os.exit(-1)
-        # self.dst_dir = dst_dir
         self.dst_file = dst_file
         self.data_dir = data_dir
         self.sql = sql
         return
-#map_canvas
+
     def write(self):
         generators = [NxReport, WorldMap]
         render = ""        
@@ -32,7 +26,7 @@ class NxReportGen(object):
                 render += i
             rfd.close()
         except:
-            print "Unable to open/read tpl file :"+self.data_dir+"/map.tpl"
+            logging.critical("Unable to open/read tpl file :"+self.data_dir+"/map.tpl")
             sys.exit(-1)
         target = self.dst_file
         for gen in generators:
@@ -43,7 +37,7 @@ class NxReportGen(object):
             dstfd.write(render)
             dstfd.close()
         except:
-            print "Unable to create dst file "+target
+            logging.critical("Unable to create dst file "+target)
             sys.exit(-1)
         
             
@@ -171,7 +165,7 @@ class WorldMap():
             self.has_geoip = True
             self.gi = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
         except:
-            print "No geoip, no map."
+            logging.warning("No geoip, no map.")
         self.data_dir = data_dir
         self.sql = sql
         self.ratio = circle_ratio

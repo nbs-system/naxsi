@@ -75,7 +75,7 @@ class NxWhitelistExtractor:
             ("select  count(*) as ct, e.rule_id, e.zone, '' as var_name, '' as url, count(distinct c.peer_ip) as peer_count, "
              "(select count(distinct peer_ip) from connections) as ptot, "
              "(select count(*) from connections) as tot from exceptions as e, "
-             "urls as u, connections as c where c.id_exception = "
+             "connections as c where c.id_exception = "
              "e.exception_id GROUP BY e.zone, e.rule_id HAVING (ct) > "
              "((select count(*) from connections)/1000);"),
             # select on zone+url+var_name (unpredictable id)
@@ -84,10 +84,9 @@ class NxWhitelistExtractor:
              "(select count(*) from connections) as tot "
              "from exceptions as e, urls as u, connections as c where c.url_id "
              "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, "
-             "e.zone, e.var_name HAVING (ct) > ((select count(*) from connections)/1000)")
+             "e.zone, e.var_name HAVING (ct) > tot/1000")
             ]
-      
-        for req in opti_select_DESC:
+        for req in opti_select_DESC:            
             res = self.wrapper.execute(req)
 #            res = self.wrapper.getResults()
             for r in res:

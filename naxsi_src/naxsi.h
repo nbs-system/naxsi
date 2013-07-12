@@ -32,7 +32,7 @@
 #ifndef __FOO_H__
 #define __FOO_H__
 
-#define NAXSI_VERSION "0.51-1"
+#define NAXSI_VERSION "0.51-2"
 
 #include <nginx.h>
 #include <ngx_config.h>

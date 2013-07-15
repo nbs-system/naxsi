@@ -50,43 +50,47 @@ class NxWhitelistExtractor:
         # rules of requests extracting optimized whitelists, from 
         # more restrictive to less restrictive.
         opti_select_DESC = [
-            # select on url+var_name+zone+rule_id
-            ("select  count(*) as ct, e.rule_id, e.zone, e.var_name, u.url, count(distinct c.peer_ip) as peer_count, "
+            ("select count(*) as ct, e.rule_id, e.zone, e.var_name, u.url,"
+             "count(distinct c.peer_ip) as peer_count,"
+             "(select count(distinct peer_ip) from connections) as ptot,"
+             "(select count(*) from connections) as tot from exceptions as e "
+             "JOIN connections as c ON c.id_exception = e.exception_id "
+             "JOIN urls as u ON c.url_id = u.url_id "
+             "GROUP BY u.url, e.var_name,e.zone, e.rule_id "
+             "HAVING (ct) > ((select count(*) from connections)/1000);"),
+            # select on var_name+zone+rule_id (unpredictable URL) 
+            ("select count(*) as ct, e.rule_id, e.zone, e.var_name, '' as url, count(distinct c.peer_ip) as peer_count, "
              "(select count(distinct peer_ip) from connections) as ptot, "
              "(select count(*) from connections) as tot "
-             "from exceptions as e, urls as u, connections as c where c.url_id "
-             "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, e.var_name,"
-             "e.zone, e.rule_id HAVING (ct) > ((select count(*) from connections)/1000)"),
-            # select on var_name+zone+rule_id (unpredictable URL)
-            ("select  count(*) as ct, e.rule_id, e.zone, e.var_name, '' as url, count(distinct c.peer_ip) as peer_count, "
-             "(select count(distinct peer_ip) from connections) as ptot, "
-             "(select count(*) from connections) as tot "
-             "from exceptions as e, urls as u, connections as c where c.url_id = u.url_id and c.id_exception = "
-             "e.exception_id GROUP BY e.var_name,  e.zone, e.rule_id HAVING (ct) > "
+             "from exceptions as e JOIN connections as c ON c.id_exception = e.exception_id "
+             "JOIN urls as u ON c.url_id = u.url_id "
+             "GROUP BY e.var_name,e.zone, e.rule_id HAVING (ct) > "
              "((select count(*) from connections)/1000)"),
-            # select on zone+url+rule_id (unpredictable arg_name)
-            ("select  count(*) as ct, e.rule_id, e.zone, '' as var_name, u.url, count(distinct c.peer_ip) as peer_count, "
+            # select on zone+url+rule_id (unpredictable arg_name) 
+            ("select count(*) as ct, e.rule_id, e.zone, '' as var_name, u.url, count(distinct c.peer_ip) as peer_count, "
              "(select count(distinct peer_ip) from connections) as ptot, "
              "(select count(*) from connections) as tot "
-             "from exceptions as e, urls as u, connections as c where c.url_id "
-             "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, "
+             "from exceptions as e JOIN connections as c ON c.id_exception = e.exception_id "
+             "JOIN urls as u ON c.url_id = u.url_id "
+             "GROUP BY u.url, "
              "e.zone, e.rule_id HAVING (ct) > ((select count(*) from connections)/1000)"),
             # select on zone+rule_id (mostly because of ARGS|NAME containing ie '[foo]')
-            ("select  count(*) as ct, e.rule_id, e.zone, '' as var_name, '' as url, count(distinct c.peer_ip) as peer_count, "
+            ("select count(*) as ct, e.rule_id, e.zone, '' as var_name, '' as url, count(distinct c.peer_ip) as peer_count, "
              "(select count(distinct peer_ip) from connections) as ptot, "
              "(select count(*) from connections) as tot from exceptions as e, "
              "connections as c where c.id_exception = "
              "e.exception_id GROUP BY e.zone, e.rule_id HAVING (ct) > "
              "((select count(*) from connections)/1000);"),
             # select on zone+url+var_name (unpredictable id)
-            ("select  count(*) as ct, 0 as rule_id, e.zone, e.var_name, u.url, count(distinct c.peer_ip) as peer_count, "
+            ("select count(*) as ct, 0 as rule_id, e.zone, e.var_name, u.url, count(distinct c.peer_ip) as peer_count, "
              "(select count(distinct peer_ip) from connections) as ptot, "
              "(select count(*) from connections) as tot "
-             "from exceptions as e, urls as u, connections as c where c.url_id "
-             "= u.url_id and c.id_exception = e.exception_id GROUP BY u.url, "
+             "from exceptions as e JOIN connections as c ON c.id_exception = e.exception_id"
+             " JOIN urls as u ON c.url_id = u.url_id"
+             " GROUP BY u.url, "
              "e.zone, e.var_name HAVING (ct) > tot/1000")
             ]
-        for req in opti_select_DESC:            
+        for req in opti_select_DESC:
             res = self.wrapper.execute(req)
 #            res = self.wrapper.getResults()
             for r in res:

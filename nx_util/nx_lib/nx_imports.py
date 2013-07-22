@@ -82,6 +82,12 @@ class NxImportFilter():
             if w == "lastmonth":
                 mnow = time.gmtime(time.time() - (60*60*24*30))
                 w = time.strftime("%Y-%m-%d %H:%M:%S", mnow)
+            if w == "lastday":
+                mnow = time.gmtime(time.time() - (60*60*24))
+                w = time.strftime("%Y-%m-%d %H:%M:%S", mnow)
+            if w == "lasthour":
+                mnow = time.gmtime(time.time() - (60*60))
+                w = time.strftime("%Y-%m-%d %H:%M:%S", mnow)
         res.append(w)
         return 3
 

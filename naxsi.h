@@ -32,7 +32,7 @@
 #ifndef __FOO_H__
 #define __FOO_H__
 
-#define NAXSI_VERSION "0.50"
+#define NAXSI_VERSION "0.51-1"
 
 #include <nginx.h>
 #include <ngx_config.h>
@@ -98,7 +98,10 @@ typedef struct
   /* match on URL [name] */
   ngx_flag_t		specific_url:1;
   ngx_str_t		target;
+  /* to be used for regexed match zones */
+  ngx_regex_compile_t	*target_rx;
   ngx_uint_t		hash;
+  
 } ngx_http_custom_rule_location_t;
 
 
@@ -172,8 +175,12 @@ typedef struct
 {
   ngx_str_t		*str; // string
   ngx_regex_compile_t   *rx;  // or regex
+  ngx_int_t		rx_mz;
+  /* store index of url & name custom location */
+  //ngx_int_t		name_idx, url_idx;
   ngx_int_t		transform; //transform rule to apply, as flags.
   /* ~~~~~ match zones ~~~~~~ */
+  ngx_int_t			zone;
   /* match in full body (POST DATA) */
   ngx_flag_t		body:1;
   ngx_flag_t		body_var:1;
@@ -295,6 +302,8 @@ typedef struct
   ngx_array_t   *whitelist_rules;
   /* raw array of transformed whitelists */
   ngx_array_t	*tmp_wlr;
+  /* raw array of regex-mz whitelists */
+  ngx_array_t   *rxmz_wlr;
   /* hash table of whitelisted URL rules */
   ngx_hash_t	*wlr_url_hash;
   /* hash table of whitelisted ARGS rules */

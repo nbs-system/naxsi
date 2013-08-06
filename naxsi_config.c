@@ -186,16 +186,16 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 
   if (!rule->br)
     return (NGX_CONF_ERROR);
-/* #ifdef dummy_zone_debug */
-/*   ngx_conf_log_error(NGX_LOG_EMERG, r, 0, "FEU:%V", tmp); */
-/* #endif   */
+  /* #ifdef dummy_zone_debug */
+  /*   ngx_conf_log_error(NGX_LOG_EMERG, r, 0, "FEU:%V", tmp); */
+  /* #endif   */
 
   
   tmp_ptr = (char *) tmp->data+strlen(MATCH_ZONE_T);
   while (*tmp_ptr) {
-/* #ifdef dummy_zone_debug  */
-/*     ngx_conf_log_error(NGX_LOG_EMERG, r, 0, "FEU:%s", tmp_ptr);  */
-/* #endif  */
+    /* #ifdef dummy_zone_debug  */
+    /*     ngx_conf_log_error(NGX_LOG_EMERG, r, 0, "FEU:%s", tmp_ptr);  */
+    /* #endif  */
     
     if (tmp_ptr[0] == '|')
       tmp_ptr++;
@@ -284,7 +284,45 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 		    tmp_ptr += strlen(MZ_SPECIFIC_URL_T);
 		  }
 		  else 
-		    return (NGX_CONF_ERROR);
+		    /* add support for regex-style match zones. 
+		    ** this whole function should be rewritten as it's getting
+		    ** messy as hell
+		    */
+#define MZ_GET_VAR_X "$ARGS_VAR_X:"
+#define MZ_HEADER_VAR_X "$HEADERS_VAR_X:"
+#define MZ_POST_VAR_X "$BODY_VAR_X:"
+#define MZ_SPECIFIC_URL_X "$URL_X:"
+		    if (!strncmp(tmp_ptr, MZ_GET_VAR_X, strlen(MZ_GET_VAR_X))) {
+		      custom_rule->args_var = 1;
+		      rule->br->args_var = 1;
+		      rule->br->rx_mz = 1;
+		      tmp_ptr += strlen(MZ_GET_VAR_X);
+		    }
+		    else if (!strncmp(tmp_ptr, MZ_POST_VAR_X, 
+				      strlen(MZ_POST_VAR_X))) {
+		      rule->br->rx_mz = 1;
+		      custom_rule->body_var = 1;
+		      rule->br->body_var = 1;
+		      tmp_ptr += strlen(MZ_POST_VAR_X);
+		    }
+		    else if (!strncmp(tmp_ptr, MZ_HEADER_VAR_X, 
+				      strlen(MZ_HEADER_VAR_X))) {
+		      custom_rule->headers_var = 1;
+		      rule->br->headers_var = 1;
+		      rule->br->rx_mz = 1;
+		      tmp_ptr += strlen(MZ_HEADER_VAR_X);
+		    }
+		    else if (!strncmp(tmp_ptr, MZ_SPECIFIC_URL_X, 
+				      strlen(MZ_SPECIFIC_URL_X))) { 
+		      custom_rule->specific_url = 1;
+		      rule->br->rx_mz = 1;
+		      tmp_ptr += strlen(MZ_SPECIFIC_URL_X);
+		    }
+		    else 
+		      return (NGX_CONF_ERROR);
+		  
+		  /*		  else 
+				  return (NGX_CONF_ERROR);*/
 		  tmp_end = strchr((const char *) tmp_ptr, '|');
 		  if (!tmp_end) 
 		    tmp_end = tmp_ptr + strlen(tmp_ptr);

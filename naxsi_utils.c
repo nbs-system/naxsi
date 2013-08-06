@@ -483,7 +483,7 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
 #ifdef whitelist_heavy_debug
   ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 		     "nb items : body:%d headers:%d uri:%d get:%d",
-		     body_sz, headers_sz, uri_sz, get_sz);
+	     body_sz, headers_sz, uri_sz, get_sz);
 #endif
 
   if (get_sz)
@@ -612,6 +612,7 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
 ** as well as rules targetting the same argument name / zone.
 */
 
+//#define rx_matchzone_debug
 //#define whitelist_heavy_debug
 ngx_int_t
 ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc, 
@@ -673,12 +674,66 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
 	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelists has no target uri.");
 	return (NGX_ERROR);
       }
+    curr_r->br->zone = zone;
     /*
-      ngx_http_whitelist_rule_t *
-      ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
-      ngx_http_rule_t *curr, int zone, int uri_idx,
-      int name_idx, char **fullname) {
+    ** Handle regular-expression-matchzone rules :
+    ** Store them in a separate linked list, parsed
+    ** at runtime.
+    */
+    if (curr_r->br->rx_mz == 1) {
+#ifdef rx_matchzone_debug
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Found WL is RX mz");
+      if (name_idx != -1)
+	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist target name : %V", 
+			   &(custloc_array(curr_r->br->custom_locations->elts)[name_idx].target));
+      else
+	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist has no target name.");
+      if (uri_idx != -1)
+	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist target uri : %V", 
+			   &(custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target));
+      else
+	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelists has no target uri.");
+#endif
+      if (!dlc->rxmz_wlr) {
+	dlc->rxmz_wlr = ngx_array_create(cf->pool, 1,
+					 sizeof(ngx_http_rule_t *));
+	if (!dlc->rxmz_wlr) return (NGX_ERROR);
+      }
+      ngx_http_rule_t **rptr;
+      ngx_regex_compile_t *rgc;
+      if (name_idx != -1) {
+	custloc_array(curr_r->br->custom_locations->elts)[name_idx].target_rx = 
+	  ngx_pcalloc(cf->pool, sizeof(ngx_regex_compile_t));
+	rgc = custloc_array(curr_r->br->custom_locations->elts)[name_idx].target_rx;
+	rgc->options = PCRE_CASELESS|PCRE_MULTILINE;
+	rgc->pattern = custloc_array(curr_r->br->custom_locations->elts)[name_idx].target;
+	rgc->pool = cf->pool;
+	rgc->err.len = 0;
+	rgc->err.data = NULL;
+	//custloc_array(curr_r->br->custom_locations->elts)[name_idx].target;
+	if (ngx_regex_compile(rgc) != NGX_OK)
+	  return (NGX_ERROR);
+      }
+      if (uri_idx != -1) {
+	custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target_rx = 
+	  ngx_pcalloc(cf->pool, sizeof(ngx_regex_compile_t));
+	rgc = custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target_rx;
+	rgc->options = PCRE_CASELESS|PCRE_MULTILINE;
+	rgc->pattern = custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target;
+	rgc->pool = cf->pool;
+	rgc->err.len = 0;
+	rgc->err.data = NULL;
+	//custloc_array(curr_r->br->custom_locations->elts)[name_idx].target;
+	if (ngx_regex_compile(rgc) != NGX_OK)
+	  return (NGX_ERROR);
+      }
       
+      rptr = ngx_array_push(dlc->rxmz_wlr);
+      *rptr = curr_r;
+      continue;
+    }
+    /*
+    ** Handle static match-zones for hashtables
     */
     father_wlr = ngx_http_wlr_find(cf, dlc, curr_r, zone, uri_idx, name_idx, (char **) &fullname);
     if (!father_wlr) {

@@ -980,6 +980,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 //#define whitelist_debug 
 //#define whitelist_light_debug
 /* #define whitelist_heavy_debug */
+//#define extensive_log_debug 1
 
 int
 ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx, 
@@ -1010,11 +1011,6 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
 #endif  
     return (0);
   }
-  //XX42
-#ifdef extensive_log_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		"Current extensive log value: %d", ctx->extensive_log);
-#endif
   if (ctx->extensive_log) {
     if (target_name)
       naxsi_log_offending(value, name, req, r, zone);

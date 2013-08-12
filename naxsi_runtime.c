@@ -764,13 +764,43 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 #define MAX_LINE_SIZE (NGX_MAX_ERROR_STR - 100)
 #define MAX_SEED_LEN 17 /*seed_start=10000*/
 
+
+ngx_str_t  *ngx_http_append_log(ngx_http_request_t *r, ngx_array_t *ostr, 
+				ngx_str_t *fragment, u_int *offset)
+{
+  u_int seed, sub;
+  static u_int prev_seed = 0;
+
+  /* 
+  ** avoid random collisions, as we % 1000 them,
+  ** this is very likely to happen !
+  */
+  
+  while ((seed = random() % 1000) == prev_seed)
+    ;
+  sub = snprintf((char *)(fragment->data+*offset), MAX_SEED_LEN, "&seed_start=%d", seed);
+  fragment->len = *offset+sub;
+  fragment = ngx_array_push(ostr);
+  if (!fragment)
+    return (NULL);
+  fragment->data = ngx_pcalloc(r->pool, MAX_LINE_SIZE+1);
+  if (!fragment->data)
+    return (NULL);
+  sub = snprintf((char *)fragment->data, MAX_SEED_LEN, "seed_end=%d", seed);
+  prev_seed = seed;
+  *offset = sub;
+  return (fragment);
+}
+
 ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 			  ngx_http_request_t *r,
 			  ngx_array_t *ostr, ngx_str_t **ret_uri)
 {
-  u_int		sz_left, sub, psub, offset = 0, seed, prev_seed = 0, i;
+  u_int		sz_left, sub, offset = 0, i;
   ngx_str_t	*fragment, *tmp_uri;
-  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&vers=%.*s&total_processed=%zu&total_blocked=%zu";
+  ngx_http_special_score_t	*sc;
+  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&vers=%.*s&total_processed=%zu&total_blocked=%zu&block=%zu";
+  const char	*fmt_score = "&cscore%d=%.*s&score%d=%zu";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_http_matched_rule_t	*mr;
@@ -806,10 +836,30 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 		 r->connection->addr_text.data,
 		 r->headers_in.server.len, r->headers_in.server.data,
 		 tmp_uri->len, tmp_uri->data, ctx->learning ? 1 : 0, strlen(NAXSI_VERSION),
-		 NAXSI_VERSION, cf->request_processed, cf->request_blocked);
+		 NAXSI_VERSION, cf->request_processed, cf->request_blocked, ctx->block ? 1 : 0);
   sz_left -= sub;
   offset += sub;
-  
+  /*
+  ** append scores
+  */
+  sc = ctx->special_scores->elts;
+  for (i = 0; i < ctx->special_scores->nelts; i++) {
+    if (sc[i].sc_score != 0) {
+      sub = snprintf(0, 0, fmt_score, i, sc[i].sc_tag->len, sc[i].sc_tag->data, i, sc[i].sc_score);
+      if (sub >= sz_left)
+	{
+	  fragment = ngx_http_append_log(r, ostr, fragment, &offset);
+	  if (!fragment) return (NGX_ERROR);
+	  sz_left = MAX_LINE_SIZE - MAX_SEED_LEN - offset - 1;
+	}
+      sub = snprintf((char *) (fragment->data+offset), sz_left, fmt_score, i, sc[i].sc_tag->len, sc[i].sc_tag->data, i, sc[i].sc_score);
+      offset += sub;
+      sz_left -= sub;
+    } 
+  }
+  /*
+  ** and matched zone/id/name
+  */
   if (ctx->matched) {
     mr = ctx->matched->elts;
     sub = 0;
@@ -838,42 +888,16 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
       */
       if (sub >= sz_left)
 	{
-	  psub = sub;
-	  /* 
-	  ** avoid random collisions, as we % 1000 them,
-	  ** this is very likely to happen !
-	  */
-	  while ((seed = random() % 1000) == prev_seed)
-	    ;
-	  sub = snprintf((char *)fragment->data+offset, MAX_SEED_LEN, "&seed_start=%d", seed);
-	  fragment->len = offset+sub;
-	  fragment = ngx_array_push(ostr);
-	  if (!fragment)
-	    return (NGX_ERROR);
-	  fragment->data = ngx_pcalloc(r->pool, MAX_LINE_SIZE+1);
-	  if (!fragment->data)
-	    return (NGX_ERROR);
-	  sub = snprintf((char *)fragment->data, MAX_SEED_LEN, "seed_end=%d", seed);
-	  prev_seed = seed;
-	  sz_left = MAX_LINE_SIZE - MAX_SEED_LEN - sub - 1;
-	  offset = sub;
-	  /* if it did not fit because the event itself is too big,
-	     truncate it, and append to the new fragment */
-	  if (psub > MAX_LINE_SIZE - MAX_SEED_LEN - 1) {
-	    sub = snprintf((char *)fragment->data+offset, sz_left, 
-			   fmt_rm, i, tmp_zone, i, mr[i].rule->rule_id, i, 
-			   mr[i].name->len, mr[i].name->data);
-	    offset += (sz_left - 1);
-	    sz_left = 0;
-	    i += 1;
-	  }
-	  continue;
+	  fragment = ngx_http_append_log(r, ostr, fragment, &offset);
+	  if (!fragment) return (NGX_ERROR);
+	  sz_left = MAX_LINE_SIZE - MAX_SEED_LEN - offset - 1;
 	}
+      
       sub = snprintf((char *)fragment->data+offset, sz_left, 
 		     fmt_rm, i, tmp_zone, i, mr[i].rule->rule_id, i, 
 		     mr[i].name->len, mr[i].name->data);
-      sz_left -= sub;
       offset += sub;
+      sz_left -= sub;
       i += 1;
     } while(i < ctx->matched->nelts);
   }
@@ -898,6 +922,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   if (ngx_http_nx_log(ctx, r, ostr, &tmp_uri) != NGX_HTTP_OK)
     return (NGX_ERROR);
   for (i = 0; i < ostr->nelts; i++) {
+
     ngx_log_error(NGX_LOG_ERR, r->connection->log,
 		  0, "NAXSI_FMT: %s", ((ngx_str_t *)ostr->elts)[i].data);
   }
@@ -916,7 +941,12 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   */
   if (ctx->log && !ctx->block)
     return (NGX_DECLINED);
-  
+  /*
+  ** If we are in learning without post_action,
+  ** stop here as well.
+  */
+  if (ctx->learning && !ctx->post_action)
+    return (NGX_DECLINED);
   /* 
   ** add headers with original url 
   ** and arguments, as well as 

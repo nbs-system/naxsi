@@ -799,7 +799,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   u_int		sz_left, sub, offset = 0, i;
   ngx_str_t	*fragment, *tmp_uri;
   ngx_http_special_score_t	*sc;
-  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&vers=%.*s&total_processed=%zu&total_blocked=%zu&block=%zu";
+  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&vers=%.*s&total_processed=%zu&total_blocked=%zu&block=%d";
   const char	*fmt_score = "&cscore%d=%.*s&score%d=%zu";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
   ngx_http_dummy_loc_conf_t	*cf;
@@ -842,8 +842,9 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   /*
   ** append scores
   */
-  sc = ctx->special_scores->elts;
-  for (i = 0; i < ctx->special_scores->nelts; i++) {
+  
+  for (i = 0; ctx->special_scores && i < ctx->special_scores->nelts; i++) {
+    sc = ctx->special_scores->elts;
     if (sc[i].sc_score != 0) {
       sub = snprintf(0, 0, fmt_score, i, sc[i].sc_tag->len, sc[i].sc_tag->data, i, sc[i].sc_score);
       if (sub >= sz_left)

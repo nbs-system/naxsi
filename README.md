@@ -1,6 +1,7 @@
-## We need your help
-Please perform this little feedback survey, 2 minutes of your time, great help for us :
-[https://docs.google.com/spreadsheet/viewform?formkey=dG9UWDFuTEhiWWt4UF9fZEtwWFVJUlE6MQ]
+### We need your help
+
+[Please fill this little feedback survey](https://docs.google.com/spreadsheet/viewform?formkey=dG9UWDFuTEhiWWt4UF9fZEtwWFVJUlE6MQ), 2 minutes of your time, great help for us !
+
 
 ## What is Naxsi?
 
@@ -40,18 +41,13 @@ See the [wiki](https://github.com/nbs-system/naxsi/wiki)
 
 #### Performance reviews
 
-  * [http://code.google.com/p/naxsi/wiki/NaxsiVsAppScan See how Naxsi performs against a highly vulnerable web site]
-  * [http://code.google.com/p/naxsi/wiki/Naxsi_Vs_ObfuscatedAttackPatterns See how Naxsi performs vs Obfuscated|Complex SQLi patterns]
+  * [See how Naxsi performs against a highly vulnerable web site](http://code.google.com/p/naxsi/wiki/NaxsiVsAppScan) 
+  * [See how Naxsi performs vs Obfuscated|Complex SQLi patterns](https://github.com/nbs-system/naxsi/wiki/naxsivsobfuscated)
 
 ### We need you !
 
  * Performance, stability testing: we are looking for independent reviews, benchmarks, and related feedback
  * Security testing: we prepared a running [http://code.google.com/p/naxsi/wiki/OnlyTrustWhatYouCanTest testing environment] for you to play with. Go, play, (try to) bypass!
  * Post feature requests, documentation improvements
- * Bug reports: [http://code.google.com/p/naxsi/wiki/KnownBugs Naxsi is young, there are known bugs]
+ * Bug reports: [Naxsi is young, there are known bugs](http://code.google.com/p/naxsi/wiki/KnownBugs)
 
-### Documentation
-
- * [/wiki/Home.md Howto : basic Naxsi setup]
- * [http://code.google.com/p/naxsi/wiki/LearningMode Naxsi LearningMode explained]
- * [http://code.google.com/p/naxsi/wiki/NaxsiInternals Developers documentation: Naxsi internals, callgraphs, etc.]

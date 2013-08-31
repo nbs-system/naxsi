@@ -31,7 +31,14 @@ WAF, Naxsi filters Get & Posts resquests and is OpenSource and free to use
 for your company or personal own use (ie: as long as you don't resell a
 service or product based on Naxsi to customers).
 
-### Performance reviews
+### Getting started
+
+#### Wiki
+
+See the [wiki](https://github.com/nbs-system/naxsi/wiki)
+
+
+#### Performance reviews
 
   * [http://code.google.com/p/naxsi/wiki/NaxsiVsAppScan See how Naxsi performs against a highly vulnerable web site]
   * [http://code.google.com/p/naxsi/wiki/Naxsi_Vs_ObfuscatedAttackPatterns See how Naxsi performs vs Obfuscated|Complex SQLi patterns]

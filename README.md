@@ -1,8 +1,8 @@
-=We need your help=
+## We need your help
 Please perform this little feedback survey, 2 minutes of your time, great help for us :
 [https://docs.google.com/spreadsheet/viewform?formkey=dG9UWDFuTEhiWWt4UF9fZEtwWFVJUlE6MQ]
 
-=What is Naxsi?=
+## What is Naxsi?
 
 NAXSI means Nginx Anti Xss & Sql Injection. 
 
@@ -22,7 +22,7 @@ rules regarding website's behaviour.
 In short, Naxsi behaves like a DROP-by-default firewall, the only job needed
 is to add required ACCEPT rules for the target website to work properly.
 
-=Why it is different?=
+## Why it is different?
 
 On the contrary of most Web Application Firewall, Naxsi doesn't rely on a
 signature base, like an antivirus, and thus cannot be circumvented by an
@@ -31,20 +31,20 @@ WAF, Naxsi filters Get & Posts resquests and is OpenSource and free to use
 for your company or personal own use (ie: as long as you don't resell a
 service or product based on Naxsi to customers).
 
-=Performance reviews=
+### Performance reviews
 
-* [http://code.google.com/p/naxsi/wiki/NaxsiVsAppScan See how Naxsi performs against a highly vulnerable web site]
-* [http://code.google.com/p/naxsi/wiki/Naxsi_Vs_ObfuscatedAttackPatterns See how Naxsi performs vs Obfuscated|Complex SQLi patterns]
+  * [http://code.google.com/p/naxsi/wiki/NaxsiVsAppScan See how Naxsi performs against a highly vulnerable web site]
+  * [http://code.google.com/p/naxsi/wiki/Naxsi_Vs_ObfuscatedAttackPatterns See how Naxsi performs vs Obfuscated|Complex SQLi patterns]
 
-=We need you !=
+### We need you !
 
  * Performance, stability testing: we are looking for independent reviews, benchmarks, and related feedback
  * Security testing: we prepared a running [http://code.google.com/p/naxsi/wiki/OnlyTrustWhatYouCanTest testing environment] for you to play with. Go, play, (try to) bypass!
  * Post feature requests, documentation improvements
  * Bug reports: [http://code.google.com/p/naxsi/wiki/KnownBugs Naxsi is young, there are known bugs]
 
-=Documentation=
+### Documentation
 
- * [http://code.google.com/p/naxsi/wiki/Howto Howto : basic Naxsi setup]
+ * [/wiki/Home.md Howto : basic Naxsi setup]
  * [http://code.google.com/p/naxsi/wiki/LearningMode Naxsi LearningMode explained]
  * [http://code.google.com/p/naxsi/wiki/NaxsiInternals Developers documentation: Naxsi internals, callgraphs, etc.]

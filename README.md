@@ -47,7 +47,7 @@ See the [wiki](https://github.com/nbs-system/naxsi/wiki)
 ### We need you !
 
  * Performance, stability testing: we are looking for independent reviews, benchmarks, and related feedback
- * Security testing: we prepared a running [http://code.google.com/p/naxsi/wiki/OnlyTrustWhatYouCanTest testing environment] for you to play with. Go, play, (try to) bypass!
+ * Security testing: we prepared a running [testing environment](http://github.com/nbs-system/naxsi/wiki/OnlyTrustWhatYouCanTest) for you to play with. Go, play, (try to) bypass!
  * Post feature requests, documentation improvements
  * Bug reports: [Naxsi is young, there are known bugs](https://github.com/nbs-system/naxsi/wiki/KnownBugs)
 

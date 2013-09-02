@@ -31,7 +31,7 @@
 
 #include "naxsi.h"
 
-#define naxsi_json_debug 1
+//#define naxsi_json_debug 1
 
 ngx_http_rule_t nx_int__invalid_json = {/*type*/ 0, /*whitelist flag*/ 0, 
 					/*wl_id ptr*/ NULL, /*rule_id*/ 15,

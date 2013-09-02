@@ -265,7 +265,7 @@ location / {
 	 CheckRule "$XSS >= 8" BLOCK;
   	 root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-	 BasicRule wl:1999 "mz:$ARGS_VAR:/bla";
+	 BasicRule wl:1999 "mz:$ARGS_VAR:bla";
 	 BasicRule wl:1998 "mz:$URL:/bla|ARGS";
 }	 
 location /RequestDenied {

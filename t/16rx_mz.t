@@ -505,3 +505,30 @@ location /RequestDenied {
 --- request
 GET /?foo_1999_inject=x
 --- error_code: 412
+
+=== RXWL TEST 6.0: case sensitiveness
+--- user_files
+>>> foo
+eh yo
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:abcd" "msg:foobar test pattern #1" "mz:ARGS|URL" "s:$SQL:42" id:1999;
+--- config
+location / {
+         #LearningMode;
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+         BasicRule wl:1999 "mz:$ARGS_VAR_X:^foo_[0-9]+_$";
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /?foo_1999_=ABCD
+--- error_code: 200

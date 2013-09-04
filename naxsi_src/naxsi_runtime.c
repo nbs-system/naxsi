@@ -1285,7 +1285,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 /*
 ** check variable + name against a set of rules, checking against 'custom' location rules too.
 */
-#define basestr_ruleset_debug
+//#define basestr_ruleset_debug
 
 int 
 ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
@@ -1432,7 +1432,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 ** [XXX] : this function sucks ! I don't parse bigger-than-body-size posts that 
 **	   are partially stored in files, TODO ;)
 */
-#define post_heavy_debug
+//#define post_heavy_debug
 
 
 /*

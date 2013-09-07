@@ -292,11 +292,12 @@ ngx_http_wlr_merge(ngx_conf_t *cf, ngx_http_whitelist_rule_t *father_wl,
       if (!father_wl->ids)
 	return (NGX_ERROR);
     }
-  for (i = 0; curr->wl_id[i] >= 0 ; i++) {
+  for (i = 0; i < curr->wlid_array->nelts; i++) {
     tmp_ptr = ngx_array_push(father_wl->ids);
     if (!tmp_ptr)
       return (NGX_ERROR);
-    *tmp_ptr = curr->wl_id[i];
+    *tmp_ptr = ((ngx_int_t *)curr->wlid_array->elts)[i];
+    //*tmp_ptr = curr->wlid_array->elts[i];
   }
   return (NGX_OK);
 }
@@ -838,4 +839,32 @@ void naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *re
   if (tmp_uri.len > 0)
     ngx_pfree(req->pool, tmp_uri.data);
   
+}
+
+
+/*
+** Used to check matched rule ID against wl IDs
+** Returns 1 if rule is whitelisted, 0 else
+*/
+int nx_check_ids(ngx_int_t match_id, ngx_array_t *wl_ids) {
+  
+  int negative=0;
+  unsigned int i;
+  
+  for (i = 0; i < wl_ids->nelts; i++) {
+    if ( ((ngx_int_t *)wl_ids->elts)[i] == match_id)
+      return (1);
+    if ( ((ngx_int_t *)wl_ids->elts)[i] == 0)
+      return (1);
+    /* manage negative whitelists, except for internal rules */
+    if ( ((ngx_int_t *)wl_ids->elts)[i] < 0 && match_id >= 1000) {
+      negative = 1;
+      /* negative wl excludes this one.*/
+      if (match_id == -((ngx_int_t *)wl_ids->elts)[i]) {
+	return (0);
+      }
+    }
+  }
+  if (negative == 1) return (1);
+  return (0);
 }

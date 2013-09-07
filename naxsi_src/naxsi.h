@@ -255,7 +255,8 @@ typedef struct
   ngx_int_t			type;
   // simply put a flag if it's a wlr, wl_id array will be used to store the whitelisted IDs
   ngx_flag_t			whitelist:1;
-  ngx_int_t			*wl_id;
+  //ngx_int_t			*wl_id;
+  ngx_array_t			*wlid_array;
   /* "common" data for all rules */
   ngx_int_t			rule_id;
   ngx_str_t			*log_msg; // a specific log message
@@ -465,7 +466,7 @@ ngx_int_t		ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 int			naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, 
 					   ngx_uint_t type);
 
-
+int			nx_check_ids(ngx_int_t match_id, ngx_array_t *wl_ids);
 int			naxsi_unescape(ngx_str_t *str);
 
 void			ngx_http_dummy_json_parse(ngx_http_request_ctx_t *ctx, 

@@ -275,8 +275,6 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
                                     enum MATCH_TYPE type,
                                     ngx_int_t target_name) 
 {
-  unsigned int i;
-  
   /* if something was found, check the rule ID */
   if (!b) return (0);
   /* FILE_EXT zone is just a hack, as it indeed targets BODY */
@@ -317,21 +315,8 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
 #endif
       return (0);
     }
-    
-    for (i = 0; i < b->ids->nelts; i++) {
-      if ( ((ngx_int_t *)b->ids->elts)[i] == r->rule_id ||
-           ((ngx_int_t *)b->ids->elts)[i] == 0) {
-#ifdef whitelist_debug
-        ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-                      "WhiteListing0 rule %d on var [%V] at uri [%V] (dst id:%d)",
-                      r->rule_id, name, &(req->uri), ((ngx_int_t *)b->ids->elts)[i]);
-#endif
-        return (1);
-      }
-    }
-    return (0);
-  }
-  
+    return (nx_check_ids(r->rule_id, b->ids));
+  }  
   if (type == URI_ONLY ||
       type == MIXED) {
     /* zone must match */
@@ -350,25 +335,7 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
       
       return (0);
     }
-    
-    for (i = 0; i < b->ids->nelts; i++) {
-#ifdef whitelist_heavy_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-                    "wl : %d, matched rule : %d", ((ngx_int_t *)b->ids->elts)[i], r->rule_id);
-#endif      
-      if ( ((ngx_int_t *)b->ids->elts)[i] == r->rule_id || 
-           ((ngx_int_t *)b->ids->elts)[i] == 0) { 
-#ifdef whitelist_debug
-        ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-                      "WhiteListing1 rule %d/ wl[%d] = %d (wl had %d wl ids) on var [%V] at uri [%V] (zone:%s)",
-                      r->rule_id, i, ((ngx_int_t *)b->ids->elts)[i], b->ids->nelts, name, &(req->uri), 
-                      zone == HEADERS ? "HEADERS" : zone == URL ? "URL" : zone == BODY ? "BODY" :
-                      zone == ARGS ? "ARGS" : "UNKNOWN!!!!");
-#endif
-        return (1);
-      }
-    }
-    return (0);
+    return (nx_check_ids(r->rule_id, b->ids));
   }
   return (0);
 }
@@ -442,10 +409,6 @@ ngx_http_dummy_pcre_wrapper(ngx_regex_compile_t *rx, unsigned char *str, unsigne
 }
 
 
-/*
-** XXX TO BE FINISHED
-**
-*/
 int
 ngx_http_dummy_is_rule_whitelisted_rx(ngx_http_request_t *req, 
 				      ngx_http_dummy_loc_conf_t *cf, 
@@ -576,7 +539,7 @@ ngx_http_dummy_is_rule_whitelisted_rx(ngx_http_request_t *req,
 #ifdef wlrx_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "wut, rule whitelisted by rx.");
 #endif
-      return (1);
+      return (nx_check_ids(r->rule_id, p->wlid_array));
     }
     else {
 #ifdef wlrx_debug
@@ -588,6 +551,8 @@ ngx_http_dummy_is_rule_whitelisted_rx(ngx_http_request_t *req,
   return (0);
 }
 
+#define whitelist_debug
+
 int	
 ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req, 
 				     ngx_http_dummy_loc_conf_t *cf, 
@@ -597,7 +562,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 {
   ngx_int_t			k;
   ngx_http_whitelist_rule_t	*b = NULL;
-  unsigned int		i, z;
+  unsigned int		i;
   ngx_http_rule_t	**dr;
   ngx_str_t tmp_hashname;
   ngx_str_t nullname = ngx_null_string;
@@ -617,40 +582,32 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   if (cf->disabled_rules) {
     dr = cf->disabled_rules->elts;
     for (i = 0; i < cf->disabled_rules->nelts; i++) {
-      for (z = 0; dr[i]->wl_id[z] >= 0; z++) {
-	/* if it's the same ID or that the WL id is 0 (which means ALL RULES), it's whitelisted ! */
-	/* TODO : test case for WL on rule_id 0 */
-	if (dr[i]->wl_id[z] == r->rule_id || dr[i]->wl_id[z] == 0) {
-	  /* matched in args zone and whitelisted in full args zone */
-	  if (zone == ARGS && dr[i]->br && dr[i]->br->args) {
-	    if (dr[i]->br->target_name && target_name)
-	      return (1);
-	    if (!dr[i]->br->target_name && !target_name)
-	      return (1);
-	  }
-	  /* matched in headers zone and whitelisted in full headers zone */
-	  else if (zone == HEADERS && dr[i]->br && dr[i]->br->headers) {
-	    if (dr[i]->br->target_name && target_name)
-	      return (1);
-	    if (!dr[i]->br->target_name && !target_name)
-	      return (1);
-	  }
-	  else if (zone == BODY && dr[i]->br && dr[i]->br->body) {
-	    if (dr[i]->br->target_name && target_name)
-	      return (1);
-	    if (!dr[i]->br->target_name && !target_name)
-	      return (1);
-	  }
-	  else if (zone == FILE_EXT && dr[i]->br && dr[i]->br->file_ext) {
-	    if (dr[i]->br->target_name && target_name)
-	      return (1);
-	    if (!dr[i]->br->target_name && !target_name)
-	      return (1);
-	  }
-	  else if (zone == URL && dr[i]->br && dr[i]->br->url) return (1);
-	  /* this one, with no match zone at all, means the rule is purely disabled */
-	  else if (dr[i]->br && !(dr[i]->br->args ||  dr[i]->br->headers ||
-				  dr[i]->br->body ||  dr[i]->br->url)) return (1);
+      
+      /* Is rule disabled ? */
+      if (nx_check_ids(r->rule_id, dr[i]->wlid_array)) {
+
+#ifdef whitelist_debug
+	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled somewhere", r->rule_id);
+#endif	
+	if (!dr[i]->br || dr[i]->br->target_name != target_name)
+	  continue;
+	
+	/* If rule target nothing, it's whitelisted everywhere */
+	if (!(dr[i]->br->args ||  dr[i]->br->headers || 
+	      dr[i]->br->body ||  dr[i]->br->url)) return (1); 
+	switch (zone) {
+	case ARGS:
+	  if (dr[i]->br->args) return (1);
+	case HEADERS:
+	  if (dr[i]->br->headers) return (1);
+	case BODY:
+	  if (dr[i]->br->body) return (1);
+	case FILE_EXT:
+	  if (dr[i]->br->file_ext) return (1);
+	case URL:
+	  if (dr[i]->br->url) return (1);
+	default:
+	  break;
 	}
       }
     }
@@ -1146,7 +1103,6 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
       }
     }
   }
-  //else {
   /* else, apply normal score */
   ctx->score += (r->score * nb_match);
   if (r->block)
@@ -1155,9 +1111,6 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
     ctx->allow = 1;
   if (r->log)
     ctx->log = 1;
-  
-  //}
-  
   ngx_http_dummy_update_current_ctx_status(ctx, cf, req);
   return (1);
 }
@@ -2076,20 +2029,6 @@ ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx,
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		"XX-custom check rules");
 #endif
-/*   if (ctx->weird_request) { */
-/* #ifdef custom_score_debug */
-/*     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
-/* 		  "XX-blocking, weird_request flag set"); */
-/* #endif */
-/*     ctx->block = 1; */
-/*   } */
-/*   if (ctx->big_request) { */
-/* #ifdef custom_score_debug */
-/*     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
-/* 		  "XX-blocking unexpected big request"); */
-/* #endif */
-/*     ctx->block = 1; */
-/*   } */
   /*cr, sc, cf, ctx*/
   if (cf->check_rules && ctx->special_scores) {
 #ifdef custom_score_debug

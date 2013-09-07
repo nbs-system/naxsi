@@ -402,7 +402,7 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	return (NGX_CONF_ERROR);
       }
     /* push in whitelist rules, as it have a whitelist ID array */
-    if (rule.wl_id) {
+    if (rule.wlid_array && rule.wlid_array->nelts > 0) {
 #ifdef readconf_debug
       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 			 "pushing rule %d in whitelist rules", 
@@ -911,9 +911,6 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   
   ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
-
-  /* ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, */
-  /* 		"naxsi_entry_point"); */
   
   if (ctx && ctx->over)
     return (NGX_DECLINED);

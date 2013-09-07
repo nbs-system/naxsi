@@ -353,12 +353,6 @@ void	*
 dummy_id(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 {
   rule->rule_id = atoi((const char *) tmp->data+strlen(ID_T));
-  if (rule->rule_id < 0) {
-    ngx_conf_log_error(NGX_LOG_EMERG, r, 0, 
-		       "id: failed (%s), should be numeric only",
-		       tmp->data);
-    return (NGX_CONF_ERROR);
-  }
   return (NGX_CONF_OK);
 }
 
@@ -402,8 +396,9 @@ void	*
 dummy_whitelist(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 {
   
-  ngx_int_t	*wl;
+  ngx_array_t	*wl_ar;
   unsigned int	i, ct;
+  ngx_int_t	*id;
   ngx_str_t	str;
   
   str.data = tmp->data + strlen(WHITELIST_T);
@@ -411,27 +406,20 @@ dummy_whitelist(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   for (ct = 1, i = 0; i < str.len; i++)
     if (str.data[i] == ',')
       ct++;
-  wl = ngx_pcalloc(r->pool, sizeof(ngx_int_t) * (ct+1));
-  if (!wl)
+  wl_ar = ngx_array_create(r->pool, ct, sizeof(ngx_int_t));
+  if (!wl_ar)
     return (NGX_CONF_ERROR);
-  //as 0 means "all rules", memset to -1
-  memset(wl, -1, sizeof(ngx_int_t) * (ct+1));
 #ifdef whitelist_debug
   ngx_conf_log_error(NGX_LOG_EMERG, r, 0, "XX- allocated %d elems for WL", ct);
 #endif
   for (ct = 0, i = 0; i < str.len; i++) {
     if (i == 0 || str.data[i-1] == ',') {
-      wl[ct] = atoi((const char *)str.data+i);
-      //rule ID can't be negative
-      if (wl[ct] < 0)
-	return (NGX_CONF_ERROR);
-#ifdef whitelist_debug
-      ngx_conf_log_error(NGX_LOG_EMERG, r, 0, "XX-WL[%d]= %d (idx:%d,%s)", ct, wl[ct], i, str.data);
-#endif
-      ct++;
+      id = (ngx_int_t *) ngx_array_push(wl_ar);
+
+      *id = (ngx_int_t) atoi((const char *)str.data+i);
     }
   }
-  rule->wl_id = wl;
+  rule->wlid_array = wl_ar;
   return (NGX_CONF_OK);
 }
 

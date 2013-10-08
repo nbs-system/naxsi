@@ -551,7 +551,7 @@ ngx_http_dummy_is_rule_whitelisted_rx(ngx_http_request_t *req,
   return (0);
 }
 
-#define whitelist_debug
+//#define whitelist_debug
 
 int	
 ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req, 

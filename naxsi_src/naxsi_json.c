@@ -38,8 +38,7 @@ ngx_http_rule_t nx_int__invalid_json = {/*type*/ 0, /*whitelist flag*/ 0,
 					/*log_msg*/ NULL, /*score*/ 0, 
 					/*sscores*/ NULL,
 					/*sc_block*/ 1,  /*sc_allow*/ 0, 
-					/*block*/ 1,  /*allow*/ 0, /*log*/ 0,
-					/*lnk_to & from*/ 0, 0,
+					/*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
 					/*br ptrs*/ NULL};
 
 

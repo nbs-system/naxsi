@@ -86,6 +86,7 @@ dummy_score(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   rule->score = 0;
   rule->block = 0;
   rule->allow = 0;
+  rule->drop = 0;
   tmp_ptr = (char *) (tmp->data + strlen(SCORE_T));
 #ifdef score_debug 
   ngx_conf_log_error(NGX_LOG_EMERG, r, 0,
@@ -138,6 +139,10 @@ dummy_score(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
     else if (!strcasecmp(tmp_ptr, "BLOCK")) {
       rule->block = 1;
       tmp_ptr += 5;
+    }
+    else if (!strcasecmp(tmp_ptr, "DROP")) {
+      rule->drop = 1;
+      tmp_ptr += 4;
     }
     else if (!strcasecmp(tmp_ptr, "ALLOW")) {
       rule->allow = 1;

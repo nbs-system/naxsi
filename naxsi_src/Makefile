@@ -11,7 +11,7 @@ build:
 # run unit tests
 test:
 	export PATH="/tmp/nginx/objs/:"$(PATH) ; \
-	export PERL5LIB=/usr/local/share/perl/5.12.4/ ; \
+	export PERL5LIB=/usr/local/share/perl/5.14.2/ ; \
 	cd .. ; \
 	prove -r t/*.t
 

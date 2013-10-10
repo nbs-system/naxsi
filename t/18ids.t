@@ -226,3 +226,54 @@ location /RequestDenied {
 GET /?foo=a%00a
 --- error_code: 412
 
+
+=== ID TEST 3.0: Partial disabled whitelist
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:1999" "msg:foobar test pattern #1" "mz:ARGS|URL" "s:$SQL:42" id:1999;
+# MainRule "str:1998" "msg:foobar test pattern #1" "mz:ARGS" "s:$SQL:42" id:1998;
+# MainRule "str:1997" "msg:foobar test pattern #1" "mz:ARGS" "s:$SQL:42" id:1997;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 BasicRule wl:1999 "mz:ARGS";
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /?foo=a1999a
+--- error_code: 200
+
+=== ID TEST 3.1: Partial disabled whitelist (fail zone)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:1999" "msg:foobar test pattern #1" "mz:ARGS|URL" "s:$SQL:42" id:1999;
+# MainRule "str:1998" "msg:foobar test pattern #1" "mz:ARGS" "s:$SQL:42" id:1998;
+# MainRule "str:1997" "msg:foobar test pattern #1" "mz:ARGS" "s:$SQL:42" id:1997;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 BasicRule wl:1999 "mz:ARGS";
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /1999?foo=aa
+--- error_code: 412
+

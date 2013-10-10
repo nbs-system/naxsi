@@ -227,6 +227,7 @@ typedef struct
   ngx_int_t	sc_score;
   ngx_flag_t	block:1;
   ngx_flag_t	allow:1;
+  ngx_flag_t	drop:1;
   ngx_flag_t	log:1;
 } ngx_http_special_score_t;
 
@@ -242,6 +243,7 @@ typedef struct
   ngx_int_t	cmp;
   ngx_flag_t	block:1;
   ngx_flag_t	allow:1;
+  ngx_flag_t	drop:1;
   ngx_flag_t	log:1;
 } ngx_http_check_rule_t;
 
@@ -266,10 +268,8 @@ typedef struct
   // end of specific score tag stuff
   ngx_flag_t			block:1;
   ngx_flag_t			allow:1;
+  ngx_flag_t			drop:1;
   ngx_flag_t			log:1;
-  /* flag set if we're linked FROM or TO another rule  */
-  ngx_flag_t			lnk_to:1;
-  ngx_flag_t			lnk_from:1;
   /* pointers on specific rule stuff */
   ngx_http_basic_rule_t		*br;
 } ngx_http_rule_t;
@@ -365,6 +365,7 @@ typedef struct
   ngx_flag_t	log:1;
   ngx_flag_t	block:1;
   ngx_flag_t	allow:1;
+  ngx_flag_t	drop:1;
   /* state */
   ngx_flag_t	wait_for_body:1;
   ngx_flag_t	ready:1;

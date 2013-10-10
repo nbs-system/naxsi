@@ -642,6 +642,8 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     rule_c->allow = 1;
   else if (ngx_strstr(value[2].data, "LOG"))
     rule_c->log = 1;
+  else if (ngx_strstr(value[2].data, "DROP"))
+    rule_c->drop = 1;
   else {
     ngx_http_dummy_line_conf_error(cf, value);
     return (NGX_CONF_ERROR);
@@ -1100,12 +1102,12 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     if ((end = times(&tmsend)) == (clock_t)-1)
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : Failed to get time");
-    if (end - start > 0)
+    if (end - start > 10)
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		    "[MORE THAN 1MS] times : start:%l end:%l diff:%l",
+		    "[MORE THAN 10MS] times : start:%l end:%l diff:%l",
 		    start, end, (end-start));
     ctx->over = 1;
-    if (ctx->block) {
+    if (ctx->block || ctx->drop) {
       cf->request_blocked++;
       rc = ngx_http_output_forbidden_page(ctx, r);
       //nothing:      return (NGX_OK);

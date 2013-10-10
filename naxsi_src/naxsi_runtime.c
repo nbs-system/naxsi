@@ -52,8 +52,7 @@ ngx_http_rule_t nx_int__weird_request = {/*type*/ 0, /*whitelist flag*/ 0,
 						/*log_msg*/ NULL, /*score*/ 0, 
 						/*sscores*/ NULL,
 						/*sc_block*/ 0,  /*sc_allow*/ 0, 
-						/*block*/ 1,  /*allow*/ 0, /*log*/ 0,
-						/*lnk_to & from*/ 0, 0,
+						/*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
 						/*br ptrs*/ NULL};
 
 ngx_http_rule_t nx_int__uncommon_hex_encoding = {/*type*/ 0, /*whitelist flag*/ 0, 
@@ -61,26 +60,23 @@ ngx_http_rule_t nx_int__uncommon_hex_encoding = {/*type*/ 0, /*whitelist flag*/ 
 						 /*log_msg*/ NULL, /*score*/ 0, 
 						 /*sscores*/ NULL,
 						 /*sc_block*/ 1,  /*sc_allow*/ 0, 
-						 /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
-						 /*lnk_to & from*/ 0, 0,
+						 /*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
 						 /*br ptrs*/ NULL};
 
 ngx_http_rule_t nx_int__uncommon_content_type = {/*type*/ 0, /*whitelist flag*/ 0, 
-					   /*wl_id ptr*/ NULL, /*rule_id*/ 11,
-					   /*log_msg*/ NULL, /*score*/ 0, 
-					   /*sscores*/ NULL,
-					   /*sc_block*/ 1,  /*sc_allow*/ 0, 
-					   /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
-					   /*lnk_to & from*/ 0, 0,
-					   /*br ptrs*/ NULL};
+						 /*wl_id ptr*/ NULL, /*rule_id*/ 11,
+						 /*log_msg*/ NULL, /*score*/ 0, 
+						 /*sscores*/ NULL,
+						 /*sc_block*/ 1,  /*sc_allow*/ 0, 
+						 /*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
+						 /*br ptrs*/ NULL};
 
 ngx_http_rule_t nx_int__uncommon_url = {/*type*/ 0, /*whitelist flag*/ 0, 
 					/*wl_id ptr*/ NULL, /*rule_id*/ 12,
 					/*log_msg*/ NULL, /*score*/ 0, 
 					/*sscores*/ NULL,
 					/*sc_block*/ 1,  /*sc_allow*/ 0, 
-					/*block*/ 1,  /*allow*/ 0, /*log*/ 0,
-					/*lnk_to & from*/ 0, 0,
+					/*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
 					/*br ptrs*/ NULL};
 
 ngx_http_rule_t nx_int__uncommon_post_format = {/*type*/ 0, /*whitelist flag*/ 0, 
@@ -88,8 +84,7 @@ ngx_http_rule_t nx_int__uncommon_post_format = {/*type*/ 0, /*whitelist flag*/ 0
 						/*log_msg*/ NULL, /*score*/ 0, 
 						/*sscores*/ NULL,
 						/*sc_block*/ 1,  /*sc_allow*/ 0, 
-						/*block*/ 1,  /*allow*/ 0, /*log*/ 0,
-						/*lnk_to & from*/ 0, 0,
+						/*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
 						/*br ptrs*/ NULL};
 
 ngx_http_rule_t nx_int__uncommon_post_boundary = {/*type*/ 0, /*whitelist flag*/ 0, 
@@ -97,8 +92,7 @@ ngx_http_rule_t nx_int__uncommon_post_boundary = {/*type*/ 0, /*whitelist flag*/
 						  /*log_msg*/ NULL, /*score*/ 0, 
 						  /*sscores*/ NULL,
 						  /*sc_block*/ 1,  /*sc_allow*/ 0, 
-						  /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
-						  /*lnk_to & from*/ 0, 0,
+						  /*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
 						  /*br ptrs*/ NULL};
 
 
@@ -107,8 +101,7 @@ ngx_http_rule_t nx_int__big_request = {/*type*/ 0, /*whitelist flag*/ 0,
 				       /*log_msg*/ NULL, /*score*/ 0, 
 				       /*sscores*/ NULL,
 				       /*sc_block*/ 0,  /*sc_allow*/ 0, 
-				       /*block*/ 1,  /*allow*/ 0, /*log*/ 0,
-				       /*lnk_to & from*/ 0, 0,
+				       /*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
 				       /*br ptrs*/ NULL};
 
 #define dummy_error_fatal(ctx, r, ...) do {				\
@@ -409,6 +402,8 @@ ngx_http_dummy_pcre_wrapper(ngx_regex_compile_t *rx, unsigned char *str, unsigne
 }
 
 
+//#define wlrx_debug
+
 int
 ngx_http_dummy_is_rule_whitelisted_rx(ngx_http_request_t *req, 
 				      ngx_http_dummy_loc_conf_t *cf, 
@@ -594,18 +589,53 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 	
 	/* If rule target nothing, it's whitelisted everywhere */
 	if (!(dr[i]->br->args ||  dr[i]->br->headers || 
-	      dr[i]->br->body ||  dr[i]->br->url)) return (1); 
+	      dr[i]->br->body ||  dr[i]->br->url)) {
+#ifdef whitelist_debug
+	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is fully disabled", r->rule_id);
+#endif	
+	  return (1); 
+	}
 	switch (zone) {
 	case ARGS:
-	  if (dr[i]->br->args) return (1);
+	  if (dr[i]->br->args) {
+#ifdef whitelist_debug
+	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in ARGS", r->rule_id);
+#endif	
+	    return (1);
+	  }
+	  break;
 	case HEADERS:
-	  if (dr[i]->br->headers) return (1);
+	  if (dr[i]->br->headers) {
+#ifdef whitelist_debug
+	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in HEADERS", r->rule_id);
+#endif	
+	    return (1);
+	  }
+	  break;
 	case BODY:
-	  if (dr[i]->br->body) return (1);
+	  if (dr[i]->br->body) {
+#ifdef whitelist_debug
+	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in BODY", r->rule_id);
+#endif	
+	    return (1);
+	  }
+	  break;
 	case FILE_EXT:
-	  if (dr[i]->br->file_ext) return (1);
+	  if (dr[i]->br->file_ext) {
+#ifdef whitelist_debug
+	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in FILE_EXT", r->rule_id);
+#endif	
+	    return (1);
+	  }
+	  break;
 	case URL:
-	  if (dr[i]->br->url) return (1);
+	  if (dr[i]->br->url) {
+#ifdef whitelist_debug
+	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in URL zone:%d", r->rule_id, zone);
+#endif	
+	    return (1);
+	  }
+	  break;
 	default:
 	  break;
 	}
@@ -903,10 +933,10 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   if (ctx->log && !ctx->block)
     return (NGX_DECLINED);
   /*
-  ** If we are in learning without post_action,
+  ** If we are in learning without post_action and without drop
   ** stop here as well.
   */
-  if (ctx->learning && !ctx->post_action)
+  if (ctx->learning && !ctx->post_action && !ctx->drop)
     return (NGX_DECLINED);
   /* 
   ** add headers with original url 
@@ -948,7 +978,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     h->value.data = denied_args.data;
   }
   
-  if (ctx->learning) {
+  if (ctx->learning && !ctx->drop) {
     if (ctx->post_action) {
       ngx_http_core_loc_conf_t  *clcf;
       clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
@@ -1109,6 +1139,8 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
     ctx->block = 1;
   if (r->allow)
     ctx->allow = 1;
+  if (r->drop)
+    ctx->drop = 1;
   if (r->log)
     ctx->log = 1;
   ngx_http_dummy_update_current_ctx_status(ctx, cf, req);
@@ -1149,7 +1181,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       str++;
       continue;
     }
-    if (ctx->block && !ctx->learning)
+    if ( (ctx->block && !ctx->learning) || ctx->drop)
       return (0);
     eq = strchr(str, '=');
     ev = strchr(str, '&');
@@ -1272,7 +1304,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 		"XX-checking rules ..."); 
 #endif
   
-  for (i = 0; i < rules->nelts && (!ctx->block || ctx->learning) ; i++) {
+  for (i = 0; i < rules->nelts && ( (!ctx->block || ctx->learning) && !ctx->drop ) ; i++) {
 #ifdef basestr_ruleset_debug 
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		  "XX-rule %d (%V=%V)", r[i].rule_id, name, value); 
@@ -1891,7 +1923,7 @@ ngx_http_dummy_uri_parse(ngx_http_dummy_main_conf_t *main_cf,
   
   if (!r->uri.len)
     return ;
-  if (ctx->block && !ctx->learning)
+  if ( (ctx->block && !ctx->learning) || ctx->drop )
     return ;
   if (!main_cf->generic_rules && !cf->generic_rules) {
     dummy_error_fatal(ctx, r, "no generic rules ?!");
@@ -1922,7 +1954,7 @@ ngx_http_dummy_args_parse(ngx_http_dummy_main_conf_t *main_cf,
 {
   ngx_str_t			tmp;
   
-  if (ctx->block && !ctx->learning)
+  if ( (ctx->block && !ctx->learning) || ctx->drop )
     return ;
   if (!r->args.len)
     return ;
@@ -1957,12 +1989,12 @@ ngx_http_dummy_headers_parse(ngx_http_dummy_main_conf_t *main_cf,
   if (!cf->header_rules && !main_cf->header_rules)
     return ;
   // this check may be removed, as it shouldn't be needed anymore !
-  if (ctx->block && !ctx->learning)
+  if ( (ctx->block && !ctx->learning) || ctx->drop)
     return ;
   part = &r->headers_in.headers.part;
   h = part->elts;
   // this check may be removed, as it shouldn't be needed anymore !
-  for (i = 0; !ctx->block ; i++) {
+  for (i = 0; ( (!ctx->block || ctx->learning) && !ctx->block) ; i++) {
     if (i >= part->nelts) {
       if (part->next == NULL) 
 	break;
@@ -2008,7 +2040,7 @@ ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx,
       /* presence of body rules (POST/PUT rules) */
       (cf->body_rules || main_cf->body_rules) && 
       /* and the presence of data to parse */
-      r->request_body && (!ctx->block || ctx->learning)) 
+      r->request_body && ( (!ctx->block || ctx->learning) && !ctx->drop)) 
     ngx_http_dummy_body_parse(ctx, r, cf, main_cf);
   ngx_http_dummy_update_current_ctx_status(ctx, cf, r);
 }
@@ -2076,6 +2108,8 @@ ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx,
 
 	    if (cr[i].block)
 	      ctx->block = 1;
+	    if (cr[i].drop)
+	      ctx->drop = 1;
 	    if (cr[i].allow)
 	      ctx->allow = 1;
 	    if (cr[i].log)

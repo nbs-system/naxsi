@@ -949,8 +949,10 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   if(r->headers_in.headers.last)  {
     
     h = ngx_list_push(&(r->headers_in.headers));
+    if (!h) return (NGX_ERROR);
     h->key.len = strlen("orig_url");
     h->key.data = ngx_pcalloc(r->pool, strlen("orig_url")+1);
+    if (!h->key.data) return (NGX_ERROR);
     memcpy(h->key.data, "orig_url", strlen("orig_url"));
 	h->lowcase_key = ngx_pcalloc(r->pool, strlen("orig_url") + 1);
     memcpy(h->lowcase_key, "orig_url", strlen("orig_url"));
@@ -959,8 +961,10 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     memcpy(h->value.data, tmp_uri->data, tmp_uri->len);
     
     h = ngx_list_push(&(r->headers_in.headers));
+    if (!h) return (NGX_ERROR);
     h->key.len = strlen("orig_args");
     h->key.data = ngx_pcalloc(r->pool, strlen("orig_args")+1);
+    if (!h->key.data) return (NGX_ERROR);
     memcpy(h->key.data, "orig_args", strlen("orig_args"));
 	h->lowcase_key = ngx_pcalloc(r->pool, strlen("orig_args") + 1);
     memcpy(h->lowcase_key, "orig_args", strlen("orig_args"));
@@ -969,8 +973,10 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     memcpy(h->value.data, r->args.data, r->args.len);
     
     h = ngx_list_push(&(r->headers_in.headers));
+    if (!h) return (NGX_ERROR);
     h->key.len = strlen("naxsi_sig");
     h->key.data = ngx_pcalloc(r->pool, strlen("naxsi_sig")+1);
+    if (!h->key.data) return (NGX_ERROR);
     memcpy(h->key.data, "naxsi_sig", strlen("naxsi_sig"));
 	h->lowcase_key = ngx_pcalloc(r->pool, strlen("naxsi_sig") + 1);
     memcpy(h->lowcase_key, "naxsi_sig", strlen("naxsi_sig"));
@@ -1230,37 +1236,39 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       name.data = (unsigned char *) str;
       name.len = eq - str - 1;
     }
-    if (val.len || name.len) {
+    if (name.len) {
       nullbytes = naxsi_unescape(&name);
       if (nullbytes > 0) {
 	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, req, &name, &val, zone, 1, 1);
       }
+    }
+    if (val.len) {
       nullbytes = naxsi_unescape(&val);
       if (nullbytes > 0) {
 	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, req, &name, &val, zone, 1, 0);
       }
-#ifdef spliturl_ruleset_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		    "XX-extract  [%V]=[%V]", &(name), &(val));
-#endif
-      if (rules)
-	ngx_http_basestr_ruleset_n(pool, &name, &val, rules, req,  ctx, zone);
-#ifdef spliturl_ruleset_debug
-      else
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		      "XX-no arg rules ?");
-#endif	  
-
-	
-      if (main_rules)
-	ngx_http_basestr_ruleset_n(pool, &name, &val, main_rules, req,  ctx, 
-				   zone);
-#ifdef spliturl_ruleset_debug
-      else
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		      "XX-no main rules ?");
-#endif	  
     }
+#ifdef spliturl_ruleset_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
+		  "XX-extract  [%V]=[%V]", &(name), &(val));
+#endif
+    if (rules)
+      ngx_http_basestr_ruleset_n(pool, &name, &val, rules, req,  ctx, zone);
+#ifdef spliturl_ruleset_debug
+    else
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
+		    "XX-no arg rules ?");
+#endif	  
+    
+	
+    if (main_rules)
+      ngx_http_basestr_ruleset_n(pool, &name, &val, main_rules, req,  ctx, 
+				 zone);
+#ifdef spliturl_ruleset_debug
+    else
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
+		    "XX-no main rules ?");
+#endif	  
     str += len; 
   }
 
@@ -1459,7 +1467,7 @@ nx_content_disposition_parse(unsigned char *str, unsigned char *line_end,
       varn_end = varn_start = str + 6;
       do {
 	varn_end = (unsigned char *) ngx_strchr(varn_end, '"');
-	if (varn_end && *(varn_end - 1) != '\\')
+	if (!varn_end || (varn_end && *(varn_end - 1) != '\\'))
 	  break;
 	varn_end++;
       } while (varn_end && varn_end < line_end);

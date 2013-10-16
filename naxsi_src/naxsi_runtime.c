@@ -1485,6 +1485,7 @@ nx_content_disposition_parse(unsigned char *str, unsigned char *line_end,
       filen_end = filen_start = str + 10;
       do {
 	filen_end = (unsigned char *) ngx_strchr(filen_end, '"');
+	if (!filen_end) break;
 	if (filen_end && *(filen_end - 1) != '\\')
 	  break;
 	filen_end++;

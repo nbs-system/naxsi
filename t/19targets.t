@@ -214,4 +214,111 @@ GET /?bla=1999
 
 
 
-
+=== ID TEST 3.0: <= checkrule (why not dude)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:1999" "msg:foobar test pattern #1" "mz:ARGS" "s:$FOO:8" id:1999;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$FOO <= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /?bla=1999
+--- error_code: 412
+=== ID TEST 3.1: <= checkrule : Is useless, as score will go through value 8 before reaching 16, thus the checkrule will be applied
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:1999" "msg:foobar test pattern #1" "mz:ARGS" "s:$FOO:8" id:1999;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$FOO <= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /?bla=1999&blu=1999
+--- error_code: 412
+=== ID TEST 3.2: < checkrule (why not dude)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:1999" "msg:foobar test pattern #1" "mz:ARGS" "s:$FOO:8" id:1999;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$FOO < 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /?bla=1999
+--- error_code: 200
+=== ID TEST 3.3: < checkrule (why not dude)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:1999" "msg:foobar test pattern #1" "mz:ARGS" "s:$FOO:7" id:1999;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$FOO < 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /?bla=1999
+--- error_code: 412
+=== ID TEST 3.4: > checkrule (why not dude)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:1999" "msg:foobar test pattern #1" "mz:ARGS" "s:$FOO:8" id:1999;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$FOO > 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /?bla=1999
+--- error_code: 200
+=== ID TEST 3.5: > checkrule (why not dude)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:1999" "msg:foobar test pattern #1" "mz:ARGS" "s:$FOO:9" id:1999;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$FOO > 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /?bla=1999
+--- error_code: 412

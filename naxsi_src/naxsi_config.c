@@ -113,6 +113,8 @@ dummy_score(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
       if (len <= 0)
 	return (NGX_CONF_ERROR);
       sc = ngx_array_push(rule->sscores);
+      if (!sc)
+	return (NGX_CONF_ERROR);
       sc->sc_tag = ngx_pcalloc(r->pool, sizeof(ngx_str_t));
       if (!sc->sc_tag)
 	return (NGX_CONF_ERROR);
@@ -420,7 +422,8 @@ dummy_whitelist(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   for (ct = 0, i = 0; i < str.len; i++) {
     if (i == 0 || str.data[i-1] == ',') {
       id = (ngx_int_t *) ngx_array_push(wl_ar);
-
+      if (!id) 
+	return (NGX_CONF_ERROR);
       *id = (ngx_int_t) atoi((const char *)str.data+i);
     }
   }

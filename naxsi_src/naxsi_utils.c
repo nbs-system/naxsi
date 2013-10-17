@@ -513,6 +513,8 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
     default:
       return (NGX_ERROR);
     }
+    if (!arr_node)
+      return (NGX_ERROR);
     ngx_memset(arr_node, 0, sizeof(ngx_hash_key_t));
     arr_node->key = *(((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].name);
     arr_node->key_hash = ngx_hash_key_lc(((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].name->data, 
@@ -730,6 +732,8 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
       }
       
       rptr = ngx_array_push(dlc->rxmz_wlr);
+      if (!rptr)
+	return (NGX_ERROR);
       *rptr = curr_r;
       continue;
     }
@@ -760,7 +764,7 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
       if (uri_idx != -1 && name_idx == -1)
 	father_wlr->uri_only = 1;
       /* If target_name is present in son, report it. */
-      if (curr_r->br && curr_r->br->target_name)
+      if (curr_r->br->target_name)
         father_wlr->target_name = curr_r->br->target_name; 
     }
     /*merges the two whitelist rules together, including custom_locations. */

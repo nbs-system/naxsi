@@ -403,5 +403,125 @@ use URI::Escape;
 }
 "
 --- error_code: 200
+=== json wl 2.0 : malformed json (missing opening {)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:BODY" "s:$SQL:42" id:1999;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /
+
+ \"lol\" : \"bar\"
+}
+"
+--- error_code: 412
+=== json wl 2.1 : Numeric content json
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:BODY" "s:$SQL:42" id:1999;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /
+{
+ \"lol\" : 372
+}
+"
+--- error_code: 200
+=== json wl 2.2 : true/false content json
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:BODY" "s:$SQL:42" id:1999;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /
+{
+ \"lol\" : false,
+ \"serious_stuff\" : true,
+ \"extra_coverage\" : null
+}
+"
+--- error_code: 200
+
+=== json wl 2.3 : malformed json
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:BODY" "s:$SQL:42" id:1999;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /
+{
+ \"lol\" : false,
+ \"serious_stuff\" : true,
+ \"extra_coverage\" : null
+"
+--- error_code: 412
 
 

@@ -277,3 +277,52 @@ location /RequestDenied {
 GET /1999?foo=aa
 --- error_code: 412
 
+=== ID TEST 4.0: header disabled rule
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:1998" "msg:foobar test pattern #1" "mz:HEADERS|ARGS" "s:$SQL:42" id:1998;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+foo: 1998
+--- request
+GET /
+--- error_code: 412
+
+=== ID TEST 4.1: header disabled rule wl
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:1998" "msg:foobar test pattern #1" "mz:HEADERS|ARGS" "s:$SQL:42" id:1998;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 BasicRule wl:1998 "mz:HEADERS";
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+foo: 1998
+--- request
+GET /
+--- error_code: 200
+

@@ -55,6 +55,15 @@ ngx_http_rule_t nx_int__weird_request = {/*type*/ 0, /*whitelist flag*/ 0,
 						/*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
 						/*br ptrs*/ NULL};
 
+ngx_http_rule_t nx_int__big_request = {/*type*/ 0, /*whitelist flag*/ 0, 
+				       /*wl_id ptr*/ NULL, /*rule_id*/ 2,
+				       /*log_msg*/ NULL, /*score*/ 0, 
+				       /*sscores*/ NULL,
+				       /*sc_block*/ 0,  /*sc_allow*/ 0, 
+				       /*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
+				       /*br ptrs*/ NULL};
+
+
 ngx_http_rule_t nx_int__uncommon_hex_encoding = {/*type*/ 0, /*whitelist flag*/ 0, 
 						 /*wl_id ptr*/ NULL, /*rule_id*/ 10,
 						 /*log_msg*/ NULL, /*score*/ 0, 
@@ -96,13 +105,6 @@ ngx_http_rule_t nx_int__uncommon_post_boundary = {/*type*/ 0, /*whitelist flag*/
 						  /*br ptrs*/ NULL};
 
 
-ngx_http_rule_t nx_int__big_request = {/*type*/ 0, /*whitelist flag*/ 0, 
-				       /*wl_id ptr*/ NULL, /*rule_id*/ 2,
-				       /*log_msg*/ NULL, /*score*/ 0, 
-				       /*sscores*/ NULL,
-				       /*sc_block*/ 0,  /*sc_allow*/ 0, 
-				       /*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
-				       /*br ptrs*/ NULL};
 
 #define dummy_error_fatal(ctx, r, ...) do {				\
     if (ctx) ctx->block = 1;						\
@@ -1194,6 +1196,10 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       
     if ((!eq && !ev) /*?foobar */ ||
 	(eq && ev && eq > ev)) /*?foobar&bla=test*/ {
+#ifdef spliturl_ruleset_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
+		    "XX-url has no '&' and '=' or has both [%s]", str);
+#endif
       if (!ev)
 	ev = str+strlen(str);
       /* len is now [name] */
@@ -1205,6 +1211,11 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
     }
     /* ?&&val | ?var&& | ?val& | ?&val | ?val&var */
     else if (!eq && ev) { 
+#ifdef spliturl_ruleset_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
+		    "XX-url has no '=' but has '&' [%s]", str);
+#endif
+
       ngx_http_apply_rulematch_v_n(&nx_int__uncommon_url, ctx, req, NULL, NULL, zone, 1, 0);
       if (ev > str) /* ?var& | ?var&val */ {
 	val.data = (unsigned char *) str;
@@ -1220,6 +1231,11 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       }
     }
     else /* should be normal like ?var=bar& ..*/ {
+#ifdef spliturl_ruleset_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
+		    "XX-Classic format url [%s]", str);
+#endif
+
       if (!ev) /* ?bar=lol */
 	ev = str+strlen(str);
       /* len is now [name]=[content] */
@@ -1313,10 +1329,6 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 #endif
   
   for (i = 0; i < rules->nelts && ( (!ctx->block || ctx->learning) && !ctx->drop ) ; i++) {
-#ifdef basestr_ruleset_debug 
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		  "XX-rule %d (%V=%V)", r[i].rule_id, name, value); 
-#endif
       
     /* does the rule have a custom location ? custom location means checking only on a specific argument */
     if (name && name->len > 0 && r[i].br->custom_location) {
@@ -1422,10 +1434,10 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 ** does : parse body data, a.k.a POST/PUT datas. identifies content-type,
 **	  and, if appropriate, boundary. then parse the stuff if multipart/for..
 **	  or rely on spliturl if application/x-w..
-** [XXX] : this function sucks ! I don't parse bigger-than-body-size posts that 
+** this function sucks ! I don't parse bigger-than-body-size posts that 
 **	   are partially stored in files, TODO ;)
 */
-//#define post_heavy_debug
+//#define post_heavy_debug 1
 
 
 /*
@@ -1464,6 +1476,9 @@ nx_content_disposition_parse(unsigned char *str, unsigned char *line_end,
       break;
     
     if (!ngx_strncmp(str, "name=\"", 6)) {
+      /* we already successfully parsed a name, reject that. */
+      if (varn_end || varn_start)
+	return (NGX_ERROR);
       varn_end = varn_start = str + 6;
       do {
 	varn_end = (unsigned char *) ngx_strchr(varn_end, '"');
@@ -1482,6 +1497,9 @@ nx_content_disposition_parse(unsigned char *str, unsigned char *line_end,
       *fvarn_end = varn_end;
     }
     else if (!ngx_strncmp(str, "filename=\"", 10)) {
+      /* we already successfully parsed a filename, reject that. */
+      if (filen_end || filen_start)
+	return (NGX_ERROR);
       filen_end = filen_start = str + 10;
       do {
 	filen_end = (unsigned char *) ngx_strchr(filen_end, '"');
@@ -1535,8 +1553,9 @@ nx_content_type_parse(ngx_http_request_t *r,
   h += 9;
   *boundary_len = end - h;
   *boundary = h;
-  /* RFC 1867 says 70 char max */
-  if (*boundary_len > 70)
+  /* RFC 1867/1341 says 70 char max, 
+     I arbitrarily set min to 3 (yes) */
+  if (*boundary_len > 70 || *boundary_len < 3)
     return (NGX_ERROR);
   return (NGX_OK);
 }
@@ -1561,10 +1580,18 @@ ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
   
   /*extract boundary*/
   if (nx_content_type_parse(r, (unsigned char **) &boundary, &boundary_len) != NGX_OK) {
+#ifdef post_heavy_debug
+    if (boundary && boundary_len > 1)
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		    "XX-POST boundary : (%s) : %d", boundary, boundary_len);
+#endif  
     ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_boundary, ctx, r, NULL, NULL, BODY, 1, 0);
     return ;
   }
-  
+#ifdef post_heavy_debug
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		"XX-POST boundary : (%s) : %d", boundary, boundary_len);
+#endif  
   /* fetch every line starting with boundary */
   idx = 0;
   while (idx < len) {

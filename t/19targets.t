@@ -304,6 +304,7 @@ location /RequestDenied {
 --- request
 GET /?bla=1999
 --- error_code: 200
+
 === ID TEST 3.5: > checkrule (why not dude)
 --- http_config
 include /etc/nginx/naxsi_core.rules;
@@ -322,3 +323,27 @@ location /RequestDenied {
 --- request
 GET /?bla=1999
 --- error_code: 412
+
+
+=== ID TEST 4.0: super long exception (trigger 400 bad request on old versions)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+--- config
+location / {
+         SecRulesEnabled;
+	 LearningMode;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$FOO > 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request eval
+use URI::Escape;
+"POST /
+a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2=<>(){}[]'--;=a&a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1=<>(){}[]'--;=a&a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3=<>(){}[]'--;=a&a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4=<>(){}[]'&a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5=<>(){}[]'"
+--- error_code: 200
+

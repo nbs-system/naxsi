@@ -448,7 +448,7 @@ ngx_http_dummy_is_rule_whitelisted_rx(ngx_http_request_t *req,
 		  "%d/%d RXMZ rule has %d custom locations", i, cf->rxmz_wlr->nelts, 
 		  p->br->custom_locations->nelts);
 #endif
-    if (p->br->zone != zone) {
+    if (p->br->zone != (ngx_int_t)zone) {
 #ifdef wlrx_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		  "%d/%d Not targeting same zone.");

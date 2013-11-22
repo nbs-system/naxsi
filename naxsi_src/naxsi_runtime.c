@@ -536,7 +536,7 @@ ngx_http_dummy_is_rule_whitelisted_rx(ngx_http_request_t *req,
 #ifdef wlrx_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "wut, rule whitelisted by rx.");
 #endif
-      return (nx_check_ids(r->rule_id, p->wlid_array));
+      if (nx_check_ids(r->rule_id, p->wlid_array) == 1) return (1);
     }
     else {
 #ifdef wlrx_debug

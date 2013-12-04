@@ -104,6 +104,14 @@ ngx_http_rule_t nx_int__uncommon_post_boundary = {/*type*/ 0, /*whitelist flag*/
 						  /*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
 						  /*br ptrs*/ NULL};
 
+ngx_http_rule_t nx_int__empty_post_body = {/*type*/ 0, /*whitelist flag*/ 0, 
+					   /*wl_id ptr*/ NULL, /*rule_id*/ 15,
+					   /*log_msg*/ NULL, /*score*/ 0, 
+					   /*sscores*/ NULL,
+					   /*sc_block*/ 1,  /*sc_allow*/ 0, 
+					   /*block*/ 1,  /*allow*/ 0, /*drop*/ 0, /*log*/ 0,
+					   /*br ptrs*/ NULL};
+
 
 
 #define dummy_error_fatal(ctx, r, ...) do {				\
@@ -1834,7 +1842,12 @@ ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		"XX-BODY PARSE");
 #endif
-  if (!r->request_body->bufs || !r->headers_in.content_type) {
+
+  if (!r->request_body->bufs) {
+    ngx_http_apply_rulematch_v_n(&nx_int__empty_post_body, ctx, r, NULL, NULL, BODY, 1, 0);
+    return ;
+  }
+  if (!r->headers_in.content_type) {
 #ifdef dummy_body_parse_debug
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		  "XX-No content type ..");

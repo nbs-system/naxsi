@@ -1300,9 +1300,6 @@ naxsi_http_log_handler(ngx_http_request_t *r)
   str=cf->naxsi_logstrings->elts;
   for (i=0;i<cf->naxsi_logstrings->nelts;i++) {
     for (l = 0; l < cf->naxsi_logs->nelts; l++) {
-      u_char *line=(u_char*)strdup("naxsi_http_log_handler test\n");
-      ngx_naxsi_log_write(r, &log[l], line, strlen((const char *)line));
-      free(line);
       ngx_naxsi_log_write(r, &log[l], str[i].data, str[i].len);
     }
     ngx_pfree(r->pool, str[i].data);

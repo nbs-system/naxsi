@@ -924,8 +924,12 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     return (NGX_ERROR);
   for (i = 0; i < ostr->nelts; i++) {
 
-    ngx_log_error(NGX_LOG_ERR, r->connection->log,
-		  0, "NAXSI_FMT: %s", ((ngx_str_t *)ostr->elts)[i].data);
+//    ngx_log_error(NGX_LOG_ERR, r->connection->log,
+//    		  0, "NAXSI_FMT: %s", ((ngx_str_t *)ostr->elts)[i].data);
+    
+    ngx_log_naxsi(NGX_LOG_ERR, r,
+    		  0, "NAXSI_FMT: %s", ((ngx_str_t *)ostr->elts)[i].data);
+    
   }
   if (ostr->nelts >= 1) {
     denied_args.data = ((ngx_str_t *)ostr->elts)[0].data; 

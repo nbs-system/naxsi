@@ -38,8 +38,6 @@
 #include <sys/times.h>
 #include <ctype.h>
 
-static ngx_str_t  ngx_naxsi_log = ngx_string("/var/log/nginx/naxsi.log");
-
 /*
 ** Macro used to print incorrect configuration lines
 */
@@ -305,6 +303,8 @@ ngx_http_dummy_merge_loc_conf(ngx_conf_t *cf, void *parent,
   ngx_http_dummy_loc_conf_t  *prev = parent;
   ngx_http_dummy_loc_conf_t  *conf = child;
   ngx_naxsi_log_t             *log;
+  ngx_naxsi_log_t             *prevlog;
+  unsigned int i;
 
   if (conf->whitelist_rules == NULL) 
     conf->whitelist_rules = prev->whitelist_rules;
@@ -326,29 +326,21 @@ ngx_http_dummy_merge_loc_conf(ngx_conf_t *cf, void *parent,
     }
   }
   
-  conf->naxsi_logs = prev->naxsi_logs;
-  if (conf->naxsi_logs) {
-    return NGX_CONF_OK;
+  if (conf->naxsi_logs == NULL) {
+    conf->naxsi_logs = ngx_array_create(cf->pool, 2, sizeof(ngx_naxsi_log_t));
   }
-  
-  conf->naxsi_logs = ngx_array_create(cf->pool, 2, sizeof(ngx_naxsi_log_t));
   if (conf->naxsi_logs == NULL) {
     return NGX_CONF_ERROR;
   }
-  log = ngx_array_push(conf->naxsi_logs);
-  if (log == NULL) {
-    return NGX_CONF_ERROR;
+  
+  if (prev->naxsi_logs!=NULL) {
+    prevlog=prev->naxsi_logs->elts;
+    for (i=0;i<prev->naxsi_logs->nelts;i++) {
+      log = ngx_array_push(conf->naxsi_logs);
+      memcpy(log,(const void *)&prevlog[i],sizeof(ngx_naxsi_log_t));
+    }
   }
-
-  log->file = ngx_conf_open_file(cf->cycle, &ngx_naxsi_log);
-  if (log->file == NULL) {
-    return NGX_CONF_ERROR;
-  }
-
-  //log->script = NULL;
-  log->disk_full_time = 0;
-  log->error_log_time = 0;
-
+  
   return NGX_CONF_OK;
 }
 
@@ -1205,7 +1197,7 @@ ngx_http_naxsi_logfile_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     return (NGX_CONF_ERROR);
   value = cf->args->elts;
 
-  /* store denied URL for location */
+  /* create specific log file */
   if ( (!ngx_strcmp(value[0].data, TOP_NAXSI_LOGFILE_N) ||
         !ngx_strcmp(value[0].data, TOP_NAXSI_LOGFILE_T))
        && value[1].len) {
@@ -1295,18 +1287,22 @@ naxsi_http_log_handler(ngx_http_request_t *r)
   ngx_str_t                  *str;
   
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
-  
-  log = cf->naxsi_logs->elts;
   str=cf->naxsi_logstrings->elts;
+  
+  if (cf->naxsi_logs==NULL) {
+//    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "in naxsi_http_log_handler log array is NULL");
+    return NGX_ERROR;
+  }
+  log = cf->naxsi_logs->elts;
   for (i=0;i<cf->naxsi_logstrings->nelts;i++) {
     for (l = 0; l < cf->naxsi_logs->nelts; l++) {
       ngx_naxsi_log_write(r, &log[l], str[i].data, str[i].len);
     }
     ngx_pfree(r->pool, str[i].data);
     str[i].data=NULL;
+    str[i].len=0;
   }
-  ngx_array_destroy(cf->naxsi_logs);
-  cf->naxsi_logs=NULL;
+  cf->naxsi_logstrings->nelts=0;
 
   return NGX_OK;
 }
@@ -1348,13 +1344,28 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
     u_char   errstr[NGX_MAX_ERROR_STR];
     ngx_str_t *logmsg;
 
+    last = errstr + NGX_MAX_ERROR_STR;
+
     loc = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
 
     if (loc  == NULL || r == NULL) {
         return;
     }
+    
+    if (loc->naxsi_logs==NULL || loc->naxsi_logs->nelts == 0) {
 
-    last = errstr + NGX_MAX_ERROR_STR;
+#if (NGX_HAVE_VARIADIC_MACROS)
+      va_start(args, fmt);
+      p = ngx_vslprintf(errstr, last, fmt, args);
+      *p='\0';
+      ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, (const char *)errstr); 
+      va_end(args);
+#else
+      ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, fmt, args); 
+#endif
+      return;
+    }
+
 
     ngx_memcpy(errstr, ngx_cached_err_log_time.data,
                ngx_cached_err_log_time.len);
@@ -1398,12 +1409,12 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
       }
     }
 
-    if (p > last - NGX_LINEFEED_SIZE) {
-        p = last - NGX_LINEFEED_SIZE;
+    if (p > last - NGX_LINEFEED_SIZE -1) {
+        p = last - NGX_LINEFEED_SIZE -1;
     }
 
     ngx_linefeed(p);
-    *p='\0';
+    *(p++)='\0';
 
     /* add new line to log afer */
     logmsg=ngx_array_push(loc->naxsi_logstrings);

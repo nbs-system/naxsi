@@ -37,10 +37,63 @@
 #include "naxsi.h"
 
 
+/**
+ * configuration function for the "NaxsiLogfile" keyword in the 
+ * ngx_command_t modules (check naxsi_skeleton.c)
+ * for the MAIN
+ */
+char *
+ngx_http_naxsi_logfile_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
+                              void *conf)
+{
+  ngx_http_dummy_main_conf_t    *alcf = conf;
+  ngx_str_t                     *value;
+  ngx_naxsi_log_t               *log;
+
+  if (!alcf || !cf)
+    return (NGX_CONF_ERROR);  /* alloc a new rule */
+
+  value = cf->args->elts;
+  /* create specific log file */
+  if ( (!ngx_strcmp(value[0].data, TOP_NAXSI_LOGFILE_N) ||
+        !ngx_strcmp(value[0].data, TOP_NAXSI_LOGFILE_T))
+       && value[1].len) {
+    
+    if (alcf->naxsi_logs == NULL) {
+      alcf->naxsi_logs = ngx_array_create(cf->pool, 2, sizeof(ngx_naxsi_log_t));
+      if (alcf->naxsi_logs == NULL) {
+        return NGX_CONF_ERROR;
+      }
+    }
+
+  log = ngx_array_push(alcf->naxsi_logs);
+  if (log == NULL) {
+    return NGX_CONF_ERROR;
+  }
+  ngx_memzero(log, sizeof(ngx_naxsi_log_t));
+
+  log->file = ngx_conf_open_file(cf->cycle, &value[1]);
+  if (log->file == NULL) {
+    return NGX_CONF_ERROR;
+  }
+
+  // log format
+
+#ifdef mechanics_debug
+ // ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "naxsi log.");
+#endif
+    return (NGX_CONF_OK);
+  }
+  else
+    return NGX_CONF_ERROR;
+}
+
+
 
 /**
  * configuration function for the "NaxsiLogfile" keyword in the 
  * ngx_command_t modules (check naxsi_skeleton.c)
+ * for LOCATION
  */
 char *
 ngx_http_naxsi_logfile_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
@@ -48,7 +101,7 @@ ngx_http_naxsi_logfile_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 {
   ngx_http_dummy_loc_conf_t     *alcf = conf;
   ngx_str_t                     *value;
-  ngx_naxsi_log_t                *log;
+  ngx_naxsi_log_t               *log;
 
   if (!alcf || !cf)
     return (NGX_CONF_ERROR);
@@ -155,17 +208,25 @@ naxsi_http_log_handler(ngx_http_request_t *r)
   ngx_naxsi_log_t            *log;
   ngx_uint_t                 i,l;
   ngx_str_t                  *str;
+  ngx_array_t                *logarray;
+  ngx_http_dummy_main_conf_t *main_cf;
   
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
+  main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
+  
   str=cf->naxsi_logstrings->elts;
   
-  if (cf->naxsi_logs==NULL) {
+  if (cf->naxsi_logs!=NULL && cf->naxsi_logs->nelts > 0) {
+    logarray=cf->naxsi_logs;
+  } else if (main_cf->naxsi_logs!=NULL && main_cf->naxsi_logs->nelts > 0) {
+    logarray=main_cf->naxsi_logs;
+  } else {
 //    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "in naxsi_http_log_handler log array is NULL");
     return NGX_ERROR;
   }
-  log = cf->naxsi_logs->elts;
+  log = logarray->elts;
   for (i=0;i<cf->naxsi_logstrings->nelts;i++) {
-    for (l = 0; l < cf->naxsi_logs->nelts; l++) {
+    for (l = 0; l < logarray->nelts; l++) {
       ngx_naxsi_log_write(r, &log[l], str[i].data, str[i].len);
     }
     ngx_pfree(r->pool, str[i].data);
@@ -215,19 +276,22 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
     va_list  args;
 #endif
     ngx_http_dummy_loc_conf_t *loc;
+    ngx_http_dummy_main_conf_t *main_cf;
     u_char  *p, *last;
     u_char   errstr[NGX_MAX_ERROR_STR];
     ngx_str_t *logmsg;
 
+
     last = errstr + NGX_MAX_ERROR_STR;
 
     loc = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
+    main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
 
-    if (loc  == NULL || r == NULL) {
+    if (loc  == NULL || r == NULL || main_cf==NULL) {
         return;
     }
     
-    if (loc->naxsi_logs==NULL || loc->naxsi_logs->nelts == 0) {
+    if ((loc->naxsi_logs==NULL || loc->naxsi_logs->nelts == 0) && (main_cf->naxsi_logs==NULL || main_cf->naxsi_logs->nelts == 0 )) {
 
 #if (NGX_HAVE_VARIADIC_MACROS)
       va_start(args, fmt);

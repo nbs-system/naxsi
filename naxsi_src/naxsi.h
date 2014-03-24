@@ -282,6 +282,7 @@ typedef struct
   ngx_array_t	*generic_rules; 
   ngx_array_t	*locations; /*ngx_http_dummy_loc_conf_t*/
   ngx_log_t	*log;
+  ngx_array_t   *naxsi_logs; /* array of ngx_naxsi_log_t */
   
 } ngx_http_dummy_main_conf_t;
 
@@ -417,7 +418,7 @@ typedef struct ngx_http_nx_json_s {
 #define TOP_CHECK_RULE_N	"check_rule"
 #define TOP_BASIC_RULE_N	"basic_rule"
 #define TOP_MAIN_BASIC_RULE_N	"main_rule"
-#define TOP_NAXSI_LOGFILE_N	"naxsi_logfile"
+#define TOP_NAXSI_LOGFILE_N	"naxsi_log"
 
 /*possible 'tokens' in rule */
 #define ID_T "id:"

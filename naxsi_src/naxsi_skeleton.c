@@ -55,7 +55,7 @@ static ngx_int_t	ngx_http_dummy_access_handler(ngx_http_request_t *r);
 static char		*ngx_http_dummy_read_main_conf(ngx_conf_t *cf, 
 						       ngx_command_t *cmd, 
 						       void *conf);
-static char		*ngx_http_naxsi_logfile_main_conf(ngx_conf_t *cf, 
+char		*ngx_http_naxsi_logfile_main_conf(ngx_conf_t *cf, 
 						       ngx_command_t *cmd, 
 						       void *conf);
 static ngx_int_t	ngx_http_dummy_init(ngx_conf_t *cf);

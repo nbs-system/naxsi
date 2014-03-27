@@ -214,7 +214,8 @@ naxsi_http_log_handler(ngx_http_request_t *r)
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
   
-  str=cf->naxsi_logstrings->elts;
+  if (cf->naxsi_logstrings==NULL)
+    return NGX_OK;
   
   if (cf->naxsi_logs!=NULL && cf->naxsi_logs->nelts > 0) {
     logarray=cf->naxsi_logs;
@@ -225,15 +226,19 @@ naxsi_http_log_handler(ngx_http_request_t *r)
     return NGX_ERROR;
   }
   log = logarray->elts;
+  str=cf->naxsi_logstrings->elts;
   for (i=0;i<cf->naxsi_logstrings->nelts;i++) {
     for (l = 0; l < logarray->nelts; l++) {
-      ngx_naxsi_log_write(r, &log[l], str[i].data, str[i].len);
+      if (str[i].data!=NULL)
+        ngx_naxsi_log_write(r, &log[l], str[i].data, str[i].len);
     }
     ngx_pfree(r->pool, str[i].data);
     str[i].data=NULL;
     str[i].len=0;
   }
-  cf->naxsi_logstrings->nelts=0;
+  ngx_array_destroy(cf->naxsi_logstrings);
+  //cf->naxsi_logstrings->nelts=0;
+  cf->naxsi_logstrings=NULL;
 
   return NGX_OK;
 }
@@ -355,8 +360,21 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
     *(p++)='\0';
 
     /* add new line to log afer */
+    if (loc->naxsi_logstrings==NULL)
+      loc->naxsi_logstrings = ngx_array_create(r->pool, 1, sizeof(ngx_str_t));
+    
+    if (loc->naxsi_logstrings==NULL) {
+      return;
+    }
+    
     logmsg=ngx_array_push(loc->naxsi_logstrings);
-    logmsg->len=strlen((const char *)errstr);
-    logmsg->data=ngx_pcalloc(r->pool, logmsg->len+1);
-    p=ngx_copy(logmsg->data,errstr,logmsg->len+1);
+    if (logmsg!=NULL) {
+      logmsg->len=strlen((const char *)errstr);
+      logmsg->data=ngx_pcalloc(r->pool, logmsg->len+1);
+      if (logmsg->data!=NULL) {
+        p=ngx_copy(logmsg->data,errstr,logmsg->len+1);
+      } else {
+        logmsg->len=0;
+      }
+    }
 }

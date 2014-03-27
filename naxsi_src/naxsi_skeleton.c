@@ -334,14 +334,7 @@ ngx_http_dummy_merge_loc_conf(ngx_conf_t *cf, void *parent,
   if (conf->generic_rules == NULL) 
     conf->generic_rules = prev->generic_rules;
   
-  conf->naxsi_logstrings = prev->naxsi_logstrings;
-  
-  if (conf->naxsi_logstrings==NULL) {
-    conf->naxsi_logstrings = ngx_array_create(cf->pool, 2, sizeof(ngx_str_t));
-    if (conf->naxsi_logstrings == NULL) {
-      return NGX_CONF_ERROR;
-    }
-  }
+  conf->naxsi_logstrings = NULL;
   
   if (conf->naxsi_logs == NULL) {
     conf->naxsi_logs = ngx_array_create(cf->pool, 2, sizeof(ngx_naxsi_log_t));

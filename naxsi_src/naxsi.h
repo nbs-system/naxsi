@@ -330,7 +330,6 @@ typedef struct
   ngx_uint_t	flag_post_action_h;
   ngx_uint_t	flag_extensive_log_h;
   ngx_array_t   *naxsi_logs; /* array of ngx_naxsi_log_t */
-  ngx_array_t   *naxsi_logstrings; /* array of ngx_str_t */
   
 } ngx_http_dummy_loc_conf_t;
 

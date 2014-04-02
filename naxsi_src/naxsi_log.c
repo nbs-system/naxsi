@@ -37,6 +37,7 @@
 #include "naxsi.h"
 
 
+
 /**
  * configuration function for the "NaxsiLogfile" keyword in the 
  * ngx_command_t modules (check naxsi_skeleton.c)
@@ -191,60 +192,6 @@ ngx_naxsi_log_write(ngx_http_request_t *r, ngx_naxsi_log_t *log, u_char *buf, si
 
 
 
-/**
- * When dealing with a http request, nginx process it via different phases
- * (see http://wiki.nginx.org/Phases). Logging is one of the last phase.
- * the naxsi_http_log_handler is called to treat this phase.
- *
- * What naxsi_http_log_handler does: it check if the ngx_http_dummy_loc_conf_t has
- * one or several log strings to output (which have been filed via ngx_log_naxsi()),
- * and write them to the naxsi log file
- */
-ngx_int_t
-naxsi_http_log_handler(ngx_http_request_t *r)
-{
-  //ngx_http_request_ctx_t     *ctx;
-  ngx_http_dummy_loc_conf_t  *cf;
-  ngx_naxsi_log_t            *log;
-  ngx_uint_t                 i,l;
-  ngx_str_t                  *str;
-  ngx_array_t                *logarray;
-  ngx_http_dummy_main_conf_t *main_cf;
-  
-  cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
-  main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
-  
-  if (cf->naxsi_logstrings==NULL)
-    return NGX_OK;
-  
-  if (cf->naxsi_logs!=NULL && cf->naxsi_logs->nelts > 0) {
-    logarray=cf->naxsi_logs;
-  } else if (main_cf->naxsi_logs!=NULL && main_cf->naxsi_logs->nelts > 0) {
-    logarray=main_cf->naxsi_logs;
-  } else {
-//    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "in naxsi_http_log_handler log array is NULL");
-    return NGX_ERROR;
-  }
-  log = logarray->elts;
-  str=cf->naxsi_logstrings->elts;
-  for (i=0;i<cf->naxsi_logstrings->nelts;i++) {
-    for (l = 0; l < logarray->nelts; l++) {
-      if (str[i].data!=NULL)
-        ngx_naxsi_log_write(r, &log[l], str[i].data, str[i].len);
-    }
-    ngx_pfree(r->pool, str[i].data);
-    str[i].data=NULL;
-    str[i].len=0;
-  }
-  ngx_array_destroy(cf->naxsi_logstrings);
-  //cf->naxsi_logstrings->nelts=0;
-  cf->naxsi_logstrings=NULL;
-
-  return NGX_OK;
-}
-
-
-
 static ngx_str_t err_levels[] = {
     ngx_null_string,
     ngx_string("emerg"),
@@ -264,8 +211,7 @@ static ngx_str_t err_levels[] = {
  * classical nginx log error function).
  * This function will check if a naxsi_log has been defined:
  * - if not, it will redirect logs to nginx log error
- * - if it exist, it will append the log to the loc->naxsi_logstrings, to
- *   be output at the end of the current request (see naxsi_http_log_handler())
+ * - if it exist, it will append to the log files
  */
 #if (NGX_HAVE_VARIADIC_MACROS)
 void
@@ -280,11 +226,12 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
 #if (NGX_HAVE_VARIADIC_MACROS)
     va_list  args;
 #endif
-    ngx_http_dummy_loc_conf_t *loc;
+    ngx_http_dummy_loc_conf_t  *loc;
     ngx_http_dummy_main_conf_t *main_cf;
-    u_char  *p, *last;
-    u_char   errstr[NGX_MAX_ERROR_STR];
-    ngx_str_t *logmsg;
+    u_char                     *p, *last;
+    u_char                     errstr[NGX_MAX_ERROR_STR];
+    ngx_array_t                *logarray;
+    int                        l;
 
 
     last = errstr + NGX_MAX_ERROR_STR;
@@ -359,22 +306,18 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
     ngx_linefeed(p);
     *(p++)='\0';
 
-    /* add new line to log afer */
-    if (loc->naxsi_logstrings==NULL)
-      loc->naxsi_logstrings = ngx_array_create(r->pool, 1, sizeof(ngx_str_t));
-    
-    if (loc->naxsi_logstrings==NULL) {
+    /*
+     * send it to log file
+     */
+    if (loc->naxsi_logs!=NULL && loc->naxsi_logs->nelts > 0) {
+      logarray=loc->naxsi_logs;
+    } else if (main_cf->naxsi_logs!=NULL && main_cf->naxsi_logs->nelts > 0) {
+      logarray=main_cf->naxsi_logs;
+    } else {
+//    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "in naxsi_http_log_handler log array is NULL");
       return;
     }
-    
-    logmsg=ngx_array_push(loc->naxsi_logstrings);
-    if (logmsg!=NULL) {
-      logmsg->len=strlen((const char *)errstr);
-      logmsg->data=ngx_pcalloc(r->pool, logmsg->len+1);
-      if (logmsg->data!=NULL) {
-        p=ngx_copy(logmsg->data,errstr,logmsg->len+1);
-      } else {
-        logmsg->len=0;
-      }
+    for (l = 0; l < logarray->nelts; l++) {
+      ngx_naxsi_log_write(r, &(((ngx_naxsi_log_t*)logarray->elts)[l]), (u_char *)errstr, strlen((const char *)errstr));
     }
 }

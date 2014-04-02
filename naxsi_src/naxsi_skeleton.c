@@ -85,7 +85,6 @@ static char		*ngx_http_dummy_merge_loc_conf(ngx_conf_t *cf,
 						       void *child);
 void			*ngx_http_dummy_create_main_conf(ngx_conf_t *cf);
 void			ngx_http_dummy_payload_handler(ngx_http_request_t *r);
-ngx_int_t		naxsi_http_log_handler(ngx_http_request_t *r);
 
 
 /* command handled by the module */
@@ -334,8 +333,6 @@ ngx_http_dummy_merge_loc_conf(ngx_conf_t *cf, void *parent,
   if (conf->generic_rules == NULL) 
     conf->generic_rules = prev->generic_rules;
   
-  conf->naxsi_logstrings = NULL;
-  
   if (conf->naxsi_logs == NULL) {
     conf->naxsi_logs = ngx_array_create(cf->pool, 2, sizeof(ngx_naxsi_log_t));
   }
@@ -408,13 +405,6 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   /* add handler for logging */
   cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
-  h = ngx_array_push(&cmcf->phases[NGX_HTTP_LOG_PHASE].handlers);
-  if (h == NULL) {
-    return NGX_ERROR;
-  }
-
-  *h = naxsi_http_log_handler;
-  
   return (NGX_OK);
 }
 

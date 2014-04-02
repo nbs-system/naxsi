@@ -317,7 +317,7 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
 //    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "in naxsi_http_log_handler log array is NULL");
       return;
     }
-    for (l = 0; l < logarray->nelts; l++) {
+    for (unsigned l = 0; l < logarray->nelts; l++) {
       ngx_naxsi_log_write(r, &(((ngx_naxsi_log_t*)logarray->elts)[l]), (u_char *)errstr, strlen((const char *)errstr));
     }
 }

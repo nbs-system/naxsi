@@ -505,7 +505,7 @@ void			ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
 						  ngx_http_dummy_loc_conf_t *cf,
 						  ngx_http_dummy_main_conf_t *main_cf);
 void			naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *req, 
-					    ngx_http_rule_t *rule, enum DUMMY_MATCH_ZONE zone);
+					    ngx_http_rule_t *rule, enum DUMMY_MATCH_ZONE zone, ngx_int_t target_name);
 
 int			ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx, 
 						     ngx_http_request_t *req, ngx_str_t *name, 

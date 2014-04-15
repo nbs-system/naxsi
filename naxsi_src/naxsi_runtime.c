@@ -147,7 +147,8 @@ void			ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
 						  ngx_http_dummy_loc_conf_t *cf,
 						  ngx_http_dummy_main_conf_t *main_cf);
 void			naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *req, 
-					    ngx_http_rule_t *rule, enum DUMMY_MATCH_ZONE zone);
+					    ngx_http_rule_t *rule, enum DUMMY_MATCH_ZONE zone, 
+					    ngx_int_t target_name);
 
 
 
@@ -1055,9 +1056,9 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
 #endif
   if (ctx->extensive_log) {
     if (target_name)
-      naxsi_log_offending(value, name, req, r, zone);
+      naxsi_log_offending(value, name, req, r, zone, target_name);
     else
-      naxsi_log_offending(name, value, req, r, zone);
+      naxsi_log_offending(name, value, req, r, zone, target_name);
   }
   if (nb_match == 0)
     nb_match = 1;

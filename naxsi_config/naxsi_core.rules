@@ -8,6 +8,8 @@
 #@MainRule "msg:invalid formatted url" id:12;
 #@MainRule "msg:invalid POST format" id:13;
 #@MainRule "msg:invalid POST boundary" id:14;
+#@MainRule "msg:invalid JSON" id:15;
+#@MainRule "msg:empty POST" id:16;
 
 ##################################
 ## SQL Injections IDs:1000-1099 ##

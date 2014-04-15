@@ -105,7 +105,7 @@ ngx_http_rule_t nx_int__uncommon_post_boundary = {/*type*/ 0, /*whitelist flag*/
 						  /*br ptrs*/ NULL};
 
 ngx_http_rule_t nx_int__empty_post_body = {/*type*/ 0, /*whitelist flag*/ 0, 
-					   /*wl_id ptr*/ NULL, /*rule_id*/ 15,
+					   /*wl_id ptr*/ NULL, /*rule_id*/ 16,
 					   /*log_msg*/ NULL, /*score*/ 0, 
 					   /*sscores*/ NULL,
 					   /*sc_block*/ 1,  /*sc_allow*/ 0, 

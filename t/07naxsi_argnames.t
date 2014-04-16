@@ -479,7 +479,7 @@ location /RequestDenied {
 GET /?foobar=foo
 --- error_code: 200
 
-=== WL TEST 1.6: whitelist in ARGS_NAME+$URL+$ARGS_VAR, (collision)
+=== WL TEST 1.6: whitelist in $URL+$ARGS_VAR | NAME, (collision)
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -503,4 +503,174 @@ location /RequestDenied {
 --- request
 GET /?foobar=foobar
 --- error_code: 200
+
+=== WL TEST 1.6.1: whitelist in $URL+ARGS | NAME, (collision)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 BasicRule wl:1999 "mz:$URL:/|ARGS|NAME";
+	 BasicRule wl:1999 "mz:$URL:/|ARGS";
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /?foobar=foobar
+--- error_code: 200
+
+=== WL TEST 1.6.2: whitelist in $URL+ARGS | NAME, (collision)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 BasicRule wl:1999 "mz:$URL:/|ARGS|NAME";
+	 BasicRule wl:1999 "mz:$URL:/|ARGS";
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /?foobar=lol
+--- error_code: 200
+=== WL TEST 1.6.3: whitelist in $URL+ARGS | NAME, (collision)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 BasicRule wl:1999 "mz:$URL:/|ARGS|NAME";
+	 BasicRule wl:1999 "mz:$URL:/|ARGS";
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /?lol=foobar
+--- error_code: 200
+=== WL TEST 1.6.4: whitelist in $URL+ARGS | NAME, (collision)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 BasicRule wl:1999 "mz:$URL:/|ARGS|NAME";
+#	 BasicRule wl:1999 "mz:$URL:/|ARGS";
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /?lol=foobar
+--- error_code: 412
+=== WL TEST 1.6.5: whitelist in $URL+ARGS | NAME, (collision)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+#	 BasicRule wl:1999 "mz:$URL:/|ARGS|NAME";
+	 BasicRule wl:1999 "mz:$URL:/|ARGS";
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /?foobar=lol
+--- error_code: 412
+=== WL TEST 1.6.6: whitelist in $URL+ARGS | NAME, (collision)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+#	 BasicRule wl:1999 "mz:$URL:/|ARGS|NAME";
+	 BasicRule wl:1999 "mz:$URL:/|ARGS";
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /?lol=foobar
+--- error_code: 200
+=== WL TEST 1.6.7: whitelist in $URL+ARGS | NAME, (collision)
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 BasicRule wl:1999 "mz:$URL:/|ARGS|NAME";
+#	 BasicRule wl:1999 "mz:$URL:/|ARGS";
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /?lol=foobar
+--- error_code: 412
 

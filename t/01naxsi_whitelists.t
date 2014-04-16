@@ -1024,7 +1024,7 @@ location / {
 	 CheckRule "$XSS >= 8" BLOCK;
   	 root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-	 BasicRule wl:15 "mz:$URL:/|BODY";
+	 BasicRule wl:16 "mz:$URL:/|BODY";
 	 error_page 405 = $uri;
 }
 location /RequestDenied {

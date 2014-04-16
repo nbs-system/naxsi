@@ -184,7 +184,7 @@ location /RequestDenied {
 GET /buixor?b]la=1999
 --- error_code: 412
 
-=== WL TEST 6: Whitelists trying to provoke collisions
+=== WL TEST 6: Whitelists trying to provoke collisions ($ARGS_VAR:x + $URL:x|ARGS)
 --- user_files
 >>> buixor
 eh yo
@@ -215,7 +215,7 @@ location /RequestDenied {
 GET /bla?1998
 --- error_code: 200
 
-=== WL TEST 6.0: Whitelists trying to provoke collisions
+=== WL TEST 6.0: Whitelists trying to provoke collisions ($ARGS_VAR:x + $URL:x|ARGS)
 --- user_files
 >>> buixor
 eh yo
@@ -244,7 +244,7 @@ location /RequestDenied {
 GET /?/bla=1998
 --- error_code: 412
 
-=== WL TEST 6.1: Whitelists trying to provoke collisions
+=== WL TEST 6.1: Whitelists trying to provoke collisions ($ARGS_VAR:x + $URL:x|ARGS)
 --- user_files
 >>> buixor
 eh yo
@@ -275,7 +275,7 @@ location /RequestDenied {
 GET /bla?bla=1999&toto=1998
 --- error_code: 200
 
-=== WL TEST 6.2: Whitelists trying to provoke collisions
+=== WL TEST 6.2: Whitelists trying to provoke collisions ($ARGS_VAR:x + $URL:x|ARGS)
 --- user_files
 >>> buixor
 eh yo
@@ -304,7 +304,7 @@ location /RequestDenied {
 GET /buixor?/bla=1999
 --- error_code: 200
 
-=== WL TEST 6.3: Whitelists trying to provoke collisions
+=== WL TEST 6.3: Whitelists trying to provoke collisions ($ARGS_VAR:x + $URL:x|ARGS)
 --- user_files
 >>> buixor
 eh yo

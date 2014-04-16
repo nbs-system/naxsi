@@ -285,6 +285,10 @@ ngx_http_wlr_merge(ngx_conf_t *cf, ngx_http_whitelist_rule_t *father_wl,
 		   ngx_http_rule_t *curr) {
   uint i;
   ngx_int_t		*tmp_ptr;
+
+#ifdef whitelist_debug
+  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "[naxsi] merging similar wl(s)");
+#endif
   
   if (!father_wl->ids)
     {
@@ -376,6 +380,7 @@ ngx_http_wlr_identify(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
   return (NGX_OK);
 }
 
+//#define whitelist_heavy_debug
 
 ngx_http_whitelist_rule_t *
 ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
@@ -395,8 +400,14 @@ ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
     *fullname = ngx_pcalloc(cf->pool, custloc_array(curr->br->custom_locations->elts)[name_idx].target.len +
 			    custloc_array(curr->br->custom_locations->elts)[uri_idx].target.len + 3);
     /* if WL targets variable name instead of content, prefix hash with '#' */
-    if (curr->br->target_name)
+    if (curr->br->target_name) {
+#ifdef whitelist_heavy_debug
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
+			 "whitelist targets |NAME");
+#endif
+      
       strncat(*fullname, (const char *) "#", 1);
+    }
     strncat(*fullname, (const char *) custloc_array(curr->br->custom_locations->elts)[uri_idx].target.data, 
 	    custloc_array(curr->br->custom_locations->elts)[uri_idx].target.len);
     strncat(*fullname, (const char *) "#", 1);
@@ -410,7 +421,17 @@ ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
 		       "whitelist has uri");
 #endif
     //XXX set flag only_uri
-    *fullname = ngx_pcalloc(cf->pool, custloc_array(curr->br->custom_locations->elts)[uri_idx].target.len + 1);
+    *fullname = ngx_pcalloc(cf->pool, custloc_array(curr->br->custom_locations->elts)[uri_idx].target.len + 3);
+    if (curr->br->target_name) {
+#ifdef whitelist_heavy_debug
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
+			 "whitelist targets |NAME");
+#endif
+      
+      strncat(*fullname, (const char *) "#", 1);
+    }
+
+
     strncat(*fullname, (const char *) custloc_array(curr->br->custom_locations->elts)[uri_idx].target.data, 
 	    custloc_array(curr->br->custom_locations->elts)[uri_idx].target.len);
   }
@@ -617,6 +638,7 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
 
 //#define rx_matchzone_debug
 //#define whitelist_heavy_debug
+
 ngx_int_t
 ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc, 
 				   ngx_conf_t *cf)

@@ -1,0 +1,31 @@
+{
+"elastic" : {
+ "host" : "10.1.0.24:80",
+ "index" : "nxapi",
+ "doctype" : "events",
+ "default_ttl" : "7200",
+ "max_size" : "1000"
+},
+"global_filters" : {
+ "whitelisted" : "false"
+},
+"global_warning_rules" : {
+ "rule_uri" : [ ">", "5" ],
+ "rule_var_name" : [ ">", "5" ],
+ "rule_ip" : ["<=", 10 ],
+ "global_rule_ip_ratio" : ["<", 5]
+},
+"global_success_rules" : {
+ "global_rule_ip_ratio" : [">=", 30],
+ "rule_ip" : [">=", 10]
+},
+"naxsi" : {
+ "rules_path" : "/etc/nginx/naxsi_core.rules",
+ "template_path" : "tpl/",
+ "geoipdb_path" : "nx_datas/country2coords.txt"
+},
+"output" : {
+ "colors" : "true",
+ "verbosity" : "5"
+}
+}

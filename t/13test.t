@@ -40,7 +40,7 @@ location /RequestDenied {
 }
 --- request
 GET /bla?blx=1998&1999=bla
---- error_code: 412
+--- error_code: 200
 
 === WL TEST 6.2: Trigger multi-line logs
 --- user_files

@@ -1,13 +1,212 @@
-# Introduction
+# A quick word
 
-nxtool is a whitelist generation tool for naxsi.
-It provides the following features :
-  * Generating whitelists, based on templates, along with "rating"
-  * Providing minimal statistics aiming at helping user in whitelist choices
-  * Tag existing events matching provided whitelists for exclusion of whitelist generation
-  * Tag existing events matching provided IPs for exclusion of whitelist generation
+nxapi/nxtool is the new learning tool, that attempts to perform the following :
+  * Events import : Importing naxsi events into an elasticsearch database
+  * Whitelist generation : Generate whitelists, from templates rather than from purely statistical aspects
+  * Events management : Allow tagging of events into database to exclude them from wl gen process
+  * Reporting : Display information about current DB content
 
-Tagging is important as it will exclude events from whitelist generation process and provide tracking.
+Template, introduced in nxapi is a file containing a JSON dict, used by nxapi to attempt whitelist generation. Templates can be generic or application specific ie.
+
+`
+{
+"zone" : "HEADERS",
+"var_name" : "cookie",
+"id" : "?"}
+`
+
+on the other hand, this is an application-specific template :
+
+`
+{
+"zone" : "ARGS",
+"var_name" : "redirect_to",
+"_statics" : { "id" : "1100,1101"}, 
+"_msg" : "WP post-auth redirect"
+}
+`
+
+# Configuration file : nxapi.json
+
+nxapi uses a JSON file for its settings, such as :
+
+
+$ cat nxapi.json 
+
+
+    {
+    # elasticsearch setup, must point to the right instance.
+    "elastic" : {
+     "host" : "127.0.0.1:9200",
+     "index" : "nxapi",
+     "doctype" : "events",
+     "default_ttl" : "7200",
+     "max_size" : "1000"
+    },
+    # filter used for any issued requests, you shouldn't modify it yet
+    "global_filters" : {
+     "whitelisted" : "false"
+    },
+    # global warning and global success rules, used to distinguish good and 'bad' whitelists
+    "global_warning_rules" : {
+     "rule_uri" : [ ">", "5" ],
+     "rule_var_name" : [ ">", "5" ],
+     "rule_ip" : ["<=", 10 ],
+     "global_rule_ip_ratio" : ["<", 5]
+    },
+    "global_success_rules" : {
+     "global_rule_ip_ratio" : [">=", 30],
+     "rule_ip" : [">=", 10]
+    },
+    # path to naxsi core rules, path to template files,
+    # path to geoloc database.
+    "naxsi" : {
+     "rules_path" : "/etc/nginx/naxsi_core.rules",
+     "template_path" : "tpl/",
+     "geoipdb_path" : "nx_datas/country2coords.txt"
+    },
+    # controls default colors and verbosity behavior
+    "output" : {
+     "colors" : "true",
+     "verbosity" : "5"
+    }
+    }
+
+
+# Simple usage approach
+
+## Checklist
+  * Your ElasticSearch instance is up & running
+  * Your database is running, and you already have some data inside :
+`  curl -XPOST "http://ELASTICSEARCH/nxapi/events/_search?pretty" -d '{}' `
+
+
+##1. Get infos about db
+
+    $ nxtool.py -x --colors
+Will issue a summary of database content, including :
+
+  * Ratio between tagged/untagged events.
+
+Tagging of events is an important notion that allows you to know how well you are doing on learning.
+Let's say you just started your learning. You will have a tag ratio of 0%, which means you didn't write any
+whitelists for recent events. Once you start generating whitelists, you can provide those (`-w /tmp/wl.cf --tag`)
+and nxapi will mark those events in the database as whitelisted, excluding them from future generation process.
+It allows you to speed up the generation process, but mainly to know how well you dealt with recent false positives.
+
+You can as well use tagging mechanism to exclude obvious attack patterns from learning. If X.Y.Z.W keeps hammering my website and polluting my log, I can provide nxapi with his ip (`-i /tmp/ips.txt --tag`) to tag them and exclude them from process.
+
+  * Top servers.
+A TOP10 list of dst hosts raising the most exceptions.
+  * Top URI(s).
+A TOP10 list of dst URIs raising the most exceptions. It is very useful in combination with --filter to generate whitelists for specific URI(s).
+  * Top Zones.
+List of most active zones of exceptions.
+
+##2. Generate whitelists
+Let's say I had the following output :
+
+    nxtool.py -c ./nxapi.json  -x --colors
+    # Whitelist(ing) ratio :
+    # false 79.96 % (total:196902/246244)
+    # true 20.04 % (total:49342/246244)
+    # Top servers :
+    # www.x1.fr 21.93 % (total:43181/196915)
+    # www.x2.fr 15.21 % (total:29945/196915)
+    ...
+    # Top URI(s) :
+    # /foo/bar/test 8.55 % (total:16831/196915)
+    # /user/register 5.62 % (total:11060/196915)
+    # /index.php/ 4.26 % (total:8385/196915)
+    ...
+    # Top Zone(s) :
+    # BODY 41.29 % (total:81309/196924)
+    # HEADERS 23.2 % (total:45677/196924)
+    # BODY|NAME 16.88 % (total:33243/196924)
+    # ARGS 12.47 % (total:24566/196924)
+    # URL 5.56 % (total:10947/196924)
+    # ARGS|NAME 0.4 % (total:787/196924)
+    # FILE_EXT 0.2 % (total:395/196924)
+    # Top Peer(s) :
+    # ...
+
+I want to generate WLs for x1.fr, so I will get more precise statistics first :
+
+    nxtool.py -c ./nxapi.json  -x --colors -s www.x1.fr
+    ...
+    # Top URI(s) :
+    # /foo/bar/test 8.55 % (total:16831/196915)
+    # /index.php/ 4.26 % (total:8385/196915)
+    ...
+
+I will then attempt to generate whitelists for the `/foo/bar/test` page, that seems to trigger most events :
+`Take note of the --filter option, that allows me to work whitelists only for this URI.
+Filters can specify any field : var_name, zone, uri, id, whitelisted, content, date ...
+However, take care, they don't support regexp yet.
+Take note as well of --slack usage, that allows to ignore success/warning criterias, as my website has too few
+visitors, making legitimate exceptions appear as false positives.`
+
+    nxtool.py -c nxapi.json -s www.x1.fr -f --filter '{"uri": "/foo/bar/test"}' --slack
+    ...
+    #msg: A generic whitelist, true for the whole uri
+    #Rule (1303) html close tag
+    #total hits 126
+    #content : lyiuqhfnp,+<a+href="http://preemptivelove.org/">Cialis+forum</a>,+KKSXJyE,+[url=http://preemptivelove.org/]Viagra+or+cialis[/url],+XGRgnjn,+http
+    #content : 4ThLQ6++<a+href="http://aoeymqcqbdby.com/">aoeymqcqbdby</a>,+[url=http://ndtofuvzhpgq.com/]ndtofuvzhpgq[/url],+[link..
+    #peers : x.y.z.w
+    ...
+    #uri : /faq/
+    #var_name : numcommande
+    #var_name : comment
+    ...
+    # success : global_rule_ip_ratio is 58.82
+    # warnings : rule_ip is 10
+    BasicRule  wl:1303 "mz:$URL:/foo/bar/test|BODY";
+
+
+nxtool attempts to provide extra information to allow user to decides wether it's a false positive :
+  * content : actual HTTP content, only present if $naxsi_extensive_log is set to 1
+  * uri : exemple(s) of uri on which the event was triggered
+  * var_name : exemple(s) of variable names in which the content was triggered
+  * success and warnings : nxapi will inform provide you scoring informations (see 'scores').
+
+
+##3. Tagging events
+
+Once I chose the whitelists that I think are appropriate, I will write them down to a whitelist file. 
+Then, I can tag corresponding events :
+    nxtool.py -c nxapi.json -w /tmp/whitelist.conf --tag
+
+And then, if I look at the report again, I will see a bump in the tagged ratio of events.
+Once the ratio is high enough or the most active URLs & IPs are false positives, it's done !
+
+
+# Tips and tricks of WL generation
+
+  * `--filter`
+
+--filter is your friend, especially if you have a lot of exceptions.
+By narrowing the field of search for whitelist, it will increase speed, and reduce false positives.
+
+  * use `-t` instead of `-f`
+
+-f is the "dumb" generation mode, where all templates will be attempted.
+if you provide something like `-t "ARGS/*"` only templates specific to ARGS whitelists will be attempted.
+
+  * Create your own templates
+
+If you manage applications that do share code/framework/technology, you will quickly find yourself 
+generating the same wl again and again. Stop that ! Write your own templates, improving generation time, 
+accuracy and reducing false positives. Let me take a practical example: 
+I'm dealing with magento, like a *lot*. One of the recurring patterns is the "onepage" checkout, so I created specific templates:
+
+    {
+	"_success" : { "rule_ip" : [ ">", "1"]},
+        "_msg" : "Magento checkout page (BODY|NAME)",
+        "?uri" : "/checkout/onepage/.*",
+        "zone" : "BODY|NAME",
+        "id" : "1310 OR 1311"}
+
 
 # Supported options
 
@@ -15,6 +214,12 @@ Tagging is important as it will exclude events from whitelist generation process
 
 `-s SERVER, --server=SERVER`
 
+Allows to restrict context of whitelist generation or stats display to specific FQDN.
+
+`--filter=FILTER`
+
+A filter (in the form of a dict) to merge with 
+existing templates/filters: '{"uri" : "/foobar", "zone" : "BODY"}'.
 
 ## Whitelist generation options
 
@@ -22,6 +227,7 @@ Tagging is important as it will exclude events from whitelist generation process
 
 Given a path to a template file, attempt to generate matching whitelists.
 Possible whitelists will be tested versus database, only the ones with "good" scores will be kept.
+if TEMPLATE starts with a '/' it's treated as an absolute path. Else, it's expanded starting in tpl/ directory.
 
 `-f, --full-auto`
 
@@ -53,169 +259,65 @@ Performs the actual tagging. If not specified, matching events are simply displa
 
 Generate statistics about current's db content.
 
+## Importing data
 
-# Rating system
-
-  * rule_ip_count : nb of peers hitting rule
-  * rule_uri_count : nb of uri the rule hitted on
-  * template_ip_count : nb of peers hitting template
-  * template_uri_count : nb of uri the rule  hitted on
-  * ip_ratio_template : ratio of peers hitting the template vs peers hitting the rule
-  * uri_ratio_template : ratio of uri hitting the template vs uri hitting the rule
-  * ip_ratio_global : ratio of peers hitting the rule vs all peers
-  * uri_ratio_global : ratio of uri hitting the rule vs all uri
-
-# Terms
-
-## Whitelist
-
-A valid naxsi whitelist, ie. `BasicRule wl:X "mz:ARGS";`
-
-## Template
-
-A template for whitelist generation, ie. 
-
-`
-{
-"zone" : "HEADERS",
-"var_name" : "cookie",
-"id" : "?"}
-`
-
-This template means that nxapi will extract all possible rule IDs found in zone `$HEADERS_VAR:cookie`,
-and attempt to generate whitelists from it :
-
-`
-BasicRule wl:X "mz:$HEADERS_VAR:cookie";
-..
-`
-
-templates so far support :
-  * `"key" : "?"` : Expand key values to all values matching other template's criterias.
-    keep in mind that having several '?' fields will seriously increase processing time `(uniques(key1) * uniques(key2) ..)`
-  * `"?key" : ".*p.*w.*d.*"` : Expand key values to all values matching regex.
-    In outputed rule, `key` is set to matching data, `BasicRule wl:X "mz:$BODY_VAR:user_password";`
-  * `_statics : { "id" : "0" }` : If '_statics' is present, it will override fields values in final rule.
-  * `_success : {}` and `_warnings : {}` : _success and _warning allow to expand ratings rules.
+**Note:** All acquisition features expect naxsi EXLOG/FMT content.
 
 
-
-# Example usage
-
-## Check/understand your paramters
-
-`
-$ cat nxapi.json 
-{
-# elasticsearch setup, must point to the right instance.
-"elastic" : {
- "host" : "127.0.0.1:9200",
- "index" : "nxapi",
- "doctype" : "events",
- "default_ttl" : "7200",
- "max_size" : "1000"
-},
-# filter used for any issued requests, you shouldn't modify it yet
-"global_filters" : {
- "whitelisted" : "false"
-},
-# global warning and global success rules, used to distinguish good and 'bad' whitelists
-"global_warning_rules" : {
- "rule_uri" : [ ">", "5" ],
- "rule_var_name" : [ ">", "5" ],
- "rule_ip" : ["<=", 10 ],
- "global_rule_ip_ratio" : ["<", 5]
-},
-"global_success_rules" : {
- "global_rule_ip_ratio" : [">=", 30],
- "rule_ip" : [">=", 10]
-},
-# path to naxsi core rules, path to template files,
-# path to geoloc database.
-"naxsi" : {
- "rules_path" : "/etc/nginx/naxsi_core.rules",
- "template_path" : "tpl/",
- "geoipdb_path" : "nx_datas/country2coords.txt"
-},
-# controls default colors and verbosity behaviour
-"output" : {
- "colors" : "true",
- "verbosity" : "5"
-}
-}
-`
+` --files=FILES_IN    Path to log files to parse.̀`
 
 
-## Obtain statistics about the global state of database
-
-`
-$ python nxtool.py  -c nxapi.json  --colors -x
-`
-
-Understanding the output :
-
-`
-# Whitelist(ing) ratio :
-# false 100.0 % (total:122647/122647)
-`
-
-Provides the ratio of tagged events versus untagged events.
-Tagging happens on user request, when providing whitelist files.
+Supports glob, gz bz2, ie. --files "/var/log/nginx/*mysite.com*error.log*"
 
 
-`
-# Top servers :
-# www.x.y 43.41 % (total:53241/122647)
-# www.x.y 10.84 % (total:13298/122647)
-# www.x.y 4.57 % (total:5611/122647)
-# x.y 4.43 % (total:5430/122647)
-# www.x.y 4.3 % (total:5273/122647)
-# x.y 4.11 % (total:5046/122647)
-# www.x.y 4.09 % (total:5013/122647)
-# www.x.y 3.81 % (total:4669/122647)
-# www.x.y 3.76 % (total:4609/122647)
-# www.x.y 3.02 % (total:3699/122647)
-# www.x.y 2.47 % (total:3035/122647)
-`
+`--fifo=FIFO_IN      Path to a FIFO to be created & read from. [infinite]`
+Creates a FIFO, increases F_SETPIPE_SZ, and reads on it. mostly useful for reading directly from syslog/nginx logs.
 
-A top-10 list of servers (fqdn) with most exceptions.
+`--stdin             Read from stdin.`
 
-`
-# Top URI(s) :
-# /foo/bar 12.66 % (total:15532/122647)
-# /foo/bar 8.18 % (total:10028/122647)
-# /foo/bar 6.14 % (total:7535/122647)
-# /foo/bar 4.35 % (total:5331/122647)
-# /foo/bar 4.12 % (total:5055/122647)
-# /foo/bar 3.74 % (total:4583/122647)
-# /foo/bar 3.71 % (total:4556/122647)
-# /foo/bar 3.16 % (total:3871/122647)
-# /foo/bar 3.12 % (total:3829/122647)
-# /foo/bar/ 2.67 % (total:3275/122647)
-# /foo/bar 2.64 % (total:3243/122647)
-`
+`--no-timeout        Disable timeout on read operations (stdin/fifo).̀
 
 
-A top-10 list of unique uris with most exceptions.
+# Understanding templates
+
+Templates do have a central role within nxapi.
+By default, only generic ones are provided, but you should create yours.
+Let's first look at a generic one to understand how it work :
+
+      {
+      "zone" : "HEADERS",
+      "var_name" : "cookie",
+      "id" : "?"}
+
+Here is how nxtool will use this to generate whitelists:
+     1. extract global_filters from nxapi.json, and create the base ES filter :
+     { "whitelisted" : "false" }
+     2. merge base ES filter with provided cmd line filter (--filter)
+     { "whitelisted" : "false", "server" : "www.x1.fr" }
+     3. For each static field of the template, merge it in base ES filter :
+     { "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie" }
+     4. For each field to be expanded (value is `?`) :
+     	4.1. select all possible values for this field (id) matching base ES filter, (ie. 1000 and 1001 here)
+	4.2. attempt to generate a whitelist for each possible value, and evaluate its scores.
+	{ "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie", "id" : "1000"}
+	{ "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie", "id" : "1001"}
+     5. For each final set that provided results, output a whitelist.
 
 
-`
-# Top Zone(s) :
-# BODY 53.07 % (total:65092/122648)
-# ARGS 16.58 % (total:20332/122648)
-# HEADERS 13.49 % (total:16548/122648)
-# BODY|NAME 12.75 % (total:15636/122648)
-# URL 3.57 % (total:4384/122648)
-# ARGS|NAME 0.4 % (total:488/122648)
-# FILE_EXT 0.14 % (total:168/122648)
-`
+Templates support :
+  * `"field" : "value"` : A static value that must be present in exception for template to be true.
+  * `"field" : "?"` : A value that must be expanded from database content (while matching static&global filters).
+    	       unique values for "field" will then be used for whitelist generation (one whitelist per unique value).
+  * `"?field" : "regexp"` : A regular expression for a field content that will be searched in database.
+    	       unique values matching regexp for "field" will then be used for whitelist generation (one whitelist per unique value).
+  * `"_statics" : { "field" : "value" }` : A static value to be used at whitelist generation time. Does not take part in search process,
+    		only at 'output' time. ie. `"_statics" : { "id" : "0" }` is the only way to have a whitelist outputing a 'wl:0'.
+  * `"_msg" : "string" ` : a text message to help the user understanding the template purpose.
+  * `"_success" : { ... }` : A dict supplied to overwrite/complete 'global' scoring rules.
+  * `"_warnings" : { ... }` : A dict supplied to overwrite/complete 'global' scoring rules.
 
-A list of zones in which most exceptions where triggered.
+Scoring mecanism :
+ TBD.
 
-Note: These informations should help you determine on which URIs, servers or zones you might
-      have the most learning work to do.
-
-
-## Analyze events for a specific site for whitelist generation
 
 

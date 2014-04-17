@@ -1,3 +1,9 @@
+<a href="https://scan.coverity.com/projects/1883">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/1883/badge.svg"/>
+</a>
+
+
 ### We need your help
 
 [Please fill this little feedback survey](https://docs.google.com/spreadsheet/viewform?formkey=dG9UWDFuTEhiWWt4UF9fZEtwWFVJUlE6MQ), 2 minutes of your time, great help for us !

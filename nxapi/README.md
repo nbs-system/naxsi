@@ -77,7 +77,7 @@ $ cat nxapi.json
 
 ## Checklist
   * Your ElasticSearch instance is up & running
-  * Your database is running, and you already have some data inside :
+  * Your database is running, and you already have some data inside (protip: https://github.com/buixor/naxsi-elastic):
 `  curl -XPOST "http://ELASTICSEARCH/nxapi/events/_search?pretty" -d '{}' `
 
 

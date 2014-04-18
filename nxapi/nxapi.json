@@ -21,7 +21,7 @@
 },
 "naxsi" : {
  "rules_path" : "/etc/nginx/naxsi_core.rules",
- "template_path" : "tpl/",
+ "template_path" : [ "tpl/"],
  "geoipdb_path" : "nx_datas/country2coords.txt"
 },
 "output" : {

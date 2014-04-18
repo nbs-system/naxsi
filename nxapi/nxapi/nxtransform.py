@@ -483,7 +483,7 @@ class NxTranslate():
                     tpl.append({"regexp" : { "uri" : var_name.translate(None, forbidden_rx_chars)}})
                 # URL:<string>
                 elif zone == "URL":
-                    tpl.append({"text" : { "uri" : var_name }})
+                    tpl.append({"match" : { "uri" : var_name }})
                 else:
                     print "huh, what's that ? "+zone
 
@@ -494,7 +494,7 @@ class NxTranslate():
                 zone = k
                 if t_name is True:
                     zone += "|NAME"
-                tpl.append({"text" : {"zone" : zone}})
+                tpl.append({"match" : {"zone" : zone}})
         print "RULE :"
         pprint.pprint(esq)
         return [True, esq]

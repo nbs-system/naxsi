@@ -365,54 +365,36 @@ class ESInject(NxInjector):
     #         return False
     #     return True
     def set_mappings(self):
-        self.es.create(
-            index=self.cfg["elastic"]["index"],
-            doc_type=self.cfg["elastic"]["doctype"],
-#            id=repo_name,
-            body={},
-            ignore=409 # 409 - conflict - would be returned if the document is already there
-            )
-        self.es.indices.put_mapping(
-            index=self.cfg["elastic"]["index"],
-            doc_type=self.cfg["elastic"]["doctype"],
-            body={ 
-                "events" : { 
-                    "_ttl" : { "enabled" : "true", "default" : "4d" },
-                    "properties" : { "var_name" : {"type": "string", "index" : "not_analyzed"}, 
-                                     "uri" : {"type": "string", "index" : "not_analyzed"},
-                                     "zone" : {"type": "string", "index" : "not_analyzed"},
-                                     "server" : {"type": "string", "index" : "not_analyzed"},
-                                     "whitelisted" : {"type" : "string", "index" : "not_analyzed"},
-                                     "ip" : { "type" : "string", "index" : "not_analyzed"}
-                                     }
-                    }
-                })
-        
-    # def set_mappings_old(self):
-    #     """ creates index and sets mappings """
-
-    #     import os
-    #     try:
-    #         method = "PUT"
-    #         req = urllib.Request("http://"+self.host+"/"+self.index)
-    #         req.get_method = lambda: method
-    #         f = urllib.urlopen(req)
-    #         f.close()
-    #     except:
-    #         print "!! Index creation failed."
-
-    #     mappings = { 
-    #         "events" : { 
-    #             "_ttl" : { "enabled" : "true", "default" : "4d" },
-    #             "properties" : { "var_name" : {"type": "string", "index" : "not_analyzed"}, 
-    #                              "uri" : {"type": "string", "index" : "not_analyzed"},
-    #                              "zone" : {"type": "string", "index" : "not_analyzed"},
-    #                              "server" : {"type": "string", "index" : "not_analyzed"},
-    #                              "whitelisted" : {"type" : "string", "index" : "not_analyzed"}
-    #                              }
-    #             }
-    #         }
-    #     self.esreq("/events/_mapping", mappings)
+        try:
+            self.es.create(
+                index=self.cfg["elastic"]["index"],
+                doc_type=self.cfg["elastic"]["doctype"],
+                #            id=repo_name,
+                body={},
+                ignore=409 # 409 - conflict - would be returned if the document is already there
+                )
+        except:
+            print "Unable to create the index/collection : "+self.cfg["elastic"]["index"]+" "+self.cfg["elastic"]["doctype"]
+            return
+        try:
+            self.es.indices.put_mapping(
+                index=self.cfg["elastic"]["index"],
+                doc_type=self.cfg["elastic"]["doctype"],
+                body={ 
+                    "events" : { 
+                        "_ttl" : { "enabled" : "true", "default" : "4d" },
+                        "properties" : { "var_name" : {"type": "string", "index" : "not_analyzed"}, 
+                                         "uri" : {"type": "string", "index" : "not_analyzed"},
+                                         "zone" : {"type": "string", "index" : "not_analyzed"},
+                                         "server" : {"type": "string", "index" : "not_analyzed"},
+                                         "whitelisted" : {"type" : "string", "index" : "not_analyzed"},
+                                         "ip" : { "type" : "string", "index" : "not_analyzed"}
+                                         }
+                        }
+                    })
+        except:
+            print "Unable to set mapping on index/collection : "+self.cfg["elastic"]["index"]+" "+self.cfg["elastic"]["doctype"]
+            return
     def commit(self):
         """Process list of dict (yes) and push them to DB """
         self.total_objs += len(self.nlist)
@@ -438,12 +420,6 @@ class ESInject(NxInjector):
             print "Unable to json.dumps : "
             pprint.pprint(items)
         bulk(self.es, items, index="nxapi", doc_type="events", raise_on_error=True)
-        # req = urllib.Request("http://"+self.host+"/"+self.index+"/events/_bulk?pretty_true" , data=full_body)
-        # #try:
-        # f = urllib.urlopen(req)
-        #except:
-        #print "Unable to urlopen : ",
-        #pprint.pprint(full_body)
         self.total_commits += count
         logging.debug("Written "+str(self.total_commits)+" events")
         print "Written "+str(self.total_commits)+" events"

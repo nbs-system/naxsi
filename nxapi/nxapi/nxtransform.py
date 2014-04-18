@@ -373,7 +373,7 @@ class NxTranslate():
             elif ob[k] == '?':
                 pass
             else:
-                qr['query']['bool']['must'].append({"text" : { k : ob[k]}})
+                qr['query']['bool']['must'].append({"match" : { k : ob[k]}})
 
         qr = self.append_gfilter(qr)
         return qr
@@ -381,8 +381,8 @@ class NxTranslate():
         """ append global filters parameters 
         to and existing elasticsearch query """
         for x in self.cfg["global_filters"]:
-            if {"text" : { x : self.cfg["global_filters"][x] }} not in esq['query']['bool']['must']:
-                esq['query']['bool']['must'].append({"text" : { x : self.cfg["global_filters"][x] }})
+            if {"match" : { x : self.cfg["global_filters"][x] }} not in esq['query']['bool']['must']:
+                esq['query']['bool']['must'].append({"match" : { x : self.cfg["global_filters"][x] }})
             # else:
             #     print "double!"
         return esq
@@ -430,9 +430,9 @@ class NxTranslate():
                         #print "Negative query."
                         if not 'must_not' in tpl['query']['bool'].keys():
                             esq['query']['bool']['must_not'] = []
-                        esq['query']['bool']['must_not'].append({"text" : { "id" : wl_id}})
+                        esq['query']['bool']['must_not'].append({"match" : { "id" : wl_id}})
                     else:
-                        esq['query']['bool']['must'].append({"text" : { "id" : wl_id}})
+                        esq['query']['bool']['must'].append({"match" : { "id" : wl_id}})
             if x.startswith("mz:"):
                 mz_str = x[3:]
                 [res, filters] = self.parse_mz(mz_str, esq)
@@ -467,14 +467,14 @@ class NxTranslate():
                     zone = zone[:-4]
                     if t_name is True:
                         zone += "|NAME"
-                    tpl.append({"text" : { "zone" : zone}})
-                    tpl.append({"text" : { "var_name" : var_name}})
+                    tpl.append({"match" : { "zone" : zone}})
+                    tpl.append({"match" : { "var_name" : var_name}})
                 # *_VAR_X:<regexp>
                 elif zone.endswith("_VAR_X"):
                     zone = zone[:-6]
                     if t_name is True:
                         zone += "|NAME"
-                    tpl.append({"text" : { "zone" : zone}})
+                    tpl.append({"match" : { "zone" : zone}})
                     #.translate(string.maketrans(chars, newchars))
                     tpl.append({"regexp" : { "var_name" : var_name.translate(None, forbidden_rx_chars)}})
                 # URL_X:<regexp>

@@ -238,24 +238,24 @@ class NxTranslate():
         if scoring.get("global", "ip") <= 0:
             print "No hits for this filter."
             return
-        
-        for root, dirs, files in os.walk(self.cfg["naxsi"]["template_path"]):
-            for file in files:
-                if file.endswith(".tpl"):
-                    print "# "+self.grn.format(" template :")+root+"/"+file+" "
-                    template = self.load_tpl_file(root+"/"+file)
-                    scoring.refresh_scope('template', self.tpl2esq(template))
-                    print "Nb of hits :"+str(scoring.get('template', 'total'))
-                    if scoring.get('template', 'total') > 0:
-                        print self.grn.format("#  template matched, generating all rules.")
-                        whitelists = self.gen_wl(template, rule={})
-                        print str(len(whitelists))+" whitelists ..."
-                        for genrule in whitelists:
-                            scoring.refresh_scope('rule', genrule['rule'])
-                            results = scoring.check_rule_score(template)
-                            if len(results['success']) > len(results['warnings']) or self.cfg["naxsi"]["strict"] == "false":
-                                self.fancy_display(genrule, results, template)
-                                print self.grn.format(self.tpl2wl(genrule['rule']), template).encode('utf-8', errors='replace')
+        for sdir in self.cfg["naxsi"]["template_path"]:
+            for root, dirs, files in os.walk(sdir):
+                for file in files:
+                    if file.endswith(".tpl"):
+                        print "# "+self.grn.format(" template :")+root+"/"+file+" "
+                        template = self.load_tpl_file(root+"/"+file)
+                        scoring.refresh_scope('template', self.tpl2esq(template))
+                        print "Nb of hits :"+str(scoring.get('template', 'total'))
+                        if scoring.get('template', 'total') > 0:
+                            print self.grn.format("#  template matched, generating all rules.")
+                            whitelists = self.gen_wl(template, rule={})
+                            print str(len(whitelists))+" whitelists ..."
+                            for genrule in whitelists:
+                                scoring.refresh_scope('rule', genrule['rule'])
+                                results = scoring.check_rule_score(template)
+                                if len(results['success']) > len(results['warnings']) or self.cfg["naxsi"]["strict"] == "false":
+                                    self.fancy_display(genrule, results, template)
+                                    print self.grn.format(self.tpl2wl(genrule['rule']), template).encode('utf-8', errors='replace')
                                 
     def fancy_display(self, full_wl, scores, template=None):
         if template is not None and '_msg' in template.keys():
@@ -286,7 +286,8 @@ class NxTranslate():
         if template.startswith('/') or template.startswith('.'):
             tpl_files.extend(glob.glob(template))
         else:
-            tpl_files.extend(glob.glob(self.cfg['naxsi']['template_path'] +"/"+template))
+            for sdir in self.cfg['naxsi']['template_path']:
+                tpl_files.extend(glob.glob(sdir +"/"+template))
         for x in tpl_files:
             if x.endswith(".tpl") and x not in clean_tpls:
                 clean_tpls.append(x)

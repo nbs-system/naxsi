@@ -428,6 +428,7 @@ ngx_http_dummy_is_rule_whitelisted_rx(ngx_http_request_t *req,
 {
   ngx_http_rule_t *p;
   uint		  i, x;
+  int		  rx_match, violation;
   
   /* Look it up in regexed whitelists for matchzones */
   if (!cf->rxmz_wlr || cf->rxmz_wlr->nelts < 1)
@@ -480,7 +481,6 @@ ngx_http_dummy_is_rule_whitelisted_rx(ngx_http_request_t *req,
     
 
 
-    int	rx_match, violation;
     for (x = 0, violation = 0; x < p->br->custom_locations->nelts && violation == 0; x++) {
       /* does custom location targets a body var ? */
       if (custloc_array(p->br->custom_locations->elts)[x].body_var) {

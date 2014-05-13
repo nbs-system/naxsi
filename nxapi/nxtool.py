@@ -65,7 +65,7 @@ opt.add_option_group(p)
 # group : filtering
 p = OptionGroup(opt, "Filtering options (for whitelist generation)")
 p.add_option('-s', '--server', dest="server", help="FQDN to which we should restrict operations.")
-p.add_option('--filter', dest="filter", help="A filter (in the form of a dict) to merge with existing templates/filters: '{\"uri\" : \"/foobar\"}'.")
+p.add_option('--filter', dest="filter", action="append", help="This option specify a filter for each type of filter you have to add a filter option in your command line, filter are merge with existing templates/filters. (--filter 'uri /foobar')")
 opt.add_option_group(p)
 # group : tagging
 p = OptionGroup(opt, "Tagging options (tag existing events in database)")
@@ -100,8 +100,15 @@ cfg.cfg["naxsi"]["strict"] = str(options.slack).lower()
 
 if options.filter is not None:
     x = {}
+    to_parse = []
+    for arglist in options.filter:
+		to_parse += [x for x in arglist.split(' ')]
+    print to_parse
+    kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'date']
     try:
-        x = json.loads(options.filter)
+		for kw in to_parse :
+			if kw in kwlist :
+				x[kw] = to_parse[to_parse.index(kw)+1]
     except:
         logging.critical("Unable to json.loads('"+options.filter+"')")
         sys.exit(-1)

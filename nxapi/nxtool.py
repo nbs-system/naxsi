@@ -65,7 +65,7 @@ opt.add_option_group(p)
 # group : filtering
 p = OptionGroup(opt, "Filtering options (for whitelist generation)")
 p.add_option('-s', '--server', dest="server", help="FQDN to which we should restrict operations.")
-p.add_option('--filter', dest="filter", action="append", help="This option specify a filter for each type of filter you have to add a filter option in your command line, filter are merge with existing templates/filters. (--filter 'uri /foobar')")
+p.add_option('--filter', dest="filter", action="append", help="This option specify a filter for each type of filter, filter are merge with existing templates/filters. (--filter 'uri /foobar')")
 opt.add_option_group(p)
 # group : tagging
 p = OptionGroup(opt, "Tagging options (tag existing events in database)")

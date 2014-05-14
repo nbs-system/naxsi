@@ -105,9 +105,8 @@ if options.filter is not None:
     try:
         for argstr in options.filter:
             argstr = ' '.join(argstr.split())
-            to_parse += [y for y in argstr.split(' ')]
-        is_corret = bool([a for a in kwlist if a in to_parse])
-        if is_corret:
+            to_parse += argstr.split(' ')
+        if [a for a in kwlist if a in to_parse]:
             for kw in to_parse:
                 if kw in kwlist:
                     x[kw] = to_parse[to_parse.index(kw)+1]
@@ -120,8 +119,6 @@ if options.filter is not None:
         cfg.cfg["global_filters"][z] = x[z]
     print "-- modified global filters : "
     pprint.pprint(cfg.cfg["global_filters"])
-    sys.exit(-1)
-
 
 
 es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"])

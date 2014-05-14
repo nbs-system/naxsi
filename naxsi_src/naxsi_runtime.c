@@ -428,6 +428,7 @@ ngx_http_dummy_is_rule_whitelisted_rx(ngx_http_request_t *req,
 {
   ngx_http_rule_t *p;
   uint		  i, x;
+  int		  rx_match, violation;
   
   /* Look it up in regexed whitelists for matchzones */
   if (!cf->rxmz_wlr || cf->rxmz_wlr->nelts < 1)
@@ -480,7 +481,6 @@ ngx_http_dummy_is_rule_whitelisted_rx(ngx_http_request_t *req,
     
 
 
-    int	rx_match, violation;
     for (x = 0, violation = 0; x < p->br->custom_locations->nelts && violation == 0; x++) {
       /* does custom location targets a body var ? */
       if (custloc_array(p->br->custom_locations->elts)[x].body_var) {
@@ -948,6 +948,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ngx_str_t	 empty = ngx_string("");
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_array_t	*ostr;
+  ngx_table_elt_t	    *h;
   
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   /* get array of signatures strings */
@@ -985,7 +986,6 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ** and arguments, as well as 
   ** the first fragment of log
   */
-  ngx_table_elt_t	    *h;
   
   
   if(r->headers_in.headers.last)  {

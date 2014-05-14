@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import glob, fcntl, termios
 import sys
 import elasticsearch 

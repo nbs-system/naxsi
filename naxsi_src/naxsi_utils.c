@@ -646,6 +646,8 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
   int				zone, uri_idx, name_idx, ret;
   ngx_http_rule_t		*curr_r/*, *father_r*/;
   ngx_http_whitelist_rule_t	*father_wlr;
+  ngx_http_rule_t **rptr;
+  ngx_regex_compile_t *rgc;
   char			*fullname;
   uint	i;
 
@@ -724,8 +726,6 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
 					 sizeof(ngx_http_rule_t *));
 	if (!dlc->rxmz_wlr) return (NGX_ERROR);
       }
-      ngx_http_rule_t **rptr;
-      ngx_regex_compile_t *rgc;
       if (name_idx != -1) {
 	custloc_array(curr_r->br->custom_locations->elts)[name_idx].target_rx = 
 	  ngx_pcalloc(cf->pool, sizeof(ngx_regex_compile_t));

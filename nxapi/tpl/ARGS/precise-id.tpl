@@ -3,5 +3,6 @@
 "zone" : "ARGS",
 "var_name" : "?",
 "id" : "?",
-"uri" : "?"
+"uri" : "?",
+"_warnings" : { "template_uri" : [ ">=", "5"]}
 }

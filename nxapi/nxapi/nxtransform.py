@@ -46,12 +46,8 @@ class NxRating():
         """ drops all datas for a named scope """
         if scope not in self.esq.keys():
             print "Unknown scope ?!"+scope
-#        print "REFRESH SCOPE :"+scope+" : ",
-#        pprint.pprint(esq)
         self.esq[scope] = esq
         self.stats[scope] = {}
-#        print "SCORING/SCOPES :"
-#        pprint.pprint(self.esq)
     def query_ratio(self, scope, scope_small, score, force_refresh):
         """ wrapper to calculate ratio between two vals, rounded float """
         #print "ratio :"+str(self.get(scope_small, score))+" / "+str( self.get(scope, score))
@@ -271,7 +267,7 @@ class NxTranslate():
                 for y in full_wl[x]:
                     print "#"+x+" : "+unicode(y).encode("utf-8", errors='replace')
 
-        pprint.pprint(scores)
+#        pprint.pprint(scores)
         for x in scores['success']:
             print "# success : "+self.grn.format(str(x['key'])+" is "+str(x['curr']))
         for x in scores['warnings']:

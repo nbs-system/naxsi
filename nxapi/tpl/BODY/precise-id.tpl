@@ -3,5 +3,7 @@
 "zone" : "BODY",
 "var_name" : "?",
 "id" : "?",
-"uri" : "?"
+"uri" : "?",
+"_warnings" : { "template_uri" : [ ">", "5"],
+	      	"template_var_name" : [ ">", "5"]}
 }

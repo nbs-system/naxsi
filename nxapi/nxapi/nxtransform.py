@@ -249,13 +249,14 @@ class NxTranslate():
                         if scoring.get('template', 'total') > 0:
                             print self.grn.format("#  template matched, generating all rules.")
                             whitelists = self.gen_wl(template, rule={})
+                            #x add here 
                             print str(len(whitelists))+" whitelists ..."
                             for genrule in whitelists:
                                 scoring.refresh_scope('rule', genrule['rule'])
                                 results = scoring.check_rule_score(template)
                                 if len(results['success']) > len(results['warnings']) or self.cfg["naxsi"]["strict"] == "false":
                                     self.fancy_display(genrule, results, template)
-                                    print self.grn.format(self.tpl2wl(genrule['rule']), template).encode('utf-8', errors='replace')
+                                    print self.grn.format(self.tpl2wl(genrule['rule']).encode('utf-8', errors='replace'), template)
                                 
     def fancy_display(self, full_wl, scores, template=None):
         if template is not None and '_msg' in template.keys():

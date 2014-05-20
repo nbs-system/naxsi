@@ -177,6 +177,7 @@ class NxRating():
             scope = items[0]
             score = items[1]
             x = self.get(scope, score)
+#            print "scope:"+str(scope)+" score:"+str(score)
             return {'curr' : x, 'check' : check( int(self.get(scope, score)), int(beat))}
         elif len(items) == 4:
             scope = items[0]
@@ -211,9 +212,9 @@ class NxTranslate():
         self.grn = '{0}'
         self.blu = '{0}'
         if self.cfg["output"]["colors"] == "true":
-            self.red = "\033[01;31m{0}\033[00m"
-            self.grn = "\033[1;36m{0}\033[00m"
-            self.blu = "\033[1;94m{0}\033[00m"
+            self.red = "\033[91m{0}\033[0m"
+            self.grn = "\033[92m{0}\033[0m"
+            self.blu = "\033[94m{0}\033[0m"
         # Attempt to parse provided core rules file
         self.load_cr_file(self.cfg["naxsi"]["rules_path"])
 
@@ -426,7 +427,7 @@ class NxTranslate():
                     if wl_id.find("-") != -1:
                         wl_id = wl_id.replace("-", "")
                         #print "Negative query."
-                        if not 'must_not' in tpl['query']['bool'].keys():
+                        if not 'must_not' in esq['query']['bool'].keys():
                             esq['query']['bool']['must_not'] = []
                         esq['query']['bool']['must_not'].append({"match" : { "id" : wl_id}})
                     else:

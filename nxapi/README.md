@@ -219,7 +219,7 @@ Allows to restrict context of whitelist generation or stats display to specific 
 `--filter=FILTER`
 
 A filter (in the form of a dict) to merge with 
-existing templates/filters: '{"uri" : "/foobar", "zone" : "BODY"}'.
+existing templates/filters: 'uri /foobar zone BODY'.
 
 ## Whitelist generation options
 

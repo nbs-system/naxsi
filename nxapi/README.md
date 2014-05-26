@@ -146,7 +146,7 @@ However, take care, they don't support regexp yet.
 Take note as well of --slack usage, that allows to ignore success/warning criterias, as my website has too few
 visitors, making legitimate exceptions appear as false positives.`
 
-    nxtool.py -c nxapi.json -s www.x1.fr -f --filter '{"uri": "/foo/bar/test"}' --slack
+    nxtool.py -c nxapi.json -s www.x1.fr -f --filter 'uri /foo/bar/test' --slack
     ...
     #msg: A generic whitelist, true for the whole uri
     #Rule (1303) html close tag

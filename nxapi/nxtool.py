@@ -159,7 +159,8 @@ if options.template is not None:
             #pprint.pprint(genrule)
             scoring.refresh_scope('rule', genrule['rule'])
             scores = scoring.check_rule_score(tpl)
-            if len(scores['success']) > len(scores['warnings']) or cfg.cfg["naxsi"]["strict"] == "false":
+            if (len(scores['success']) > len(scores['warnings']) and scores['deny'] == False) or cfg.cfg["naxsi"]["strict"] == "false":
+                #print "?deny "+str(scores['deny'])
                 translate.fancy_display(genrule, scores, tpl)
                 print translate.grn.format(translate.tpl2wl(genrule['rule'], tpl)).encode('utf-8')
     sys.exit(1)

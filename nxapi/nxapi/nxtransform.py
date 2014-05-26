@@ -251,7 +251,9 @@ class NxTranslate():
                             for genrule in whitelists:
                                 scoring.refresh_scope('rule', genrule['rule'])
                                 results = scoring.check_rule_score(template)
-                                if len(results['success']) > len(results['warnings']) or self.cfg["naxsi"]["strict"] == "false":
+                                #XX1
+                                if ( len(results['success']) > len(results['warnings']) and results["deny"] == False) or self.cfg["naxsi"]["strict"] == "false":
+                                    #print "?deny "+str(results['deny'])
                                     self.fancy_display(genrule, results, template)
                                     print self.grn.format(self.tpl2wl(genrule['rule']).encode('utf-8', errors='replace'), template)
                                 

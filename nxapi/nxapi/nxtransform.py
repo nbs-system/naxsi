@@ -490,7 +490,7 @@ class NxTranslate():
 
             # |<ZONE>
             else:
-                if k not in ["HEADERS", "BODY", "URL", "ARGS"]:
+                if k not in ["HEADERS", "BODY", "URL", "ARGS", "FILE_EXT"]:
                     return [False, "Unknown zone : '"+k+"'"]
                 zone = k
                 if t_name is True:

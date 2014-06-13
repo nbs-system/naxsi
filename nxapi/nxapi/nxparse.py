@@ -102,6 +102,7 @@ class NxParser():
         self.multiline_buf = {}
         # store generated objects
         self.dict_buf = []
+        self.bad_line = 0
 
     def unify_date(self, date):
         """ tries to parse a text date, 
@@ -146,6 +147,7 @@ class NxParser():
         raw log line. 2nd item starts at first naxsi keyword
         found. """
         ret = [None, None]
+        
         # Don't try to parse if no naxsi keyword is found
         for word in self.naxsi_keywords:
             idx = line.find(word)

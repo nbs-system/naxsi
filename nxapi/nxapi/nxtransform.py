@@ -91,7 +91,7 @@ class NxRating():
             for k in sdeny.keys():
                 res = self.check_rule(k, sdeny[k])
                 if res['check'] is True:
-                    #print "WE SHOULD DENY THAT"
+                    print "WE SHOULD DENY THAT"
                     deny = True
                     break
         for scheck in [glb_success, tpl_success]:
@@ -526,7 +526,7 @@ class NxTranslate():
         else:
             zone = rule['zone']
 
-        if rule.get('var_name', '') not in  ['', '?']:
+        if rule.get('var_name', '') not in  ['', '?'] and zone != "FILE_EXT":
             wl += "$"+zone+"_VAR:"+rule['var_name']
         else:
             wl += zone

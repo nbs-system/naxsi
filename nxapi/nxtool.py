@@ -51,7 +51,7 @@ opt = OptionParser()
 # group : config
 p = OptionGroup(opt, "Configuration options")
 p.add_option('-c', '--config', dest="cfg_path", default="/usr/local/etc/nxapi.json", help="Path to nxapi.json (config).")
-p.add_option('--colors', dest="colors", action="store_true", help="Disable output colorz.")
+p.add_option('--colors', dest="colors", action="store_false", default="true", help="Disable output colorz.")
 # p.add_option('-q', '--quiet', dest="quiet_flag", action="store_true", help="Be quiet.")
 # p.add_option('-v', '--verbose', dest="verb_flag", action="store_true", help="Be verbose.")
 opt.add_option_group(p)
@@ -95,13 +95,16 @@ except ValueError:
 if options.server is not None:
     cfg.cfg["global_filters"]["server"] = options.server
 
+
+
 cfg.cfg["output"]["colors"] = str(options.colors).lower()
 cfg.cfg["naxsi"]["strict"] = str(options.slack).lower()
 
 if options.filter is not None:
     x = {}
     to_parse = []
-    kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'date']
+    kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'date',
+              '?server', '?uri', '?var_name', '?content']
     try:
         for argstr in options.filter:
             argstr = ' '.join(argstr.split())
@@ -117,8 +120,8 @@ if options.filter is not None:
         sys.exit(-1)
     for z in x.keys():
         cfg.cfg["global_filters"][z] = x[z]
-    print "-- modified global filters : "
-    pprint.pprint(cfg.cfg["global_filters"])
+    #print "-- modified global filters : "
+    #pprint.pprint(cfg.cfg["global_filters"])
 
 
 es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"])

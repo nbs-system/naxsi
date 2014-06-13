@@ -382,10 +382,13 @@ class NxTranslate():
         """ append global filters parameters 
         to and existing elasticsearch query """
         for x in self.cfg["global_filters"]:
-            if {"match" : { x : self.cfg["global_filters"][x] }} not in esq['query']['bool']['must']:
-                esq['query']['bool']['must'].append({"match" : { x : self.cfg["global_filters"][x] }})
-            # else:
-            #     print "double!"
+            if x.startswith('?'):
+                x = x[1:]
+                if {"regexp" : { x : self.cfg["global_filters"]['?'+x] }} not in esq['query']['bool']['must']:
+                    esq['query']['bool']['must'].append({"regexp" : { x : self.cfg["global_filters"]['?'+x] }}) 
+            else:
+                if {"match" : { x : self.cfg["global_filters"][x] }} not in esq['query']['bool']['must']:
+                    esq['query']['bool']['must'].append({"match" : { x : self.cfg["global_filters"][x] }})
         return esq
     def tpl_append_gfilter(self, tpl):
         for x in self.cfg["global_filters"]:

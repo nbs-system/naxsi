@@ -6,6 +6,10 @@
  "default_ttl" : "7200",
  "max_size" : "1000"
 },
+"syslogd": {
+ "host" : "0.0.0.0",
+ "port" : "51400"
+},
 "global_filters" : {
  "whitelisted" : "false"
 },

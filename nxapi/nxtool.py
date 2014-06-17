@@ -37,8 +37,8 @@ def macquire(line):
         for event in z['events']:
             event['date'] = z['date']
             event['coord'] = geoloc.ip2ll(event['ip'])
-        #print "Got data :)"
-        #pprint.pprint(z)
+        # print "Got data :)"
+        # pprint.pprint(z)
         #print ".",
         injector.insert(z)
     else:
@@ -52,7 +52,7 @@ opt = OptionParser()
 # group : config
 p = OptionGroup(opt, "Configuration options")
 p.add_option('-c', '--config', dest="cfg_path", default="/usr/local/etc/nxapi.json", help="Path to nxapi.json (config).")
-p.add_option('--colors', dest="colors", action="store_true", help="Disable output colorz.")
+p.add_option('--colors', dest="colors", action="store_false", default="true", help="Disable output colorz.")
 # p.add_option('-q', '--quiet', dest="quiet_flag", action="store_true", help="Be quiet.")
 # p.add_option('-v', '--verbose', dest="verb_flag", action="store_true", help="Be verbose.")
 opt.add_option_group(p)
@@ -62,7 +62,7 @@ p.add_option('--files', dest="files_in", help="Path to log files to parse.")
 p.add_option('--fifo', dest="fifo_in", help="Path to a FIFO to be created & read from. [infinite]")
 p.add_option('--stdin', dest="stdin", action="store_true", help="Read from stdin.")
 p.add_option('--no-timeout', dest="infinite_flag", action="store_true", help="Disable timeout on read operations (stdin/fifo).")
-p.add_option('--syslog', dest="syslog_in", action="store_true", help="Listen on port udp/514 for syslog logging.")
+p.add_option('--syslog', dest="syslog_in", action="store_true", help="Listen on tcp port for syslog logging.")
 opt.add_option_group(p)
 # group : filtering
 p = OptionGroup(opt, "Filtering options (for whitelist generation)")
@@ -103,7 +103,8 @@ cfg.cfg["naxsi"]["strict"] = str(options.slack).lower()
 if options.filter is not None:
     x = {}
     to_parse = []
-    kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'date']
+    kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'date',
+              '?server', '?uri', '?var_name', '?content']
     try:
         for argstr in options.filter:
             argstr = ' '.join(argstr.split())
@@ -119,8 +120,8 @@ if options.filter is not None:
         sys.exit(-1)
     for z in x.keys():
         cfg.cfg["global_filters"][z] = x[z]
-    print "-- modified global filters : "
-    pprint.pprint(cfg.cfg["global_filters"])
+    #print "-- modified global filters : "
+    #pprint.pprint(cfg.cfg["global_filters"])
 
 
 es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"])
@@ -258,8 +259,10 @@ if options.fifo_in is not None:
     sys.exit(1)
 
 if options.syslog_in is not None:
+    sysloghost = cfg.cfg["syslogd"]["host"]
+    syslogport = cfg.cfg["syslogd"]["port"]
     while 1:
-      reader = NxReader(macquire, syslog=True)
+      reader = NxReader(macquire, syslog=True, syslogport=syslogport, sysloghost=sysloghost)
       reader.read_files()
     injector.stop()
     sys.exit(1)

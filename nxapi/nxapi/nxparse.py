@@ -22,13 +22,15 @@ import socket
 class NxReader():
     """ Feeds the given injector from logfiles """
     def __init__(self, acquire_fct, stdin=False, lglob=[], fd=None,
-                 stdin_timeout=5, syslog=None):
+                 stdin_timeout=5, syslog=None, syslogport=None, sysloghost=None):
         self.acquire_fct = acquire_fct
         self.files = []
         self.timeout = stdin_timeout
         self.stdin = False
         self.fd = fd
         self.syslog = syslog
+        self.syslogport = syslogport
+        self.sysloghost = sysloghost
         if stdin is not False:
             logging.warning("Using stdin")
             self.stdin = True
@@ -56,8 +58,12 @@ class NxReader():
         else:
             return False
     def read_syslog(self, syslog):
-        host = ''
-        port = 51400
+        if self.syslogport is not None:
+          host = self.sysloghost
+          port = int(self.syslogport)
+        else:
+          print "Unable to get syslog host and port"
+          sys.exit(1)
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         try:
           s.bind((host,port))
@@ -65,7 +71,7 @@ class NxReader():
         except socket.error as msg:
           print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
           pass
-        print "Listening for syslog incoming"
+        print "Listening for syslog incoming "+host+" port "+ str(self.syslogport)
         conn, addr = s.accept()
         syslog = conn.recv(1024)
         if syslog == '':
@@ -130,6 +136,7 @@ class NxParser():
         self.multiline_buf = {}
         # store generated objects
         self.dict_buf = []
+        self.bad_line = 0
 
     def unify_date(self, date):
         """ tries to parse a text date, 
@@ -174,6 +181,7 @@ class NxParser():
         raw log line. 2nd item starts at first naxsi keyword
         found. """
         ret = [None, None]
+
         # Don't try to parse if no naxsi keyword is found
         for word in self.naxsi_keywords:
             idx = line.find(word)

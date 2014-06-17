@@ -17,17 +17,20 @@ import json
 import copy
 from elasticsearch.helpers import bulk
 import os
-
+import socket
         
 class NxReader():
     """ Feeds the given injector from logfiles """
     def __init__(self, acquire_fct, stdin=False, lglob=[], fd=None,
-                 stdin_timeout=5):
+                 stdin_timeout=5, syslog=None, syslogport=None, sysloghost=None):
         self.acquire_fct = acquire_fct
         self.files = []
         self.timeout = stdin_timeout
         self.stdin = False
         self.fd = fd
+        self.syslog = syslog
+        self.syslogport = syslogport
+        self.sysloghost = sysloghost
         if stdin is not False:
             logging.warning("Using stdin")
             self.stdin = True
@@ -38,6 +41,8 @@ class NxReader():
             logging.warning("List of files :"+str(self.files))
         if self.fd is not None:
             logging.warning("Reading from supplied FD (fifo ?)")
+        if self.syslog is not None:
+            logging.warning("Reading from syslog socket")
     def read_fd(self, fd):
         if self.timeout is not None:
             rlist, _, _ = select([fd], [], [], self.timeout)
@@ -52,6 +57,29 @@ class NxReader():
             return True
         else:
             return False
+    def read_syslog(self, syslog):
+        if self.syslogport is not None:
+          host = self.sysloghost
+          port = int(self.syslogport)
+        else:
+          print "Unable to get syslog host and port"
+          sys.exit(1)
+        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        try:
+          s.bind((host,port))
+          s.listen(10)
+        except socket.error as msg:
+          print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
+          pass
+        print "Listening for syslog incoming "+host+" port "+ str(self.syslogport)
+        conn, addr = s.accept()
+        syslog = conn.recv(1024)
+        if syslog == '':
+            return False
+        conn.send(syslog)     
+        self.acquire_fct(syslog)
+        return True
+
     def read_files(self):
         if self.stdin is True:
             ret = ""
@@ -63,6 +91,12 @@ class NxReader():
             while self.read_fd(self.fd) is True:
                 pass
             return 0
+        if self.syslog is not None:
+            ret = ""
+            while self.read_syslog(self.syslog) is True:
+                pass
+            return 0
+
         count = 0
         total = 0
         for lfile in self.files:
@@ -147,7 +181,7 @@ class NxParser():
         raw log line. 2nd item starts at first naxsi keyword
         found. """
         ret = [None, None]
-        
+
         # Don't try to parse if no naxsi keyword is found
         for word in self.naxsi_keywords:
             idx = line.find(word)

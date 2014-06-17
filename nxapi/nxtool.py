@@ -2,6 +2,7 @@
 
 import glob, fcntl, termios
 import sys
+import socket
 import elasticsearch 
 from optparse import OptionParser, OptionGroup
 from nxapi.nxtransform import *
@@ -9,6 +10,7 @@ from nxapi.nxparse import *
 
 F_SETPIPE_SZ = 1031  # Linux 2.6.35+
 F_GETPIPE_SZ = 1032  # Linux 2.6.35+
+
 
 
 def open_fifo(fifo):
@@ -46,7 +48,6 @@ def macquire(line):
 
 
 
-
 opt = OptionParser()
 # group : config
 p = OptionGroup(opt, "Configuration options")
@@ -61,6 +62,7 @@ p.add_option('--files', dest="files_in", help="Path to log files to parse.")
 p.add_option('--fifo', dest="fifo_in", help="Path to a FIFO to be created & read from. [infinite]")
 p.add_option('--stdin', dest="stdin", action="store_true", help="Read from stdin.")
 p.add_option('--no-timeout', dest="infinite_flag", action="store_true", help="Disable timeout on read operations (stdin/fifo).")
+p.add_option('--syslog', dest="syslog_in", action="store_true", help="Listen on tcp port for syslog logging.")
 opt.add_option_group(p)
 # group : filtering
 p = OptionGroup(opt, "Filtering options (for whitelist generation)")
@@ -94,8 +96,6 @@ except ValueError:
 
 if options.server is not None:
     cfg.cfg["global_filters"]["server"] = options.server
-
-
 
 cfg.cfg["output"]["colors"] = str(options.colors).lower()
 cfg.cfg["naxsi"]["strict"] = str(options.slack).lower()
@@ -227,8 +227,8 @@ if options.stats is True:
     sys.exit(1)
 
 # input options, only setup injector if one input option is present
-if options.files_in is not None or options.fifo_in is not None or options.stdin is not None:
-    if options.fifo_in is not None:
+if options.files_in is not None or options.fifo_in is not None or options.stdin is not None or options.syslog_in is not None:
+    if options.fifo_in is not None or options.syslog_in is not None:
         injector = ESInject(es, cfg.cfg, auto_commit_limit=1)
     else:
         injector = ESInject(es, cfg.cfg)
@@ -257,6 +257,16 @@ if options.fifo_in is not None:
         print "stop"
     injector.stop()
     sys.exit(1)
+
+if options.syslog_in is not None:
+    sysloghost = cfg.cfg["syslogd"]["host"]
+    syslogport = cfg.cfg["syslogd"]["port"]
+    while 1:
+      reader = NxReader(macquire, syslog=True, syslogport=syslogport, sysloghost=sysloghost)
+      reader.read_files()
+    injector.stop()
+    sys.exit(1)
+
 if options.stdin is True:
     if options.infinite_flag:
         reader = NxReader(macquire, lglob=[], stdin=True, stdin_timeout=None)

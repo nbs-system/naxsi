@@ -21,6 +21,9 @@
  "global_rule_ip_ratio" : [">=", 10],
  "rule_ip" : [">=", 10]
 },
+"global_deny_rules" : {
+ "global_rule_ip_ratio" : ["<", 2]
+},
 "naxsi" : {
  "rules_path" : "/etc/nginx/naxsi_core.rules",
  "template_path" : [ "tpl/"],

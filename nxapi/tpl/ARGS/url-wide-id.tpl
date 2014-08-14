@@ -3,6 +3,6 @@
 "zone" : "ARGS",
 "uri" : "?",
 "id" : "?",
-"_warnings" : { "rule_var_name" : [ "<=", "3" ]},
+"_deny" : { "rule_var_name" : [ "<=", "3" ]},
 "_success" : { "rule_var_name" : [ ">", "3" ]}
 }

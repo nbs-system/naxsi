@@ -37,6 +37,7 @@ class NxRating():
             }
         self.global_warnings = cfg["global_warning_rules"]
         self.global_success = cfg["global_success_rules"]
+        self.global_deny = cfg["global_deny_rules"]
     def drop(self):
         """ clears all existing stats """
         self.stats['template'] = {}
@@ -77,6 +78,7 @@ class NxRating():
                                 tpl_warnings=tpl.get('_warnings', None), 
                                 tpl_deny=tpl.get('_deny', None))
     def check_score(self, tpl_success=None, tpl_warnings=None, tpl_deny=None):
+#        pprint.pprint(self.stats)
         debug = False
         success = []
         warning = []
@@ -84,14 +86,15 @@ class NxRating():
         failed_tests = {"success" : [], "warnings" : []}
         glb_success = self.global_success
         glb_warnings = self.global_warnings
+        glb_deny = self.global_deny
 
-        for sdeny in [tpl_deny]:
+        for sdeny in [tpl_deny, glb_deny]:
             if sdeny is None:
                 continue
             for k in sdeny.keys():
                 res = self.check_rule(k, sdeny[k])
                 if res['check'] is True:
-                    print "WE SHOULD DENY THAT"
+#                    print "WE SHOULD DENY THAT"
                     deny = True
                     break
         for scheck in [glb_success, tpl_success]:
@@ -121,42 +124,6 @@ class NxRating():
                     if debug is True:
                         print "[WARNINGS] NOT TRIGGERED, on "+k+" vs "+str(res['curr'])+", check :"+str(fcheck[k][0])+" - "+str(fcheck[k][1])
                     failed_tests["warnings"].append({'key' : k, 'criteria' : fcheck[k], 'curr' : res['curr']})
-
-#            pass
-
-        # if glb_success is not None:
-        #     for k in glb_success.keys():
-        #         res = self.check_rule(k, glb_success[k])
-        #         if res['check'] is True:
-        #             if debug is True:
-        #                 print "[SUCCESS] check OK, on "+k+" vs "+str(res['curr'])+", check :"+str(glb_success[k][0])+" - "+str(glb_success[k][1])
-        #             success.append({'key' : k, 'criteria' : glb_success[k], 'curr' : res['curr']})
-        #         else:
-        #             if debug is True:
-        #                 print "[SUCCESS] check KO, on "+k+" vs "+str(res['curr'])+", check :"+str(glb_success[k][0])+" - "+str(glb_success[k][1])
-        #             failed_tests["success"].append({'key' : k, 'criteria' : glb_success[k], 'curr' : res['curr']})
-        # if glb_warnings is not None:
-        #     for k in glb_warnings.keys():
-        #         res =  self.check_rule(k, glb_warnings[k])
-        #         if res['check'] is True:
-        #             warning.append({'key' : k, 'criteria' : glb_warnings[k], 'curr' : res['curr']})
-        #         else:
-        #             failed_tests["warnings"].append({'key' : k, 'criteria' : glb_warnings[k], 'curr' : res['curr']})
-        # if tpl_success is not None:
-        #     for k in tpl_success.keys():
-        #         res = self.check_rule(k, tpl_success[k])
-        #         if res['check'] is True:
-        #             success.append({'key' : k, 'criteria' : tpl_success[k], 'curr' : res['curr']})
-        #         else:
-        #              failed_tests["success"].append({'key' : k, 'criteria' : tpl_success[k], 'curr' : res['curr']})
-        # if tpl_warnings is not None:
-        #     for k in tpl_warnings.keys():
-        #         res = self.check_rule(k, tpl_warnings[k])
-        #         if res['check'] is True:
-        #             warning.append({'key' : k, 'criteria' : tpl_warnings[k], 'curr' : res['curr']})
-        #         else:
-        #             failed_tests["warnings"].append({'key' : k, 'criteria' : tpl_warnings[k], 'curr' : res['curr']})
-
         x = { 'success' : success,
               'warnings' : warning,
               'failed_tests' : failed_tests,
@@ -184,6 +151,7 @@ class NxRating():
             scope_small = items[1]
             score = items[2]
             x = self.get(scope, score, scope_small=scope_small)
+            #Xpprint.pprint()
             return {'curr' : x, 'check' : check(int(self.get(scope, score, scope_small=scope_small)), int(beat))}
         else:
             print "cannot understand rule ("+label+"):",
@@ -203,6 +171,7 @@ class NxTranslate():
         self.cfg = cfg.cfg
         self.cfg["global_warning_rules"] = self.normalize_checks(self.cfg["global_warning_rules"])
         self.cfg["global_success_rules"] = self.normalize_checks(self.cfg["global_success_rules"])
+        self.cfg["global_deny_rules"] = self.normalize_checks(self.cfg["global_deny_rules"])
         self.core_msg = {}
         # by default, es queries will return 1000 results max
         self.es_max_size = self.cfg.get("elastic").get("max_size", 1000)
@@ -499,8 +468,8 @@ class NxTranslate():
                 if t_name is True:
                     zone += "|NAME"
                 tpl.append({"match" : {"zone" : zone}})
-        print "RULE :"
-        pprint.pprint(esq)
+        # print "RULE :"
+        # pprint.pprint(esq)
         return [True, esq]
     def tpl2wl(self, rule, template=None):
         """ transforms a rule/esq
@@ -602,6 +571,8 @@ class NxTranslate():
         """ tag events with msg + tstamp if they match esq """
         count = 0
         esq["size"] = "0"
+        print "TAG RULE :",
+        pprint.pprint(esq)
         x = self.search(esq)
         print self.grn.format(str(x["hits"]["total"])) + " items to be tagged ..."
         esq["size"] = x["hits"]["total"]

@@ -169,6 +169,11 @@ if options.template is not None:
     sys.exit(1)
 
 # tagging options
+
+if options.wl_file is not None and options.server is None:
+    print translate.red.format("Cannot tag events in database without a server name !")
+    sys.exit(2)
+
 if options.wl_file is not None:
     wl_files = []
     wl_files.extend(glob.glob(options.wl_file))

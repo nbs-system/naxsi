@@ -582,7 +582,7 @@ class NxTranslate():
             size = size / 10
         while count < total_events:
             esq["size"] = size
-            esq["from"] = count
+            esq["from"] = 0
             res = self.search(esq)
             # Iterate through matched evts to tag them.
             for item in res['hits']['hits']:

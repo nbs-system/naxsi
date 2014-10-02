@@ -570,26 +570,36 @@ class NxTranslate():
     def tag_events(self, esq, msg, tag=False):
         """ tag events with msg + tstamp if they match esq """
         count = 0
+        total_events = 0
         esq["size"] = "0"
         print "TAG RULE :",
         pprint.pprint(esq)
         x = self.search(esq)
-        print self.grn.format(str(x["hits"]["total"])) + " items to be tagged ..."
-        esq["size"] = x["hits"]["total"]
-        res = self.search(esq)
-        # Iterate through matched evts to tag them.
-        for item in res['hits']['hits']:
-            eid = item['_id']
-            body = item['_source']
-            cm = item['_source']['comments']
-            body['comments'] += ","+msg+":"+str(datetime.datetime.now())
-            body['whitelisted'] = "true"
-            if tag is True:
-                print "Tagging id: "+eid
-                print str(self.index(body, eid))
-            else:
-                print eid+",",
-            count += 1
+        total_events = int(str(x["hits"]["total"]))
+        print str(self.grn.format(total_events)) + " items to be tagged ..."
+        size = int(x['hits']['total'])
+        if size > 100:
+            size = size / 10
+        while count < total_events:
+            esq["size"] = size
+            esq["from"] = count
+            res = self.search(esq)
+            # Iterate through matched evts to tag them.
+            for item in res['hits']['hits']:
+                eid = item['_id']
+                body = item['_source']
+                cm = item['_source']['comments']
+                body['comments'] += ","+msg+":"+str(datetime.datetime.now())
+                body['whitelisted'] = "true"
+                if tag is True:
+#                    print "Tagging id: "+eid
+                    self.index(body, eid)
+                else:
+                    print eid+",",
+                count += 1
+            print "Tagged {0} events out of {1}".format(count, total_events)
+            if total_events - count < size:
+                size = total_events - count
         print ""
         return count
 

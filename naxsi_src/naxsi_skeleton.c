@@ -158,14 +158,14 @@ static ngx_command_t  ngx_http_dummy_commands[] =  {
     NULL },
   /* NaxsiLogfile */
   { ngx_string(TOP_NAXSI_LOGFILE_T),
-    NGX_HTTP_MAIN_CONF|NGX_CONF_1MORE,
+    NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
     ngx_http_naxsi_logfile_main_conf,
     NGX_HTTP_MAIN_CONF_OFFSET,
     0,
     NULL },
   /* NaxsiLogfile - nginx style*/
   { ngx_string(TOP_NAXSI_LOGFILE_N),
-    NGX_HTTP_MAIN_CONF|NGX_CONF_1MORE,
+    NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
     ngx_http_naxsi_logfile_main_conf,
     NGX_HTTP_MAIN_CONF_OFFSET,
     0,

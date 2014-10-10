@@ -52,9 +52,13 @@ ngx_http_naxsi_logfile_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   ngx_naxsi_log_t               *log;
 
   if (!alcf || !cf)
-    return (NGX_CONF_ERROR);  /* alloc a new rule */
-
+    return (NGX_CONF_ERROR);
+  if (cf->args==NULL)
+    return (NGX_CONF_ERROR);
+  if (cf->args->elts==NULL)
+    return (NGX_CONF_ERROR);
   value = cf->args->elts;
+
   /* create specific log file */
   if ( (!ngx_strcmp(value[0].data, TOP_NAXSI_LOGFILE_N) ||
         !ngx_strcmp(value[0].data, TOP_NAXSI_LOGFILE_T))
@@ -105,6 +109,10 @@ ngx_http_naxsi_logfile_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   ngx_naxsi_log_t               *log;
 
   if (!alcf || !cf)
+    return (NGX_CONF_ERROR);
+  if (cf->args==NULL)
+    return (NGX_CONF_ERROR);
+  if (cf->args->elts==NULL)
     return (NGX_CONF_ERROR);
   value = cf->args->elts;
 
@@ -318,6 +326,18 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
       return;
     }
     for (l = 0; l < logarray->nelts; l++) {
-      ngx_naxsi_log_write(r, &(((ngx_naxsi_log_t*)logarray->elts)[l]), (u_char *)errstr, strlen((const char *)errstr));
+      ngx_naxsi_log_t*log_descriptor=&(((ngx_naxsi_log_t*)logarray->elts)[l]);
+      struct stat stat_buf;
+      if (log_descriptor!=NULL && log_descriptor->file!=NULL) {
+        stat((const char *)log_descriptor->file->name.data,&stat_buf);
+        // if the file has been removed
+        if (S_ISREG(stat_buf.st_mode)) {
+          ngx_naxsi_log_write(r, log_descriptor, (u_char *)errstr, strlen((const char *)errstr));
+        } else {
+          ngx_log_error(level, r->connection->log, err, (const char *)errstr);
+        }
+      } else {
+        ngx_log_error(level, r->connection->log, err, (const char *)errstr);
+      }
     }
 }

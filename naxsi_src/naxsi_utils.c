@@ -860,7 +860,8 @@ void naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *re
     ngx_escape_uri(tmp_name.data, name->data, name->len, NGX_ESCAPE_ARGS);
   }
   
-  ngx_log_error(NGX_LOG_ERR, req->connection->log, 0, 
+  //ngx_log_error(NGX_LOG_ERR, req->connection->log, 0, 
+  ngx_log_naxsi(NGX_LOG_ERR, req, 0, 
 		"NAXSI_EXLOG: ip=%V&server=%V&uri=%V&id=%d&zone=%s&var_name=%V&content=%V", 
 		&(req->connection->addr_text), &(req->headers_in.server),
 		&(tmp_uri), rule->rule_id, tmp_zone /*dummy_match_zones[zone]*/, &(tmp_name), &(tmp_val));

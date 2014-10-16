@@ -992,40 +992,44 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   */
   
   
+  #define NAXSI_HEADER_ORIG_URL "x-orig_url"
+  #define NAXSI_HEADER_ORIG_ARGS "x-orig_args"
+  #define NAXSI_HEADER_NAXSI_SIG "x-naxsi_sig"
+  
   if(r->headers_in.headers.last)  {
     
     h = ngx_list_push(&(r->headers_in.headers));
     if (!h) return (NGX_ERROR);
-    h->key.len = strlen("orig_url");
-    h->key.data = ngx_pcalloc(r->pool, strlen("orig_url")+1);
+    h->key.len = strlen(NAXSI_HEADER_ORIG_URL);
+    h->key.data = ngx_pcalloc(r->pool, strlen(NAXSI_HEADER_ORIG_URL)+1);
     if (!h->key.data) return (NGX_ERROR);
-    memcpy(h->key.data, "orig_url", strlen("orig_url"));
-	h->lowcase_key = ngx_pcalloc(r->pool, strlen("orig_url") + 1);
-    memcpy(h->lowcase_key, "orig_url", strlen("orig_url"));
+    memcpy(h->key.data, NAXSI_HEADER_ORIG_URL, strlen(NAXSI_HEADER_ORIG_URL));
+	h->lowcase_key = ngx_pcalloc(r->pool, strlen(NAXSI_HEADER_ORIG_URL) + 1);
+    memcpy(h->lowcase_key, NAXSI_HEADER_ORIG_URL, strlen(NAXSI_HEADER_ORIG_URL));
     h->value.len = tmp_uri->len;
     h->value.data = ngx_pcalloc(r->pool, tmp_uri->len+1);
     memcpy(h->value.data, tmp_uri->data, tmp_uri->len);
     
     h = ngx_list_push(&(r->headers_in.headers));
     if (!h) return (NGX_ERROR);
-    h->key.len = strlen("orig_args");
-    h->key.data = ngx_pcalloc(r->pool, strlen("orig_args")+1);
+    h->key.len = strlen(NAXSI_HEADER_ORIG_ARGS);
+    h->key.data = ngx_pcalloc(r->pool, strlen(NAXSI_HEADER_ORIG_ARGS)+1);
     if (!h->key.data) return (NGX_ERROR);
-    memcpy(h->key.data, "orig_args", strlen("orig_args"));
-	h->lowcase_key = ngx_pcalloc(r->pool, strlen("orig_args") + 1);
-    memcpy(h->lowcase_key, "orig_args", strlen("orig_args"));
+    memcpy(h->key.data, NAXSI_HEADER_ORIG_ARGS, strlen(NAXSI_HEADER_ORIG_ARGS));
+	h->lowcase_key = ngx_pcalloc(r->pool, strlen(NAXSI_HEADER_ORIG_ARGS) + 1);
+    memcpy(h->lowcase_key, NAXSI_HEADER_ORIG_ARGS, strlen(NAXSI_HEADER_ORIG_ARGS));
     h->value.len = r->args.len;
     h->value.data = ngx_pcalloc(r->pool, r->args.len+1);
     memcpy(h->value.data, r->args.data, r->args.len);
     
     h = ngx_list_push(&(r->headers_in.headers));
     if (!h) return (NGX_ERROR);
-    h->key.len = strlen("naxsi_sig");
-    h->key.data = ngx_pcalloc(r->pool, strlen("naxsi_sig")+1);
+    h->key.len = strlen(NAXSI_HEADER_NAXSI_SIG);
+    h->key.data = ngx_pcalloc(r->pool, strlen(NAXSI_HEADER_NAXSI_SIG)+1);
     if (!h->key.data) return (NGX_ERROR);
-    memcpy(h->key.data, "naxsi_sig", strlen("naxsi_sig"));
-	h->lowcase_key = ngx_pcalloc(r->pool, strlen("naxsi_sig") + 1);
-    memcpy(h->lowcase_key, "naxsi_sig", strlen("naxsi_sig"));
+    memcpy(h->key.data, NAXSI_HEADER_NAXSI_SIG, strlen(NAXSI_HEADER_NAXSI_SIG));
+	h->lowcase_key = ngx_pcalloc(r->pool, strlen(NAXSI_HEADER_NAXSI_SIG) + 1);
+    memcpy(h->lowcase_key, NAXSI_HEADER_NAXSI_SIG, strlen(NAXSI_HEADER_NAXSI_SIG));
     h->value.len = denied_args.len;
     h->value.data = denied_args.data;
   }

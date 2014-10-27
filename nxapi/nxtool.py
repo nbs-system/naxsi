@@ -4,6 +4,7 @@ import glob, fcntl, termios
 import sys
 import socket
 import elasticsearch 
+import time
 from optparse import OptionParser, OptionGroup
 from nxapi.nxtransform import *
 from nxapi.nxparse import *
@@ -238,7 +239,14 @@ if options.files_in is not None or options.fifo_in is not None or options.stdin 
     else:
         injector = ESInject(es, cfg.cfg)
     parser = NxParser()
-    parser.out_date_format = "%Y-%m-%dT%H:%M:%S+02" #ES-friendly
+    offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
+    offset = offset / 60 / 60 * -1
+    if offset < 0:
+        offset = str(-offset)
+    else:
+        offset = str(offset)
+    offset = offset.zfill(2)
+    parser.out_date_format = "%Y-%m-%dT%H:%M:%S+"+offset #ES-friendly
     try:
         geoloc = NxGeoLoc(cfg.cfg)
     except:

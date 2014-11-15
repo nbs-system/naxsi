@@ -221,26 +221,19 @@ static ngx_str_t err_levels[] = {
  * - if not, it will redirect logs to nginx log error
  * - if it exist, it will append to the log files
  */
-#if (NGX_HAVE_VARIADIC_MACROS)
 void
 ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
     const char *fmt, ...)
-#else
-void
-ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
-    const char *fmt, va_list args)
-#endif
 {
-#if (NGX_HAVE_VARIADIC_MACROS)
     va_list  args;
-#endif
     ngx_http_dummy_loc_conf_t  *loc;
     ngx_http_dummy_main_conf_t *main_cf;
     u_char                     *p, *last;
     u_char                     errstr[NGX_MAX_ERROR_STR];
     ngx_array_t                *logarray;
     u_int                      l;
-
+	ngx_file_info_t            fi;
+	int                        rc;
 
     last = errstr + NGX_MAX_ERROR_STR;
 
@@ -253,18 +246,13 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
     
     if ((loc->naxsi_logs==NULL || loc->naxsi_logs->nelts == 0) && (main_cf->naxsi_logs==NULL || main_cf->naxsi_logs->nelts == 0 )) {
 
-#if (NGX_HAVE_VARIADIC_MACROS)
       va_start(args, fmt);
       p = ngx_vslprintf(errstr, last, fmt, args);
       *p='\0';
       ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, (const char *)errstr); 
       va_end(args);
-#else
-      ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, fmt, args); 
-#endif
       return;
     }
-
 
     ngx_memcpy(errstr, ngx_cached_err_log_time.data,
                ngx_cached_err_log_time.len);
@@ -283,17 +271,11 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
 //      }
       p = ngx_slprintf(p, last, "*%uA ", r->connection->number);
     }
-#if (NGX_HAVE_VARIADIC_MACROS)
 
     va_start(args, fmt);
     p = ngx_vslprintf(p, last, fmt, args);
     va_end(args);
 
-#else
-
-    p = ngx_vslprintf(p, last, fmt, args);
-
-#endif
 
     if (err) {
         p = ngx_log_errno(p, last, err);
@@ -327,13 +309,16 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
     }
     for (l = 0; l < logarray->nelts; l++) {
       ngx_naxsi_log_t*log_descriptor=&(((ngx_naxsi_log_t*)logarray->elts)[l]);
-      struct stat stat_buf;
       if (log_descriptor!=NULL && log_descriptor->file!=NULL) {
-        stat((const char *)log_descriptor->file->name.data,&stat_buf);
-        // if the file has been removed
-        if (S_ISREG(stat_buf.st_mode)) {
-          ngx_naxsi_log_write(r, log_descriptor, (u_char *)errstr, strlen((const char *)errstr));
-        } else {
+        rc=ngx_file_info(log_descriptor->file->name.data,&fi);
+		if (rc != NGX_FILE_ERROR) {
+		  if (ngx_is_file(&fi)) {
+            ngx_naxsi_log_write(r, log_descriptor, (u_char *)errstr, strlen((const char *)errstr));
+		  } else {
+            // if the file has been removed
+            ngx_log_error(level, r->connection->log, err, (const char *)errstr);
+		  }
+		}else {
           ngx_log_error(level, r->connection->log, err, (const char *)errstr);
         }
       } else {

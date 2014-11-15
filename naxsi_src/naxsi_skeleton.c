@@ -35,8 +35,10 @@
 */
 
 #include "naxsi.h"
+#ifndef _MSC_VER
 #include <sys/times.h>
 #include <ctype.h>
+#endif
 
 /*
 ** Macro used to print incorrect configuration lines
@@ -400,7 +402,11 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   }
   
   /* initialize prng (used for fragmented logs) */
+#ifdef _MSC_VER
+  srandom((unsigned int)time(0) * _getpid());
+#else
   srandom(time(0) * getpid());
+#endif
   
   /* add handler for logging */
   cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
@@ -958,7 +964,9 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   ngx_http_request_ctx_t	*ctx;
   ngx_int_t			rc;
   ngx_http_dummy_loc_conf_t	*cf;
+#ifndef _MSC_VER
   struct tms		 tmsstart, tmsend;
+#endif
   clock_t		 start, end;
   ngx_http_variable_value_t *lookup;
 
@@ -976,7 +984,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     return (NGX_DECLINED);
   if (ctx && ctx->wait_for_body) {
 #ifdef mechanics_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "naxsi:NGX_AGAIN");
 #endif
     return (NGX_DONE);
@@ -996,7 +1004,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     /* Look if the user did not try to enable naxsi dynamically */
     lookup = ngx_http_get_variable(r, &enable_flag, cf->flag_enable_h);
     if (lookup && !lookup->not_found && lookup->len > 0) {
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "live enable is present %d", lookup->data[0] - '0');
       if (lookup->data[0] - '0' != 1) {
 	return (NGX_DECLINED);}
@@ -1007,7 +1015,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   /* don't process internal requests. */
   if (r->internal) {
 #ifdef mechanics_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug5(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-DON'T PROCESS (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
 		  r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
 		  r->internal);
@@ -1015,7 +1023,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     return (NGX_DECLINED);
   }
 #ifdef mechanics_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+  ngx_log_debug4(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
   		"XX-processing (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
 		r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
 		r->internal);
@@ -1027,7 +1035,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     ngx_http_set_ctx(r, ctx, ngx_http_naxsi_module);
     
 #ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig learning : %d", cf->learning ? 1 : 0);
 #endif
     /* it seems that nginx will - in some cases - 
@@ -1040,32 +1048,32 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       
       ctx->learning = lookup->data[0] - '0';
 #ifdef naxsi_modifiers_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override learning : %d (raw=%d)", 
 		    ctx->learning ? 1 : 0, lookup->len);
 #endif
     }
 #ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] learning : %d", ctx->learning ? 1 : 0);
 #endif
 
     ctx->enabled = cf->enabled;
 #ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig enabled : %d", ctx->enabled ? 1 : 0);
 #endif
     lookup = ngx_http_get_variable(r, &enable_flag, cf->flag_enable_h);
     if (lookup && !lookup->not_found && lookup->len > 0) {
       ctx->enabled = lookup->data[0] - '0';
 #ifdef naxsi_modifiers_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override enable : %d", ctx->enabled ? 1 : 0);
 #endif
 
     }
 #ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] enabled : %d", ctx->enabled ? 1 : 0);
 #endif
     
@@ -1077,35 +1085,35 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       else*/
     ctx->post_action = 0;
 #ifdef naxsi_modifiers_debug    
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig post_action : %d", ctx->post_action ? 1 : 0);
 #endif
     lookup = ngx_http_get_variable(r, &post_action_flag, cf->flag_post_action_h);
     if (lookup && !lookup->not_found && lookup->len > 0) {
       ctx->post_action = lookup->data[0] - '0';
 #ifdef naxsi_modifier_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override post_action : %d", ctx->post_action ? 1 : 0);
 #endif
     }
 #ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] post_action : %d", ctx->post_action ? 1 : 0);
 #endif
 #ifdef naxsi_modifiers_debug    
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig extensive_log : %d", ctx->extensive_log ? 1 : 0);
 #endif
     lookup = ngx_http_get_variable(r, &extensive_log_flag, cf->flag_extensive_log_h);
     if (lookup && !lookup->not_found && lookup->len > 0) {
       ctx->extensive_log = lookup->data[0] - '0';
 #ifdef naxsi_modifier_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override extensive_log : %d", ctx->extensive_log ? 1 : 0);
 #endif
     }
 #ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] extensive_log : %d", ctx->extensive_log ? 1 : 0);
 #endif
 
@@ -1117,7 +1125,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     if  ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) 
 	 && !ctx->ready) {
 #ifdef mechanics_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : body_request : before !");
 #endif
       rc = ngx_http_read_client_request_body(r, ngx_http_dummy_payload_handler);
@@ -1132,7 +1140,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       if (rc == NGX_AGAIN) {
 	ctx->wait_for_body = 1;
 #ifdef mechanics_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+	ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		      "XX-dummy : body_request : NGX_AGAIN !");
 #endif
 	return (NGX_DONE);
@@ -1142,7 +1150,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 	  /* 
 	  ** might happen but never saw it, let the debug print.
 	  */
-	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+	  ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 			"XX-dummy : SPECIAL RESPONSE !!!!");
 	  return rc;
 	}
@@ -1151,17 +1159,24 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       ctx->ready = 1;
   }
   if (ctx && ctx->ready && !ctx->over) {
-    
+
+#ifdef _MSC_VER
+    start = clock();   
+    ngx_http_dummy_data_parse(ctx, r);
+    cf->request_processed++;
+    end = clock(); 
+#else
     if ((start = times(&tmsstart)) == (clock_t)-1)
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : Failed to get time");
     ngx_http_dummy_data_parse(ctx, r);
     cf->request_processed++;
     if ((end = times(&tmsend)) == (clock_t)-1)
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : Failed to get time");
-    if (end - start > 10)
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+#endif
+    if (end - start > 10) // report if it took more than 1/10MS to perform all the checks
+      ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		    "[MORE THAN 10MS] times : start:%l end:%l diff:%l",
 		    start, end, (end-start));
     ctx->over = 1;
@@ -1176,7 +1191,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       rc = ngx_http_output_forbidden_page(ctx, r);
   }
 #ifdef mechanics_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+  ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		"NGX_FINISHED !");
 #endif
 

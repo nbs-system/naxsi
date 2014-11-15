@@ -170,7 +170,7 @@ dummy_score(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   if (rule->sscores) {
     for (z = 0; z < rule->sscores->nelts; z++) {
       ngx_conf_log_error(NGX_LOG_EMERG, r, 0,
-			 "XX-score n°%d special scoring (%V) => (%d)",
+			 "XX-score nÂ°%d special scoring (%V) => (%d)",
 			 z, scr[z].sc_tag, scr[z].sc_score);
       
     }
@@ -377,7 +377,12 @@ dummy_str(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   str->data = tmp->data + strlen(STR_T);
   str->len = tmp->len - strlen(STR_T);
   for (i = 0; i < str->len; i++)
+#ifdef _MSC_VER
+    str->data[i] = (unsigned char)tolower(str->data[i]);
+#else
     str->data[i] = tolower(str->data[i]);
+#endif
+
   rule->br->str = str;
   return (NGX_CONF_OK);
 }
@@ -545,5 +550,4 @@ ngx_http_dummy_cfg_parse_one_rule(ngx_conf_t *cf,
     }
   return (NGX_CONF_OK);
 }
-
 

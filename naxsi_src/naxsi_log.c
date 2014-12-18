@@ -237,12 +237,12 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
     ngx_http_dummy_loc_conf_t  *loc;
     ngx_http_dummy_main_conf_t *main_cf;
     u_char                     *p, *last;
-    u_char                     errstr[NGX_MAX_ERROR_STR];
+    u_char                     errstr[NGX_MAX_ERROR_STR] = {0};
     ngx_array_t                *logarray;
     u_int                      l;
 
 
-    last = errstr + NGX_MAX_ERROR_STR;
+    last = errstr + NGX_MAX_ERROR_STR - 1;
 
     loc = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
     main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
@@ -256,8 +256,8 @@ ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
 #if (NGX_HAVE_VARIADIC_MACROS)
       va_start(args, fmt);
       p = ngx_vslprintf(errstr, last, fmt, args);
-      *p='\0';
-      ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, (const char *)errstr); 
+      *p = 0;
+      ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, (const char *)&errstr);
       va_end(args);
 #else
       ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, fmt, args); 

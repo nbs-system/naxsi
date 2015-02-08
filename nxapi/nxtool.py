@@ -64,6 +64,8 @@ p.add_option('--fifo', dest="fifo_in", help="Path to a FIFO to be created & read
 p.add_option('--stdin', dest="stdin", action="store_true", help="Read from stdin.")
 p.add_option('--no-timeout', dest="infinite_flag", action="store_true", help="Disable timeout on read operations (stdin/fifo).")
 p.add_option('--syslog', dest="syslog_in", action="store_true", help="Listen on tcp port for syslog logging.")
+p.add_option('--exlog',dest="exlog", action="store_true", help="Parse only NAXSI_EXLOG lines")
+
 opt.add_option_group(p)
 # group : filtering
 p = OptionGroup(opt, "Filtering options (for whitelist generation)")
@@ -238,9 +240,15 @@ if options.files_in is not None or options.fifo_in is not None or options.stdin 
         injector = ESInject(es, cfg.cfg, auto_commit_limit=1)
     else:
         injector = ESInject(es, cfg.cfg)
-    parser = NxParser()
+
+    if options.exlog is not None:
+        parser = NxParser(exlog=True)
+    else:
+        parser = NxParser(exlog=False)
+
     offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
     offset = offset / 60 / 60 * -1
+
     if offset < 0:
         offset = str(-offset)
     else:

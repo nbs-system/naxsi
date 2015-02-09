@@ -122,14 +122,18 @@ class NxReader():
 
 
 class NxParser():
-    def __init__(self):
+    def __init__(self,fmt_only=False):
         # output date format
         self.out_date_format = "%Y/%m/%d %H:%M:%S"
         # Start of Data / End of data marker
         self.sod_marker = [' [error] ', ' [debug] ']
         self.eod_marker = [', client: ', '']
         # naxsi data keywords
-        self.naxsi_keywords = [" NAXSI_FMT: ", " NAXSI_EXLOG: "]
+	if fmt_only is not False:
+                self.naxsi_keywords = [" NAXSI_FMT: "]
+                print "Parsing only NAXSI_FMT entries"
+        else:
+                self.naxsi_keywords = [" NAXSI_FMT: ", " NAXSI_EXLOG: "]
         # keep track of fragmented lines (seed_start=X seed_end=X)
         self.reunited_lines = 0
         self.fragmented_lines = 0

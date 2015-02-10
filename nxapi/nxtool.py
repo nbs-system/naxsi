@@ -105,7 +105,7 @@ cfg.cfg["naxsi"]["strict"] = str(options.slack).lower()
 if options.filter is not None:
     x = {}
     to_parse = []
-    kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'country', 'date',
+    kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'country', 'date', 'learning',
               '?server', '?uri', '?var_name', '?content']
     try:
         for argstr in options.filter:

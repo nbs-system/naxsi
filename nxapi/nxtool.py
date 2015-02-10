@@ -37,6 +37,7 @@ def macquire(line):
     if z is not None:
         for event in z['events']:
             event['date'] = z['date']
+            event['coords'] = geoloc.ip2ll(event['ip'])
             event['country'] = geoloc.ip2cc(event['ip'])
         # print "Got data :)"
         # pprint.pprint(z)

@@ -235,7 +235,7 @@ if options.stats is True:
 
 # input options, only setup injector if one input option is present
 if options.files_in is not None or options.fifo_in is not None or options.stdin is not None or options.syslog_in is not None:
-    if options.fifo_in is not None or options.syslog_in is not None:
+    if options.fifo_in is not None or options.syslog_in is not None or (options.stdin is not None and options.infinite_flag is not None):
         injector = ESInject(es, cfg.cfg, auto_commit_limit=1)
     else:
         injector = ESInject(es, cfg.cfg)
@@ -289,6 +289,10 @@ if options.stdin is True:
     while True:
         print "start-",
         reader.read_files()
+	if options.infinite_flag is None:
+		print "stop"
+		injector.stop()
+		sys.exit(1)
         print "stop"
     sys.exit(1)
 

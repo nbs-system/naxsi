@@ -33,11 +33,11 @@ def open_fifo(fifo):
 
 def macquire(line):
     z = parser.parse_raw_line(line)
-    # add data str and coords
+    # add data str and country
     if z is not None:
         for event in z['events']:
             event['date'] = z['date']
-            event['coord'] = geoloc.ip2ll(event['ip'])
+            event['country'] = geoloc.ip2cc(event['ip'])
         # print "Got data :)"
         # pprint.pprint(z)
         #print ".",
@@ -104,7 +104,7 @@ cfg.cfg["naxsi"]["strict"] = str(options.slack).lower()
 if options.filter is not None:
     x = {}
     to_parse = []
-    kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'date',
+    kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'country', 'date',
               '?server', '?uri', '?var_name', '?content']
     try:
         for argstr in options.filter:

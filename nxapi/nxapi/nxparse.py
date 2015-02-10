@@ -263,7 +263,7 @@ class NxParser():
             del self.multiline_buf[event['seed_end']]
         entry = {}
         
-        for x in ['uri', 'server', 'content', 'ip', 'date', 'var_name']:
+        for x in ['uri', 'server', 'content', 'ip', 'date', 'var_name', 'country']:
             entry[x] = event.get(x, '')
         clean = entry
         

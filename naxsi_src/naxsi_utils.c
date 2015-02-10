@@ -453,7 +453,7 @@ ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
   
   for (i = 0; i < dlc->tmp_wlr->nelts; i++)
     if (!strcmp((const char *)*fullname, (const char *)((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].name->data) && 
-	((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].zone == (uint) zone)
+	((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].zone == (int) zone)
       {
 #ifdef whitelist_heavy_debug
 	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 

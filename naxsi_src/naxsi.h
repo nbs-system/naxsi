@@ -32,7 +32,24 @@
 #ifndef __FOO_H__
 #define __FOO_H__
 
-#define NAXSI_VERSION "0.53-1"
+#define NAXSI_VERSION "0.53-3"
+
+#ifdef _MSC_VER
+#define __func__ __FUNCTION__
+#define snprintf _snprintf
+#define vsnprintf _vsnprintf
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#define random rand
+#define srandom srand
+#define HAVE_RAND 1
+#define uint unsigned int
+#define _CRT_SECURE_NO_WARNINGS
+#define S_ISDIR(m) ((m & S_IFMT) == S_IFDIR)
+#define S_ISREG(x) 1
+#include <process.h>
+#include <time.h>
+#endif
 
 #include <nginx.h>
 #include <ngx_config.h>
@@ -516,6 +533,8 @@ int			ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *c
 						     ngx_str_t *value, enum DUMMY_MATCH_ZONE zone, 
 						     ngx_int_t nb_match, ngx_int_t target_name);
 
+// int stat(const char *filename, struct stat *buf);
+
 typedef struct {
     ngx_open_file_t            *file;
     //ngx_http_log_script_t      *script;
@@ -525,27 +544,8 @@ typedef struct {
 } ngx_naxsi_log_t;
 
 
-#if (NGX_HAVE_C99_VARIADIC_MACROS)
-#define NGX_HAVE_VARIADIC_MACROS  1
-
 void ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
     const char *fmt, ...);
-
-#elif (NGX_HAVE_GCC_VARIADIC_MACROS)
-
-#define NGX_HAVE_VARIADIC_MACROS  1
-void
-ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
-    const char *fmt, ...);
-
-#else /* NO VARIADIC MACROS */
-
-#define NGX_HAVE_VARIADIC_MACROS  0
-void ngx_cdecl ngx_log_naxsi(ngx_uint_t level, ngx_http_request_t *r, ngx_err_t err,
-    const char *fmt, va_list args);
-
-#endif /* VARIADIC MACROS */
-
 
 
 #endif

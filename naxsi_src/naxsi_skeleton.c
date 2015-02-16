@@ -55,9 +55,6 @@ static ngx_int_t	ngx_http_dummy_access_handler(ngx_http_request_t *r);
 static char		*ngx_http_dummy_read_main_conf(ngx_conf_t *cf, 
 						       ngx_command_t *cmd, 
 						       void *conf);
-char		*ngx_http_naxsi_logfile_main_conf(ngx_conf_t *cf, 
-						       ngx_command_t *cmd, 
-						       void *conf);
 static ngx_int_t	ngx_http_dummy_init(ngx_conf_t *cf);
 static char		*ngx_http_dummy_read_conf(ngx_conf_t *cf, 
 						  ngx_command_t *cmd,
@@ -68,10 +65,6 @@ static char		*ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf,
 						    void *conf);
 
 static char		*ngx_http_naxsi_ud_loc_conf(ngx_conf_t *cf, 
-						    ngx_command_t *cmd,
-						    void *conf);
-
-char		*ngx_http_naxsi_logfile_loc_conf(ngx_conf_t *cf, 
 						    ngx_command_t *cmd,
 						    void *conf);
 
@@ -156,35 +149,6 @@ static ngx_command_t  ngx_http_dummy_commands[] =  {
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
     NULL },
-  /* NaxsiLogfile */
-  { ngx_string(TOP_NAXSI_LOGFILE_T),
-    NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
-    ngx_http_naxsi_logfile_main_conf,
-    NGX_HTTP_MAIN_CONF_OFFSET,
-    0,
-    NULL },
-  /* NaxsiLogfile - nginx style*/
-  { ngx_string(TOP_NAXSI_LOGFILE_N),
-    NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
-    ngx_http_naxsi_logfile_main_conf,
-    NGX_HTTP_MAIN_CONF_OFFSET,
-    0,
-    NULL },
-   /* NaxsiLogfile */
-  { ngx_string(TOP_NAXSI_LOGFILE_T),
-    NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
-    ngx_http_naxsi_logfile_loc_conf,
-    NGX_HTTP_LOC_CONF_OFFSET,
-    0,
-    NULL },
-  /* NaxsiLogfile - nginx style*/
-  { ngx_string(TOP_NAXSI_LOGFILE_N),
-    NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
-    ngx_http_naxsi_logfile_loc_conf,
-    NGX_HTTP_LOC_CONF_OFFSET,
-    0,
-    NULL },
-    
   /* 
   ** flag rules
   */
@@ -318,9 +282,6 @@ ngx_http_dummy_merge_loc_conf(ngx_conf_t *cf, void *parent,
 {
   ngx_http_dummy_loc_conf_t  *prev = parent;
   ngx_http_dummy_loc_conf_t  *conf = child;
-  ngx_naxsi_log_t             *log;
-  ngx_naxsi_log_t             *prevlog;
-  unsigned int i;
 
   if (conf->whitelist_rules == NULL) 
     conf->whitelist_rules = prev->whitelist_rules;
@@ -332,22 +293,6 @@ ngx_http_dummy_merge_loc_conf(ngx_conf_t *cf, void *parent,
     conf->header_rules = prev->header_rules;
   if (conf->generic_rules == NULL) 
     conf->generic_rules = prev->generic_rules;
-  
-  if (conf->naxsi_logs == NULL) {
-    conf->naxsi_logs = ngx_array_create(cf->pool, 2, sizeof(ngx_naxsi_log_t));
-  }
-  if (conf->naxsi_logs == NULL) {
-    return NGX_CONF_ERROR;
-  }
-  
-  if (prev->naxsi_logs!=NULL) {
-    prevlog=prev->naxsi_logs->elts;
-    for (i=0;i<prev->naxsi_logs->nelts;i++) {
-      log = ngx_array_push(conf->naxsi_logs);
-      memcpy(log,(const void *)&prevlog[i],sizeof(ngx_naxsi_log_t));
-    }
-  }
-  
   return NGX_CONF_OK;
 }
 
@@ -402,9 +347,6 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   /* initialize prng (used for fragmented logs) */
   srandom(time(0) * getpid());
   
-  /* add handler for logging */
-  cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
-
   return (NGX_OK);
 }
 
@@ -1182,3 +1124,4 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 
   return (NGX_DECLINED);
 }
+

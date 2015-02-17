@@ -403,6 +403,7 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   /* libinjection sqli/xss - special score init */
   ngx_http_special_score_t *libjct_sql = ngx_array_push(nx_int__libinject_sql->sscores);
   ngx_http_special_score_t *libjct_xss = ngx_array_push(nx_int__libinject_xss->sscores);
+  if (!libjct_sql || !libjct_xss) return (NGX_ERROR);
   libjct_sql->sc_tag = ngx_pcalloc(cf->pool, sizeof(ngx_str_t));
   libjct_xss->sc_tag = ngx_pcalloc(cf->pool, sizeof(ngx_str_t));
   if (!libjct_sql->sc_tag || !libjct_xss->sc_tag) return (NGX_ERROR);

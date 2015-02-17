@@ -113,6 +113,12 @@ ngx_http_rule_t nx_int__empty_post_body = {/*type*/ 0, /*whitelist flag*/ 0,
 					   /*br ptrs*/ NULL};
 
 
+ngx_http_rule_t *nx_int__libinject_sql; /*ID:17*/
+ngx_http_rule_t *nx_int__libinject_xss; /*ID:18*/
+
+
+
+
 
 #define dummy_error_fatal(ctx, r, ...) do {				\
     if (ctx) ctx->block = 1;						\
@@ -1338,7 +1344,59 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 /*
 ** check variable + name against a set of rules, checking against 'custom' location rules too.
 */
-//#define basestr_ruleset_debug
+#define basestr_ruleset_debug
+#define libinjection_debug
+
+void ngx_http_libinjection(ngx_pool_t *pool,
+			    ngx_str_t	*name,
+			    ngx_str_t	*value,
+			    ngx_http_request_ctx_t *ctx,
+			    ngx_http_request_t *req,
+			    enum DUMMY_MATCH_ZONE	zone) {
+  /* 
+  ** Libinjection integration : 
+  ** 1 - check if libinjection_sql is explicitely enabled
+  ** 2 - check if libinjection_xss is explicitely enabled
+  ** if 1 is true : perform check on both name and content,
+  **		    in case of match, apply internal rule
+  **		    increasing the LIBINJECTION_SQL score
+  ** if 2 is true ; same as for '1' but with 
+  **		    LIBINJECTION_XSS
+  */
+  sfilter state;
+  int issqli;
+  
+  if (ctx->libinjection_sql) {
+    
+    /* hardcoded call to libinjection on NAME, apply internal rule if matched. */
+    libinjection_sqli_init(&state, (const char *)name->data, name->len, FLAG_NONE);
+    issqli = libinjection_is_sqli(&state);
+    if (issqli == 1) { 
+      ngx_http_apply_rulematch_v_n(nx_int__libinject_sql, ctx, req, name, name, zone, 1, 1);
+    }
+    
+    /* hardcoded call to libinjection on CONTENT, apply internal rule if matched. */
+    libinjection_sqli_init(&state, (const char *)value->data, value->len, FLAG_NONE);
+    issqli = libinjection_is_sqli(&state);
+    if (issqli == 1) {
+      ngx_http_apply_rulematch_v_n(nx_int__libinject_sql, ctx, req, name, value, zone, 1, 0);	    
+    }
+  }
+  
+  if (ctx->libinjection_xss) {
+    /* first on var_name */
+    issqli = libinjection_xss((const char *) name->data, name->len);
+    if (issqli == 1) {
+      ngx_http_apply_rulematch_v_n(nx_int__libinject_xss, ctx, req, name, name, zone, 1, 1);
+    }
+    
+    /* hardcoded call to libinjection on CONTENT, apply internal rule if matched. */
+    issqli = libinjection_xss((const char *) value->data, value->len);
+    if (issqli == 1) {
+      ngx_http_apply_rulematch_v_n(nx_int__libinject_xss, ctx, req, name, value, zone, 1, 0);	    
+    }
+  }
+}
 
 int 
 ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
@@ -1372,6 +1430,11 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 		"XX-checking rules ..."); 
 #endif
   
+  
+  /* call to libinjection */
+  ngx_http_libinjection(pool, name, value, ctx, req, zone);
+
+
   for (i = 0; i < rules->nelts && ( (!ctx->block || ctx->learning) && !ctx->drop ) ; i++) {
       
     /* does the rule have a custom location ? custom location means checking only on a specific argument */

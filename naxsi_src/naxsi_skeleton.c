@@ -188,7 +188,7 @@ static ngx_command_t  ngx_http_dummy_commands[] =  {
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
     NULL },
-  
+
   /* DisableFlag */
   { ngx_string(TOP_DISABLED_FLAG_T),
     NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
@@ -197,7 +197,7 @@ static ngx_command_t  ngx_http_dummy_commands[] =  {
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
     NULL },
-  
+
   /* DisableFlag (nginx style) */
   { ngx_string(TOP_DISABLED_FLAG_N),
     NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
@@ -207,6 +207,41 @@ static ngx_command_t  ngx_http_dummy_commands[] =  {
     0,
     NULL },
 
+  /* LibInjectionSql */
+  { ngx_string(TOP_LIBINJECTION_SQL_T),
+    NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
+    |NGX_CONF_NOARGS,
+    ngx_http_naxsi_flags_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },
+
+  /* LibInjectionSql (nginx style) */
+  { ngx_string(TOP_LIBINJECTION_SQL_N),
+    NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
+    |NGX_CONF_NOARGS,
+    ngx_http_naxsi_flags_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },  
+
+  /* LibInjectionXss */
+  { ngx_string(TOP_LIBINJECTION_XSS_T),
+    NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
+    |NGX_CONF_NOARGS,
+    ngx_http_naxsi_flags_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },    
+
+  /* LibInjectionXss (nginx style) */
+  { ngx_string(TOP_LIBINJECTION_XSS_N),
+    NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
+    |NGX_CONF_NOARGS,
+    ngx_http_naxsi_flags_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },  
 
   ngx_null_command
 };
@@ -336,6 +371,8 @@ ngx_http_dummy_init(ngx_conf_t *cf)
     loc_cf[i]->flag_learning_h = ngx_hash_key_lc((u_char *)RT_LEARNING, strlen(RT_LEARNING));
     loc_cf[i]->flag_post_action_h = ngx_hash_key_lc((u_char *)RT_POST_ACTION, strlen(RT_POST_ACTION));
     loc_cf[i]->flag_extensive_log_h = ngx_hash_key_lc((u_char *)RT_EXTENSIVE_LOG, strlen(RT_EXTENSIVE_LOG));
+    loc_cf[i]->flag_libinjection_xss_h = ngx_hash_key_lc((u_char *)RT_LIBINJECTION_XSS, strlen(RT_LIBINJECTION_XSS));
+    loc_cf[i]->flag_libinjection_sql_h = ngx_hash_key_lc((u_char *)RT_LIBINJECTION_SQL, strlen(RT_LIBINJECTION_SQL));
     
     if(ngx_http_dummy_create_hashtables_n(loc_cf[i], cf) != NGX_OK) {
       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
@@ -347,6 +384,39 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   /* initialize prng (used for fragmented logs) */
   srandom(time(0) * getpid());
   
+  /* 
+  ** initalise internal rules for libinjection sqli/xss 
+  ** (needs proper special scores) 
+  */
+  nx_int__libinject_sql = ngx_pcalloc(cf->pool, sizeof(ngx_http_rule_t));
+  nx_int__libinject_xss = ngx_pcalloc(cf->pool, sizeof(ngx_http_rule_t));
+  if (!nx_int__libinject_xss || !nx_int__libinject_sql) return (NGX_ERROR);
+  nx_int__libinject_sql->sscores = ngx_array_create(cf->pool, 2,
+						     sizeof(ngx_http_special_score_t));
+  nx_int__libinject_xss->sscores = ngx_array_create(cf->pool, 2,
+						    sizeof(ngx_http_special_score_t));
+  if (!nx_int__libinject_sql->sscores || !nx_int__libinject_xss->sscores ) return (NGX_ERROR);
+  /* internal ID sqli - 17*/
+  nx_int__libinject_sql->rule_id = 17;
+  /* internal ID xss - 18*/
+  nx_int__libinject_xss->rule_id = 18;  
+  /* libinjection sqli/xss - special score init */
+  ngx_http_special_score_t *libjct_sql = ngx_array_push(nx_int__libinject_sql->sscores);
+  ngx_http_special_score_t *libjct_xss = ngx_array_push(nx_int__libinject_xss->sscores);
+  libjct_sql->sc_tag = ngx_pcalloc(cf->pool, sizeof(ngx_str_t));
+  libjct_xss->sc_tag = ngx_pcalloc(cf->pool, sizeof(ngx_str_t));
+  if (!libjct_sql->sc_tag || !libjct_xss->sc_tag) return (NGX_ERROR);
+  libjct_sql->sc_tag->data = ngx_pcalloc(cf->pool, 18 /* LIBINJECTION_SQL */);
+  libjct_xss->sc_tag->data = ngx_pcalloc(cf->pool, 18 /* LIBINJECTION_XSS */);
+  if (!libjct_sql->sc_tag->data || !libjct_xss->sc_tag->data) return (NGX_ERROR);
+  strncpy((char *)libjct_sql->sc_tag->data, (char *)"$LIBINJECTION_SQL", 17);
+  strncpy((char *)libjct_xss->sc_tag->data, (char *)"$LIBINJECTION_XSS", 17);
+  libjct_xss->sc_tag->len = 17;
+  libjct_sql->sc_tag->len = 17;
+  libjct_sql->sc_score = 8;
+  libjct_xss->sc_score = 8;
+
+
   return (NGX_OK);
 }
 
@@ -735,7 +805,27 @@ ngx_http_naxsi_flags_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	return (NGX_CONF_OK);
       }
       else
-	return (NGX_CONF_ERROR);
+	if (!ngx_strcmp(value[0].data, TOP_LIBINJECTION_SQL_T) ||
+	    !ngx_strcmp(value[0].data, TOP_LIBINJECTION_SQL_N)) {
+#ifdef loc_conf_debug
+	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
+			     "LibInjectionSql enabled");
+#endif	  
+	  alcf->libinjection_sql_enabled = 1;
+	  return (NGX_CONF_OK);
+	}
+	else
+	  if (!ngx_strcmp(value[0].data, TOP_LIBINJECTION_XSS_T) ||
+	      !ngx_strcmp(value[0].data, TOP_LIBINJECTION_XSS_N)) {
+	    alcf->libinjection_xss_enabled = 1;
+#ifdef loc_conf_debug
+	    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
+			       "LibInjectionXss enabled");
+#endif
+	    return (NGX_CONF_OK);
+	  }
+	  else	
+	    return (NGX_CONF_ERROR);
 }
 
 //#define main_conf_debug
@@ -909,7 +999,9 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   static ngx_str_t enable_flag = ngx_string(RT_ENABLE);
   static ngx_str_t post_action_flag = ngx_string(RT_POST_ACTION);
   static ngx_str_t extensive_log_flag = ngx_string(RT_EXTENSIVE_LOG);
-  
+  static ngx_str_t libinjection_sql_flag = ngx_string(RT_LIBINJECTION_SQL);
+  static ngx_str_t libinjection_xss_flag = ngx_string(RT_LIBINJECTION_XSS);
+
   
   ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
@@ -1010,13 +1102,55 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] enabled : %d", ctx->enabled ? 1 : 0);
 #endif
-    
-    /* as we killed nx_intercept, post_action will 
-       be set off by default, but can still be enabled
-       by dynamic modifiers. */
-    /*if (cf->learning)
-      ctx->post_action = 1;
-      else*/
+
+
+    /*
+    ** LIBINJECTION_SQL
+    */
+    ctx->libinjection_sql = cf->libinjection_sql_enabled;
+
+#ifdef naxsi_modifiers_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : orig libinjection_sql : %d", ctx->libinjection_sql ? 1 : 0);
+#endif
+
+    lookup = ngx_http_get_variable(r, &libinjection_sql_flag, cf->flag_libinjection_sql_h);
+
+    if (lookup && !lookup->not_found && lookup->len > 0) {
+      ctx->libinjection_sql = lookup->data[0] - '0';
+#ifdef naxsi_modifiers_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "XX-dummy : override libinjection_sql : %d", ctx->libinjection_sql ? 1 : 0);
+#endif
+    }
+#ifdef naxsi_modifiers_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : [final] libinjection_sql : %d", ctx->libinjection_sql ? 1 : 0);
+#endif
+    /*
+    ** LIBINJECTION_XSS
+    */
+    ctx->libinjection_xss = cf->libinjection_xss_enabled;
+
+#ifdef naxsi_modifiers_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : orig libinjection_xss : %d", ctx->libinjection_xss ? 1 : 0);
+#endif 
+
+    lookup = ngx_http_get_variable(r, &libinjection_xss_flag, cf->flag_libinjection_xss_h);
+    if (lookup && !lookup->not_found && lookup->len > 0) {
+      ctx->libinjection_xss = lookup->data[0] - '0';
+#ifdef naxsi_modifiers_debug
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		    "XX-dummy : override libinjection_xss : %d", ctx->libinjection_xss ? 1 : 0);
+#endif
+    }
+#ifdef naxsi_modifiers_debug
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		  "XX-dummy : [final] libinjection_xss : %d", ctx->libinjection_xss ? 1 : 0);
+#endif
+
+    /* post_action is off by default. */
     ctx->post_action = 0;
 #ifdef naxsi_modifiers_debug    
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,

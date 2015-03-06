@@ -1344,8 +1344,8 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 /*
 ** check variable + name against a set of rules, checking against 'custom' location rules too.
 */
-#define basestr_ruleset_debug
-#define libinjection_debug
+//#define basestr_ruleset_debug
+//#define libinjection_debug
 
 void ngx_http_libinjection(ngx_pool_t *pool,
 			    ngx_str_t	*name,

@@ -10,6 +10,8 @@
 #@MainRule "msg:invalid POST boundary" id:14;
 #@MainRule "msg:invalid JSON" id:15;
 #@MainRule "msg:empty POST" id:16;
+#@MainRule "msg:libinjection_sql" id:17;
+#@MainRule "msg:libinjection_xss" id:18;
 
 ##################################
 ## SQL Injections IDs:1000-1099 ##

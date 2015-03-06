@@ -32,7 +32,7 @@
 #ifndef __FOO_H__
 #define __FOO_H__
 
-#define NAXSI_VERSION "0.53-1"
+#define NAXSI_VERSION "0.54"
 
 #include <nginx.h>
 #include <ngx_config.h>
@@ -43,6 +43,8 @@
 #include <ngx_http_core_module.h>
 #include <pcre.h>
 #include <ctype.h>
+#include "ext/libinjection/libinjection_sqli.h"
+#include "ext/libinjection/libinjection_xss.h"
 
 
 extern ngx_module_t ngx_http_naxsi_module;
@@ -321,6 +323,8 @@ typedef struct
   ngx_flag_t	enabled:1;
   ngx_flag_t	force_disabled:1;
   ngx_flag_t	pushed:1;
+  ngx_flag_t	libinjection_sql_enabled:1;
+  ngx_flag_t	libinjection_xss_enabled:1;
   ngx_str_t	*denied_url;
   /* precomputed hash for dynamic variable lookup, 
      variable themselves are boolean */
@@ -328,6 +332,10 @@ typedef struct
   ngx_uint_t	flag_learning_h;
   ngx_uint_t	flag_post_action_h;
   ngx_uint_t	flag_extensive_log_h;
+  /* precomputed hash for 
+     libinjection dynamic flags */
+  ngx_uint_t	flag_libinjection_xss_h;
+  ngx_uint_t	flag_libinjection_sql_h;
   
 } ngx_http_dummy_loc_conf_t;
 
@@ -377,7 +385,9 @@ typedef struct
   ngx_flag_t	enabled:1;
   ngx_flag_t	post_action:1;
   ngx_flag_t	extensive_log:1;
-  
+  /* did libinjection sql/xss matched ? */
+  ngx_flag_t	libinjection_sql:1;
+  ngx_flag_t	libinjection_xss:1;
 } ngx_http_request_ctx_t;
 
 /*
@@ -405,6 +415,8 @@ typedef struct ngx_http_nx_json_s {
 #define TOP_CHECK_RULE_T	"CheckRule"
 #define TOP_BASIC_RULE_T	"BasicRule"
 #define TOP_MAIN_BASIC_RULE_T	"MainRule"
+#define TOP_LIBINJECTION_SQL_T	"LibInjectionSql"
+#define TOP_LIBINJECTION_XSS_T	"LibInjectionXss"
 
 /* nginx-style names */
 #define TOP_DENIED_URL_N	"denied_url"
@@ -414,6 +426,9 @@ typedef struct ngx_http_nx_json_s {
 #define TOP_CHECK_RULE_N	"check_rule"
 #define TOP_BASIC_RULE_N	"basic_rule"
 #define TOP_MAIN_BASIC_RULE_N	"main_rule"
+#define TOP_LIBINJECTION_SQL_N	"libinjection_sql"
+#define TOP_LIBINJECTION_XSS_N	"libinjection_xss"
+
 
 /*possible 'tokens' in rule */
 #define ID_T "id:"
@@ -433,7 +448,8 @@ typedef struct ngx_http_nx_json_s {
 #define RT_ENABLE "naxsi_flag_enable"
 #define RT_LEARNING "naxsi_flag_learning"
 #define RT_POST_ACTION "naxsi_flag_post_action"
-
+#define RT_LIBINJECTION_SQL "naxsi_flag_libinjection_sql"
+#define RT_LIBINJECTION_XSS "naxsi_flag_libinjection_xss"
 
 
 /*
@@ -470,7 +486,12 @@ void			ngx_http_dummy_json_parse(ngx_http_request_ctx_t *ctx,
 						  u_char		 *src,
 						  u_int			 len);
 
-
+void			ngx_http_libinjection(ngx_pool_t *pool,
+					       ngx_str_t	*name,
+					       ngx_str_t	*value,
+					       ngx_http_request_ctx_t *ctx,
+					       ngx_http_request_t *req,
+					       enum DUMMY_MATCH_ZONE	zone);
 /*
 ** JSON parsing prototypes.
 */
@@ -511,6 +532,17 @@ int			ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *c
 						     ngx_http_request_t *req, ngx_str_t *name, 
 						     ngx_str_t *value, enum DUMMY_MATCH_ZONE zone, 
 						     ngx_int_t nb_match, ngx_int_t target_name);
+
+
+
+/*
+** externs for internal rules that requires it.
+*/
+extern ngx_http_rule_t *nx_int__libinject_sql;
+extern ngx_http_rule_t *nx_int__libinject_xss;
+
+/*libinjection_xss wrapper not exported by libinject_xss.h.*/
+int libinjection_xss(const char* s, size_t len); 
 
 
 #endif

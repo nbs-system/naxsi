@@ -1,4 +1,4 @@
 ngx_addon_name=ngx_http_naxsi_module
 HTTP_MODULES="$HTTP_MODULES ngx_http_naxsi_module"
-NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/naxsi_runtime.c $ngx_addon_dir/naxsi_config.c $ngx_addon_dir/naxsi_utils.c $ngx_addon_dir/naxsi_skeleton.c $ngx_addon_dir/naxsi_json.c"
+NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/naxsi_runtime.c $ngx_addon_dir/naxsi_config.c $ngx_addon_dir/naxsi_utils.c $ngx_addon_dir/naxsi_skeleton.c $ngx_addon_dir/naxsi_json.c $ngx_addon_dir/ext/libinjection/libinjection_sqli.c $ngx_addon_dir/ext/libinjection/libinjection_xss.c $ngx_addon_dir/ext/libinjection/libinjection_html5.c"
 NGX_ADDON_DEPS="$NGX_ADDON_DEPS $ngx_addon_dir/naxsi.h"

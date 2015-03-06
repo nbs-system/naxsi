@@ -3,7 +3,7 @@ UTIL_VERS :=	$(shell grep version ../nx_util/setup.py | cut -d "'" -f2)
 MOD_PATH :=	$(shell pwd)
 #Enables lcov for unit test code coverage
 COV := 1
-
+TEST := "22*.t"
 build:
 	@if test -d /tmp/nginx ; then \
 		cd /tmp/nginx && make; \
@@ -18,8 +18,9 @@ test:
 	lcov --directory /tmp/nginx --zerocounters ; fi
 	@export PATH="/tmp/nginx/objs/:"$(PATH) ; \
 	export PERL5LIB=/usr/local/share/perl/5.14.2/ ; \
-	cd .. ; \
-	prove -r t/*.t
+	cd .. ; echo "-->" $(TEST) ; \
+	if [ $(TEST) ] ; then prove -r "t/$(TEST)" ; else \
+	prove -r t/*.t ; fi
 	@if [ $(COV) -eq 1 ] ; then \
 	lcov --directory /tmp/nginx/objs/addon/naxsi_src/ --capture --output-file naxsi.info --base-directory /tmp/nginx ; \
 	genhtml -s -o /tmp/naxsicov.html naxsi.info ; \

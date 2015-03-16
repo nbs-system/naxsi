@@ -34,7 +34,8 @@ re:
 
 
 deploy:
+	@cp ../naxsi_config/naxsi_core.rules  /tmp/
 	@cd /tmp/nginx && make install
-	@cat /tmp/nginx.conf | grep -v '#' | sed -e 's@http {@http {\ninclude /etc/nginx/naxsi_core.rules;\n@' | sed -e 's@listen.*80;@listen 4242;@' | sed '1i\master_process off;' > /tmp/nginx.conf.tmp
+	@cat /tmp/nginx.conf | grep -v '#' | sed -e 's@http {@http {\ninclude /tmp/naxsi_core.rules;\n@' | sed -e 's@listen.*80;@listen 4242;@' | sed '1i\master_process off;' > /tmp/nginx.conf.tmp
 	@cat /tmp/nginx.conf.tmp | sed  's@location / {@location / {\nLearningMode;\nSecRulesEnabled;\nDeniedUrl "/50x.html";\nCheckRule "$$SQL >= 8" BLOCK;\nCheckRule "$$RFI >= 8" BLOCK;\nCheckRule "$$TRAVERSAL >= 4" BLOCK;\nCheckRule "$$EVADE >= 4" BLOCK;\nCheckRule "$$XSS >= 8" BLOCK;\nerror_log /tmp/ngx_error.log debug;\naccess_log /tmp/ngx_access.log;\n@'  > /tmp/nginx.conf
 

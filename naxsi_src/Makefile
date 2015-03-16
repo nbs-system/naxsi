@@ -3,7 +3,7 @@ UTIL_VERS :=	$(shell grep version ../nx_util/setup.py | cut -d "'" -f2)
 MOD_PATH :=	$(shell pwd)
 #Enables lcov for unit test code coverage
 COV := 1
-TEST := "22*.t"
+#TEST := "22*.t"
 build:
 	@if test -d /tmp/nginx ; then \
 		cd /tmp/nginx && make; \

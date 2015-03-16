@@ -51,6 +51,13 @@ extern ngx_module_t ngx_http_naxsi_module;
 
 #define UPDATE_C(js) js->c = *(js->src + js->off)
 
+#ifdef whitelist_debug
+    #define naxsi_whitelist_debug(...)
+#else
+    #define naxsi_whitelist_debug(...) ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, __VA_ARGS__)
+#endif
+
+
 /*
 ** Here is globally how the structures are organized :
 **

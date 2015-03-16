@@ -289,39 +289,28 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
   /* FILE_EXT zone is just a hack, as it indeed targets BODY */
   if (zone == FILE_EXT)
     zone = BODY;
-#ifdef whitelist_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "Possible whitelist ... check...");
-#endif
+  naxsi_whitelist_debug("Possible whitelist ... check...");
 
   /* if whitelist targets arg name, but the rules hit content*/
   if (b->target_name && !target_name)
     {
-#ifdef whitelist_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "whitelist targets name, but rule matched content.");
-#endif
+      naxsi_whitelist_debug("whitelist targets name, but rule matched content.");
       return (0);
     }
   /* if if the whitelist target contents, but the rule hit arg name*/
   if (!b->target_name && target_name)
     {
-#ifdef whitelist_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "whitelist targets content, but rule matched name.");
-#endif
+      naxsi_whitelist_debug("whitelist targets content, but rule matched name.");
       return (0);
     }
 
   
   if (type == NAME_ONLY) {
-#ifdef whitelist_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "Name match in zone %s",
-                  zone == ARGS ? "ARGS" : zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : "UNKNOWN!!!!!");
-#endif
+    naxsi_whitelist_debug("Name match in zone %s", zone == ARGS ? "ARGS" : zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : "UNKNOWN!!!!!");
     //False Positive, there was a whitelist that matches the argument name,
     // But is was actually matching an existing URI name.
     if (zone != b->zone || b->uri_only) {
-#ifdef whitelist_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "bad whitelist, name match, but WL was only on URL.");
-#endif
+      naxsi_whitelist_debug("bad whitelist, name match, but WL was only on URL.");
       return (0);
     }
     return (nx_check_ids(r->rule_id, b->ids));
@@ -330,26 +319,18 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
       type == MIXED) {
     /* zone must match */
     if (b->uri_only && type != URI_ONLY) {
-#ifdef whitelist_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "bad whitelist, type is URI_ONLY, but not whitelist");
-#endif
+      naxsi_whitelist_debug("bad whitelist, type is URI_ONLY, but not whitelist");
       return (0);
     }
     
     if (zone != b->zone) {
-      
-#ifdef whitelist_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "bad whitelist, URL match, but not zone");
-#endif
-      
+      naxsi_whitelist_debug("bad whitelist, URL match, but not zone");
       return (0);
     }
     
     return (nx_check_ids(r->rule_id, b->ids));    
   }
-#ifdef whitelist_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "finished wl check, failed.");
-#endif
+  naxsi_whitelist_debug("finished wl check, failed.");
   
   return (0);
 }
@@ -584,16 +565,15 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   ngx_str_t nullname = ngx_null_string;
   
   /* if name is NULL, replace it by an empty string */
-  if (!name) name = &nullname;
-#ifdef whitelist_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		"is rule [%d] whitelisted in zone %s for item %V", r->rule_id,
+  if (!name)
+    name = &nullname;
+
+  naxsi_whitelist_debug("is rule [%d] whitelisted in zone %s for item %V", r->rule_id,
 		zone == ARGS ? "ARGS" : zone == HEADERS ? "HEADERS" : zone == BODY ? 
 		"BODY" : zone == URL ? "URL" : zone == FILE_EXT ? "FILE_EXT" : "UNKNOWN",
 		name);
   if (target_name)
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,  "extra: exception happened in |NAME");
-#endif
+    naxsi_whitelist_debug("extra: exception happened in |NAME");
   tmp_hashname.data = NULL;
   
   /* Check if the rule is part of disabled rules for this location */
@@ -604,58 +584,44 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
       /* Is rule disabled ? */
       if (nx_check_ids(r->rule_id, dr[i]->wlid_array)) {
 
-#ifdef whitelist_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled somewhere", r->rule_id);
-#endif	
+	naxsi_whitelist_debug("rule %d is disabled somewhere", r->rule_id);
 	if (!dr[i]->br || dr[i]->br->target_name != target_name)
 	  continue;
 	
 	/* If rule target nothing, it's whitelisted everywhere */
 	if (!(dr[i]->br->args ||  dr[i]->br->headers || 
 	      dr[i]->br->body ||  dr[i]->br->url)) {
-#ifdef whitelist_debug
-	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is fully disabled", r->rule_id);
-#endif	
+	  naxsi_whitelist_debug("rule %d is fully disabled", r->rule_id);
 	  return (1); 
 	}
 	switch (zone) {
 	case ARGS:
 	  if (dr[i]->br->args) {
-#ifdef whitelist_debug
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in ARGS", r->rule_id);
-#endif	
+	    naxsi_whitelist_debug("rule %d is disabled in ARGS", r->rule_id);
 	    return (1);
 	  }
 	  break;
 	case HEADERS:
 	  if (dr[i]->br->headers) {
-#ifdef whitelist_debug
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in HEADERS", r->rule_id);
-#endif	
+	    naxsi_whitelist_debug("rule %d is disabled in HEADERS", r->rule_id);
 	    return (1);
 	  }
 	  break;
 	case BODY:
 	  if (dr[i]->br->body) {
-#ifdef whitelist_debug
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in BODY", r->rule_id);
-#endif	
+	    naxsi_whitelist_debug("rule %d is disabled in BODY", r->rule_id);
 	    return (1);
 	  }
 	  break;
 	case FILE_EXT:
 	  if (dr[i]->br->file_ext) {
-#ifdef whitelist_debug
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in FILE_EXT", r->rule_id);
-#endif	
+	    naxsi_whitelist_debug("rule %d is disabled in FILE_EXT", r->rule_id);
 	    return (1);
 	  }
 	  break;
 	case URL:
 	  if (dr[i]->br->url) {
-#ifdef whitelist_debug
-	    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in URL zone:%d", r->rule_id, zone);
-#endif	
+	    naxsi_whitelist_debug("rule %d is disabled in URL zone:%d", r->rule_id, zone);
 	    return (1);
 	  }
 	  break;
@@ -665,19 +631,13 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
       }
     }
   }
-#ifdef whitelist_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		"hashing varname [%V]", name);
-#endif
+  naxsi_whitelist_debug("hashing varname [%V]", name);
   /*
   ** check for ARGS_VAR:x(|NAME) whitelists.
   ** (name) or (#name)
   */
   if (name->len > 0) {
-#ifdef whitelist_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		  "hashing varname [%V] (rule:%d) - 'wl:X_VAR:%V'", name, r->rule_id, name);
-#endif
+    naxsi_whitelist_debug("hashing varname [%V] (rule:%d) - 'wl:X_VAR:%V'", name, r->rule_id, name);
     /* try to find in hashtables */
     b = nx_find_wl_in_hash(name, cf, zone);
     if (b && ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, NAME_ONLY, target_name))
@@ -688,10 +648,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
     tmp_hashname.data = ngx_pcalloc(req->pool, tmp_hashname.len+1);
     tmp_hashname.data[0] = '#';
     memcpy(tmp_hashname.data+1, name->data, name->len);
-#ifdef whitelist_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		  "hashing varname [%V] (rule:%d) - 'wl:X_VAR:%V|NAME'", name, r->rule_id, name);
-#endif
+    naxsi_whitelist_debug("hashing varname [%V] (rule:%d) - 'wl:X_VAR:%V|NAME'", name, r->rule_id, name);
     b = nx_find_wl_in_hash(&tmp_hashname, cf, zone);
     ngx_pfree(req->pool, tmp_hashname.data);
     tmp_hashname.data = NULL;
@@ -710,10 +667,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
     if (!tmp_hashname.data) return (0);
     tmp_hashname.len = req->uri.len;
     k = ngx_hash_strlow(tmp_hashname.data, req->uri.data, req->uri.len);
-#ifdef whitelist_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		  "hashing uri [%V] (rule:%d) 'wl:$URI:%V|*'", &(tmp_hashname), r->rule_id, &(tmp_hashname));
-#endif
+    naxsi_whitelist_debug("hashing uri [%V] (rule:%d) 'wl:$URI:%V|*'", &(tmp_hashname), r->rule_id, &(tmp_hashname));
 
     b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_url_hash, k,
 						   (u_char*) tmp_hashname.data,
@@ -730,10 +684,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   if (!tmp_hashname.data) return (0);
   tmp_hashname.len = req->uri.len;
   ngx_memcpy(tmp_hashname.data, req->uri.data, req->uri.len);
-#ifdef whitelist_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		"hashing uri#1 [%V] (rule:%d) ($URL:X|URI)", &(tmp_hashname), r->rule_id);
-#endif
+  naxsi_whitelist_debug("hashing uri#1 [%V] (rule:%d) ($URL:X|URI)", &(tmp_hashname), r->rule_id);
   b = nx_find_wl_in_hash(&(tmp_hashname), cf, zone);
   ngx_pfree(req->pool, tmp_hashname.data);
   tmp_hashname.data = NULL;
@@ -747,10 +698,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   tmp_hashname.len = req->uri.len + 1;
   tmp_hashname.data[0] = '#';
   ngx_memcpy(tmp_hashname.data+1, req->uri.data, req->uri.len);
-#ifdef whitelist_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		"hashing uri#3 [%V] (rule:%d) ($URL:X|ZONE|NAME)", &(tmp_hashname), r->rule_id);
-#endif
+  naxsi_whitelist_debug("hashing uri#3 [%V] (rule:%d) ($URL:X|ZONE|NAME)", &(tmp_hashname), r->rule_id);
   b = nx_find_wl_in_hash(&(tmp_hashname), cf, zone);
   ngx_pfree(req->pool, tmp_hashname.data);
   tmp_hashname.data = NULL;
@@ -770,10 +718,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   strncat((char*)tmp_hashname.data, "#", 1);
   strncat((char*)tmp_hashname.data, (char*)name->data, name->len);
     
-#ifdef whitelist_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		"hashing MIX [%V] ($URL:x|$X_VAR:y) or ($URL:x|$X_VAR:y|NAME)", &tmp_hashname);
-#endif
+  naxsi_whitelist_debug("hashing MIX [%V] ($URL:x|$X_VAR:y) or ($URL:x|$X_VAR:y|NAME)", &tmp_hashname);
   b = nx_find_wl_in_hash(&(tmp_hashname), cf, zone);
   ngx_pfree(req->pool, tmp_hashname.data);
   

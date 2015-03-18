@@ -384,7 +384,7 @@ int
 ngx_http_dummy_pcre_wrapper(ngx_regex_compile_t *rx, unsigned char *str, unsigned int len) 
 {
   int match;
-  int captures[2];
+  int captures[30];
   
 #if defined nginx_version && (nginx_version >= 1002002 && nginx_version != 1003000)
   match = pcre_exec(rx->regex->code, 0, (const char *) str, len, 0, 0, captures, 1);

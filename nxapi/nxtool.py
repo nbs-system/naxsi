@@ -82,6 +82,7 @@ p = OptionGroup(opt, "Whitelist Generation")
 p.add_option('-f', '--full-auto', dest="full_auto", action="store_true", help="Attempt fully automatic whitelist generation process.")
 p.add_option('-t', '--template', dest="template", help="Path to template to apply.")
 p.add_option('--slack', dest="slack", action="store_false", help="Enables less strict mode.")
+p.add_option('--type', dest="type_wl", action="store_true", help="Generate whitelists based on param type")
 opt.add_option_group(p)
 # group : statistics
 p = OptionGroup(opt, "Statistics Generation")
@@ -130,6 +131,9 @@ es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"])
 translate = NxTranslate(es, cfg)
 
 
+if options.type_wl is True:
+    translate.wl_on_type()
+    sys.exit(1)
 
 # whitelist generation options
 if options.full_auto is True:

@@ -8,6 +8,7 @@ import shlex
 import datetime
 import glob
 
+from nxtypificator import Typificator
 
 class NxConfig():
     """ Simple configuration loader """
@@ -225,6 +226,11 @@ class NxTranslate():
                                     #print "?deny "+str(results['deny'])
                                     self.fancy_display(genrule, results, template)
                                     print self.grn.format(self.tpl2wl(genrule['rule']).encode('utf-8', errors='replace'), template)
+
+
+    def wl_on_type(self):
+        for rule in Typificator(self.es, self.cfg).get_rules():
+            print 'BasicRule negative "rx:{0}" "msg:{1}" "mz:${2}_VAR:{3}" "s:BLOCK";'.format(*rule)
                                 
     def fancy_display(self, full_wl, scores, template=None):
         if template is not None and '_msg' in template.keys():

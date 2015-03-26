@@ -760,6 +760,9 @@ ngx_str_t  *ngx_http_append_log(ngx_http_request_t *r, ngx_array_t *ostr,
   ** this is very likely to happen !
   */
   
+  /*
+  ** extra space has been reserved to append the seed.
+  */
   while ((seed = random() % 1000) == prev_seed)
     ;
   sub = snprintf((char *)(fragment->data+*offset), MAX_SEED_LEN, "&seed_start=%d", seed);
@@ -821,23 +824,39 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 		 r->headers_in.server.len, r->headers_in.server.data,
 		 tmp_uri->len, tmp_uri->data, ctx->learning ? 1 : 0, strlen(NAXSI_VERSION),
 		 NAXSI_VERSION, cf->request_processed, cf->request_blocked, ctx->block ? 1 : 0);
+  
+  if (sub >= sz_left)
+    sub = sz_left - 1;
   sz_left -= sub;
   offset += sub;
   /*
+  ** if URI exceeds the MAX_LINE_SIZE, log directly, avoid null deref (#178)
+  */
+  if (sz_left < 100) {
+    fragment = ngx_http_append_log(r, ostr, fragment, &offset);
+    if (!fragment) return (NGX_ERROR);
+    sz_left = MAX_LINE_SIZE - MAX_SEED_LEN - offset - 1;
+  }
+  
+  /*
   ** append scores
   */
-  
   for (i = 0; ctx->special_scores && i < ctx->special_scores->nelts; i++) {
     sc = ctx->special_scores->elts;
     if (sc[i].sc_score != 0) {
       sub = snprintf(0, 0, fmt_score, i, sc[i].sc_tag->len, sc[i].sc_tag->data, i, sc[i].sc_score);
       if (sub >= sz_left)
 	{
+	  /*
+	  ** ngx_http_append_log will add seed_start and seed_end, and adjust the offset.
+	  */
 	  fragment = ngx_http_append_log(r, ostr, fragment, &offset);
 	  if (!fragment) return (NGX_ERROR);
 	  sz_left = MAX_LINE_SIZE - MAX_SEED_LEN - offset - 1;
 	}
       sub = snprintf((char *) (fragment->data+offset), sz_left, fmt_score, i, sc[i].sc_tag->len, sc[i].sc_tag->data, i, sc[i].sc_score);
+      if (sub >= sz_left)
+	sub = sz_left - 1;
       offset += sub;
       sz_left -= sub;
     } 
@@ -880,6 +899,8 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
       sub = snprintf((char *)fragment->data+offset, sz_left, 
 		     fmt_rm, i, tmp_zone, i, mr[i].rule->rule_id, i, 
 		     mr[i].name->len, mr[i].name->data);
+      if (sub >= sz_left)
+	sub = sz_left - 1;
       offset += sub;
       sz_left -= sub;
       i += 1;

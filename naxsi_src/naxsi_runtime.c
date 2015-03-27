@@ -169,7 +169,7 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
 				   ngx_int_t	*nb_match)
   
 {
-  ngx_int_t	match, tmp_idx, len, i;
+  ngx_int_t	match, tmp_idx, len;
   unsigned char *ret;
   int		captures[30];
   if (!rl->br || !nb_match) return (-1);
@@ -203,8 +203,7 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
 	(0)
 #endif
 	{
-	  for(i = 0; i < match; ++i)
-	    *nb_match += 1;
+	  *nb_match += match;
 	  tmp_idx = captures[1];
 	}
     if (*nb_match > 0) {

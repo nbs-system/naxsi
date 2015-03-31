@@ -33,6 +33,7 @@ MainRule "str:)" "msg:parenthesis, probable sql/xss" "mz:ARGS|URL|BODY|$HEADERS_
 MainRule "str:'" "msg:simple quote" "mz:ARGS|BODY|URL|$HEADERS_VAR:Cookie" "s:$SQL:4,$XSS:8" id:1013;
 MainRule "str:," "msg:, in stuff" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1015;
 MainRule "str:#" "msg:mysql comment (#)" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1016;
+MainRule "str:@@" "msg:double @@" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1017;
 
 ###############################
 ## OBVIOUS RFI IDs:1100-1199 ##

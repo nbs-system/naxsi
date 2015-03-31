@@ -668,14 +668,13 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       ngx_http_dummy_line_conf_error(cf, value);
       return (NGX_CONF_ERROR);
     }
-    rule_c->sc_tag.data = ngx_pcalloc(cf->pool, var_end - value[1].data +1);
+    rule_c->sc_tag.len = var_end - value[1].data;
+    rule_c->sc_tag.data = ngx_pcalloc(cf->pool, rule_c->sc_tag.len + 1);
     if (!rule_c->sc_tag.data)
       return (NGX_CONF_ERROR);
-    memcpy(rule_c->sc_tag.data, value[1].data, (var_end - value[1].data));
-    i += (var_end - value[1].data) + 1;
-    rule_c->sc_tag.len = (var_end - value[1].data);
-  }
-  else {
+    memcpy(rule_c->sc_tag.data, value[1].data, rule_c->sc_tag.len);
+    i += rule_c->sc_tag.len + 1;
+  } else {
     ngx_http_dummy_line_conf_error(cf, value);
     return (NGX_CONF_ERROR);
   }

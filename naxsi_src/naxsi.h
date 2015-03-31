@@ -49,8 +49,6 @@
 
 extern ngx_module_t ngx_http_naxsi_module;
 
-#define UPDATE_C(js) js->c = *(js->src + js->off)
-
 #ifdef whitelist_debug
     #define naxsi_whitelist_debug(...)
 #else

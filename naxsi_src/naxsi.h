@@ -471,18 +471,12 @@ void			*ngx_http_dummy_cfg_parse_one_rule(ngx_conf_t *cf,
 char			*strfaststr(unsigned char *haystack, unsigned int hl,
 				    unsigned char *needle, unsigned int nl);
 char			*strnchr(const char *s, int c, int len);
-char			*strncasechr(const char *s, int c, int len);
-ngx_int_t		ngx_http_dummy_create_hashtables(ngx_http_dummy_loc_conf_t *dlc,
-							 ngx_conf_t *cf);
 ngx_int_t		ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
 							   ngx_conf_t *cf);
 void			ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx, 
 						  ngx_http_request_t	 *r);
 ngx_int_t		ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
 						       ngx_http_request_t *r);
-int			naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, 
-					   ngx_uint_t type);
-
 int			nx_check_ids(ngx_int_t match_id, ngx_array_t *wl_ids);
 int			naxsi_unescape(ngx_str_t *str);
 

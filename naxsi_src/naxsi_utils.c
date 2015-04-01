@@ -32,6 +32,8 @@
 #include "naxsi.h"
 
 
+static int naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type);
+
 char	*
 strnchr(const char *s, int c, int len)
 {
@@ -42,7 +44,7 @@ strnchr(const char *s, int c, int len)
   return (NULL);
 }
 
-char	*
+static char	*
 strncasechr(const char *s, int c, int len)
 {
   int	cpt;
@@ -108,7 +110,7 @@ int naxsi_unescape(ngx_str_t *str) {
 ** For example, with the original one :
 ** '%uff' -> 'uff'
 */
-int
+static int
 naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
 {
     u_char  *d, *s, ch, c, decoded;
@@ -258,7 +260,7 @@ done:
 
 
 /* push rule into disabled rules. */
-ngx_int_t 
+static ngx_int_t 
 ngx_http_wlr_push_disabled(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc, 
 			   ngx_http_rule_t *curr) {
   ngx_http_rule_t	**dr;
@@ -280,7 +282,7 @@ ngx_http_wlr_push_disabled(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
 
 /* merge the two rules into father_wl, meaning 
    ids. Not locations, as we are getting rid of it */
-ngx_int_t 
+static ngx_int_t 
 ngx_http_wlr_merge(ngx_conf_t *cf, ngx_http_whitelist_rule_t *father_wl, 
 		   ngx_http_rule_t *curr) {
   uint i;
@@ -312,7 +314,7 @@ ngx_http_wlr_merge(ngx_conf_t *cf, ngx_http_whitelist_rule_t *father_wl,
 
 //#define whitelist_heavy_debug
 
-ngx_int_t 
+static ngx_int_t 
 ngx_http_wlr_identify(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc, 
 		      ngx_http_rule_t *curr, int *zone,
 		      int *uri_idx, int *name_idx) {
@@ -466,10 +468,7 @@ ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
 
 
 
-#define httprule_array(x) ((ngx_http_rule_t *) x)
-
-
-ngx_int_t
+static ngx_int_t
 ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc) {
   int get_sz = 0, headers_sz = 0, body_sz = 0, uri_sz = 0;
   ngx_array_t *get_ar = NULL, *headers_ar = NULL, *body_ar = NULL, *uri_ar = NULL;
@@ -669,7 +668,7 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
   for (i = 0; i < dlc->whitelist_rules->nelts; i++) {
     uri_idx = name_idx = zone = -1;
     /*a whitelist is in fact just another basic_rule_t */
-    curr_r = &(httprule_array(dlc->whitelist_rules->elts)[i]);
+    curr_r = &(((ngx_http_rule_t*)(dlc->whitelist_rules->elts))[i]);
 #ifdef whitelist_heavy_debug
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
 		       "Processing wl %d/%p", i, curr_r);
@@ -807,7 +806,7 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
   ip=<ip>&server=<server>&uri=<uri>&id=<id>&zone=<zone>&content=<content>
  */
 
-static char *dummy_match_zones[] = {
+static const char *dummy_match_zones[] = {
   "HEADERS",
   "URL",
   "ARGS",
@@ -822,13 +821,6 @@ void naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *re
 			 enum DUMMY_MATCH_ZONE	zone, ngx_int_t target_name) {
   ngx_str_t			tmp_uri, tmp_val, tmp_name;
   ngx_str_t			empty=ngx_string("");
-  char				tmp_zone[30];
-
-  /* 30 is more than enough */
-  memset(tmp_zone, 0, 30);
-  memcpy(tmp_zone, dummy_match_zones[zone], strlen(dummy_match_zones[zone]));
-  if (target_name)
-    strcat(tmp_zone, "|NAME");
   
   //encode uri
   tmp_uri.len = req->uri.len + (2 * ngx_escape_uri(NULL, req->uri.data, req->uri.len,
@@ -861,9 +853,9 @@ void naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *re
   }
   
   ngx_log_error(NGX_LOG_ERR, req->connection->log, 0, 
-		"NAXSI_EXLOG: ip=%V&server=%V&uri=%V&id=%d&zone=%s&var_name=%V&content=%V", 
+		"NAXSI_EXLOG: ip=%V&server=%V&uri=%V&id=%d&zone=%s%s&var_name=%V&content=%V", 
 		&(req->connection->addr_text), &(req->headers_in.server),
-		&(tmp_uri), rule->rule_id, tmp_zone /*dummy_match_zones[zone]*/, &(tmp_name), &(tmp_val));
+		&(tmp_uri), rule->rule_id, dummy_match_zones[zone], target_name?"|NAME":"", &(tmp_name), &(tmp_val));
   
   if (tmp_val.len > 0)
     ngx_pfree(req->pool, tmp_val.data);
@@ -898,6 +890,5 @@ int nx_check_ids(ngx_int_t match_id, ngx_array_t *wl_ids) {
       }
     }
   }
-  if (negative == 1) return (1);
-  return (0);
+  return (negative == 1);
 }

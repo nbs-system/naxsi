@@ -51,7 +51,7 @@ ngx_http_nx_json_forward(ngx_json_t *js)
 	  *(js->src+js->off) == '\r') && js->off < js->len) {
     js->off++;
   }
-  UPDATE_C(js);
+  js->c = *(js->src + js->off);
   return (NGX_OK);
 }
 
@@ -115,7 +115,7 @@ ngx_int_t
 ngx_http_nx_json_array(ngx_json_t *js) {
   ngx_int_t	rc;
   
-  UPDATE_C(js);
+  js->c = *(js->src + js->off);
   if (js->c != '[' || js->depth > JSON_MAX_DEPTH)
     return (NGX_ERROR);
   js->off++;
@@ -193,7 +193,7 @@ ngx_http_nx_json_val(ngx_json_t *js) {
   if (!strncasecmp((const char *) (js->src + js->off), (const char *) "true", 4) ||
       !strncasecmp((const char *) (js->src + js->off), (const char *) "false", 5) ||
       !strncasecmp((const char *) (js->src + js->off), (const char *) "null", 4)) {
-    UPDATE_C(js);
+    js->c = *(js->src + js->off);
     /* we don't check static values, do we ?! */
     val.data = js->src+js->off;
     if (js->c == 'F' || js->c == 'f') {
@@ -256,7 +256,7 @@ ngx_http_nx_json_val(ngx_json_t *js) {
 ngx_int_t
 ngx_http_nx_json_obj(ngx_json_t *js)
 {
-  UPDATE_C(js);
+  js->c = *(js->src + js->off);
   
   if (js->c != '{' || js->depth > JSON_MAX_DEPTH)
     return (NGX_ERROR);

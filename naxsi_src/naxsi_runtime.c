@@ -1337,7 +1337,7 @@ void ngx_http_libinjection(ngx_pool_t *pool,
     libinjection_sqli_init(&state, (const char *)name->data, name->len, FLAG_NONE);
     issqli = libinjection_is_sqli(&state);
     if (issqli == 1) { 
-      ngx_http_apply_rulematch_v_n(nx_int__libinject_sql, ctx, req, name, name, zone, 1, 1);
+      ngx_http_apply_rulematch_v_n(nx_int__libinject_sql, ctx, req, name, value, zone, 1, 1);
     }
     
     /* hardcoded call to libinjection on CONTENT, apply internal rule if matched. */
@@ -1352,7 +1352,7 @@ void ngx_http_libinjection(ngx_pool_t *pool,
     /* first on var_name */
     issqli = libinjection_xss((const char *) name->data, name->len);
     if (issqli == 1) {
-      ngx_http_apply_rulematch_v_n(nx_int__libinject_xss, ctx, req, name, name, zone, 1, 1);
+      ngx_http_apply_rulematch_v_n(nx_int__libinject_xss, ctx, req, name, value, zone, 1, 1);
     }
     
     /* hardcoded call to libinjection on CONTENT, apply internal rule if matched. */

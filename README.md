@@ -34,9 +34,7 @@ is to add required ACCEPT rules for the target website to work properly.
 On the contrary of most Web Application Firewall, Naxsi doesn't rely on a
 signature base, like an antivirus, and thus cannot be circumvented by an
 "unknown" attack pattern. Another main difference between Naxsi and other
-WAF, Naxsi filters Get & Posts resquests and is OpenSource and free to use
-for your company or personal own use (ie: as long as you don't resell a
-service or product based on Naxsi to customers).
+WAF, Naxsi filters Get & Posts resquests and is OpenSource (GPLv2) and free to use.
 
 ### Getting started
 

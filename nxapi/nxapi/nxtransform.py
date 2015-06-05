@@ -386,6 +386,10 @@ class NxTranslate():
             return [False, "not a BasicRule"]
         # split line
         strings = shlex.split(raw_line)
+        # bug #194 - drop everything after the first chunk starting with a '#' (inline comments)
+        for x in strings:
+            if x.startswith('#'):
+                strings = strings[:strings.index(x)]
         # more checks
         if len(strings) < 3:
             return [False, "empty/incomplete line"]

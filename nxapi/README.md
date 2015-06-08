@@ -6,26 +6,6 @@ nxapi/nxtool is the new learning tool, that attempts to perform the following :
   * Events management : Allow tagging of events into database to exclude them from wl gen process
   * Reporting : Display information about current DB content
 
-Template, introduced in nxapi is a file containing a JSON dict, used by nxapi to attempt whitelist generation. Templates can be generic or application specific ie.
-
-`
-{
-"zone" : "HEADERS",
-"var_name" : "cookie",
-"id" : "?"}
-`
-
-on the other hand, this is an application-specific template :
-
-`
-{
-"zone" : "ARGS",
-"var_name" : "redirect_to",
-"_statics" : { "id" : "1100,1101"}, 
-"_msg" : "WP post-auth redirect"
-}
-`
-
 # Configuration file : nxapi.json
 
 nxapi uses a JSON file for its settings, such as :
@@ -140,8 +120,9 @@ I want to generate WLs for x1.fr, so I will get more precise statistics first :
     ...
 
 I will then attempt to generate whitelists for the `/foo/bar/test` page, that seems to trigger most events :
+
 `Take note of the --filter option, that allows me to work whitelists only for this URI.
-Filters can specify any field : var_name, zone, uri, id, whitelisted, content, date ...
+Filters can specify any field : var_name, zone, uri, id, whitelisted, content, country, date ...
 However, take care, they don't support regexp yet.
 Take note as well of --slack usage, that allows to ignore success/warning criterias, as my website has too few
 visitors, making legitimate exceptions appear as false positives.`
@@ -220,6 +201,8 @@ Allows to restrict context of whitelist generation or stats display to specific 
 
 A filter (in the form of a dict) to merge with 
 existing templates/filters: 'uri /foobar zone BODY'.
+You can combine several filters, for example : `--filter "country FR" --filter "uri /foobar"`.
+
 
 ## Whitelist generation options
 
@@ -292,7 +275,7 @@ Let's first look at a generic one to understand how it work :
 Here is how nxtool will use this to generate whitelists:
   1. extract global_filters from nxapi.json, and create the base ES filter :
      { "whitelisted" : "false" }
-  2. merge base ES filter with provided cmd line filter (--filter)
+  2. merge base ES filter with provided cmd line filter (--filter, -s www.x1.fr)
      { "whitelisted" : "false", "server" : "www.x1.fr" }
   3. For each static field of the template, merge it in base ES filter :
      { "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie" }
@@ -316,8 +299,63 @@ Templates support :
   * `"_success" : { ... }` : A dict supplied to overwrite/complete 'global' scoring rules.
   * `"_warnings" : { ... }` : A dict supplied to overwrite/complete 'global' scoring rules.
 
+
+# Understanding scoring
+
 Scoring mecanism :
- TBD.
+  * Scoring mecanism is a very trivial approach, relying on 3 kinds of "scoring" expressions : _success, _warning, _deny.
+  * Whenever a _success rule is met while generating a whitelist, it will INCREASE the "score" of the whitelist by 1.
+  * Whenever a _warning rule is met while generating a whitelist, it will DECREASE the "score" of the whitelist by 1.
+  * Whenever a _deny rule is met while generating a whitelist, it will disable the whitelist output.
+
+_note:_
+In order to understand scoring mecanism, it is crucial to get the difference between a template and a rule.
+A template with the .json file, which can match many events. A rule is usually a subpart of a template results.
+For example, if we have this data : 
+
+    [ {"id" : 1, "zone" : HEADERS, ip:A.A.A.A},
+      {"id" : 2, "zone" : HEADERS, ip:A.A.A.A},
+      {"id" : 1, "zone" : ARGS, ip:A.B.C.D}
+    ]
+
+
+And this template :
+
+    {"id" : 1, "zone" : "?"}
+
+Well, template_ip would be 2, as 2 peers triggered events with ID:1.
+However, rule_ip would be 1, as the two generated rules ('id:1 mz:ARGS' and 'id:1 mz:HEADERS'),
+were triggered each by one unique peer.
+
+If --slack is present, scoring is ignored, and all possible whitelists are displayed.
+In normal conditions, whitelists with more than 0 points are displayed.
+The default filters enabled in nxapi, from nxapi.json :
+
+
+    "global_warning_rules" : {
+      "rule_ip" : ["<=", 10 ],
+      "global_rule_ip_ratio" : ["<", 5]
+      },
+    "global_success_rules" : {
+      "global_rule_ip_ratio" : [">=", 10],
+      "rule_ip" : [">=", 10]
+      },
+    "global_deny_rules" : {
+     "global_rule_ip_ratio" : ["<", 2]
+      },
+
+
+  * rule_N <= X : "at least" X uniq(N) where present in the specific events from which the WL is generated.
+    * '"rule_ip" : ["<=", 10 ],' : True if less than 10 unique IPs hit the event
+    * '"rule_var_name" : [ "<=", "5" ]' : True if less than 5 unique variable names hit the event
+  * template_N <= X : "at least" X uniq(N) where present in the specific events from which the WL is generated.
+    * Note the difference with "rule_X" rules. 
+  * global_rule_ip_ratio < X : "at least" X% of the users that triggered events triggered this one as well.
+    * however, ration can theorically apply to anything, just ip_ratio is the most common.
+
+
+
+
 
 
 

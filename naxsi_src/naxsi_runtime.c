@@ -1257,9 +1257,11 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
       len = ev - str;
       eq = strnchr(str, '=', len);
       if (!eq) {
-	dummy_error_fatal(ctx, req, 
-			  "malformed url, possible attack [%s]", str);
-	return (1);
+	if (ngx_http_apply_rulematch_v_n(&nx_int__uncommon_url, ctx, req, NULL, NULL, zone, 1, 0)) {
+	  dummy_error_fatal(ctx, req, 
+			    "malformed url, possible attack [%s]", str);
+	  return (1);
+	}
       }
       eq++;
       val.data = (unsigned char *) eq;
@@ -1714,15 +1716,17 @@ ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 			(u_char *) "content-disposition: form-data;", 30)) {
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		    "Unknown content-type: [%s]", src+idx);
-      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
-      dummy_error_fatal(ctx, r, "POST data : unknown content-disposition");
+      if (ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
+	dummy_error_fatal(ctx, r, "POST data : unknown content-disposition");
+      }
       return ;
     }
     idx += 30;
     line_end = (u_char *) ngx_strchr(src+idx, '\n');
     if (!line_end) {
-      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
-      dummy_error_fatal(ctx, r, "POST data : malformed boundary line");
+      if (ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
+	dummy_error_fatal(ctx, r, "POST data : malformed boundary line");
+      }
       return ;
     }
     /* Parse content-disposition, extract name / filename */
@@ -1734,8 +1738,9 @@ ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
     }
     /* var name is mandatory */
     if (!varn_start || !varn_end || varn_end <= varn_start) {
-      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
-      dummy_error_fatal(ctx, r, "POST data : no 'name' in POST var");
+      if (ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
+	dummy_error_fatal(ctx, r, "POST data : no 'name' in POST var");
+      }
       return ;
     }
     varn_len = varn_end - varn_start;
@@ -1744,8 +1749,9 @@ ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
     if (filen_start && filen_end) {
       line_end = (u_char *) ngx_strchr(line_end+1, '\n');
       if (!line_end) {
-	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
-	dummy_error_fatal(ctx, r, "POST data : malformed filename (no content-type ?)");
+	if (ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
+	  dummy_error_fatal(ctx, r, "POST data : malformed filename (no content-type ?)");
+	}
 	return ;
 	
       }
@@ -1756,8 +1762,9 @@ ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
     */
     idx += (u_char *)line_end - (src+idx) + 1;
     if (src[idx] != '\r' || src[idx+1] != '\n') {
-      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
-      dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
+      if (ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
+	dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
+      }
       return ;
     }
     idx += 2;
@@ -1776,8 +1783,9 @@ ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
 	  break;
       }
       if (!end) {
-	ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0);
-	dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
+	if (ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
+	  dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
+	}
 	return ;
       }
       if (!ngx_strncmp(end+4, boundary, boundary_len))

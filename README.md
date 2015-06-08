@@ -43,17 +43,3 @@ service or product based on Naxsi to customers).
 #### Wiki
 
 See the [wiki](https://github.com/nbs-system/naxsi/wiki)
-
-
-#### Performance reviews
-
-  * [See how Naxsi performs against a highly vulnerable web site](https://github.com/nbs-system/naxsi/wiki/NaxsiVsAppScan) 
-  * [See how Naxsi performs vs Obfuscated|Complex SQLi patterns](https://github.com/nbs-system/naxsi/wiki/naxsivsobfuscated)
-
-### We need you !
-
- * Performance, stability testing: we are looking for independent reviews, benchmarks, and related feedback
- * Security testing: we prepared a running [testing environment](http://github.com/nbs-system/naxsi/wiki/OnlyTrustWhatYouCanTest) for you to play with. Go, play, (try to) bypass!
- * Post feature requests, documentation improvements
- * Bug reports: [Naxsi is young, there are known bugs](https://github.com/nbs-system/naxsi/wiki/KnownBugs)
-

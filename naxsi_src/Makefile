@@ -1,8 +1,7 @@
 CORE_VERS	:=	$(shell grep NAXSI_VERSION naxsi.h | cut -d '"' -f 2)
 MOD_PATH 	:=	$(shell pwd)
-#Extract l/key for coverity - out of repo ;)
-CAK 		:= $(shell cat ../../coverity.key | cut -d ':' -f2)
-CAN 		:= $(shell cat ../../coverity.key | cut -d ':' -f1)
+CAN		:=
+CAK		:=
 #1 : LCOV is enabled, and coverage report is generated.
 COV 		:= 0
 #Allows to force for specific UT only
@@ -103,9 +102,11 @@ nginx_config:
 
 
 #Build for coverity and submit build !
-coverity:
-	-wget -nc  https://scan.coverity.com/download/linux-64 --post-data "token="$(CAK)"&project=nbs-system%2Fnaxsi" -O /tmp/coverity.tgz
-	-mkdir /tmp/cov && cd /tmp/cov && cat ../coverity.tgz  | tar --strip-components=1 -xvzf -
+coverity: 
+	CAK=$(shell cat ../../coverity.key | cut -d ':' -f2) ; \
+	CAN=$(shell cat ../../coverity.key | cut -d ':' -f1) ; \
+	-wget -nc  https://scan.coverity.com/download/linux-64 --post-data "token="$(CAK)"&project=nbs-system%2Fnaxsi" -O /tmp/coverity.tgz ; \
+	-mkdir /tmp/cov && cd /tmp/cov && cat ../coverity.tgz  | tar --strip-components=1 -xvzf - ; \
 	cd /tmp/nginx ; \
 	./configure --conf-path=/tmp/naxsi_ut/nginx.conf  --add-module=$(MOD_PATH) \
 	 --error-log-path=/tmp/naxsi_ut/error.log \
@@ -124,7 +125,7 @@ coverity:
 	 --with-ipv6  --prefix=/tmp \
 	 --with-debug && \
 	/tmp/cov/bin/cov-build --dir cov-int make && \
-	tar cvzf coverity-res-naxsi.tgz cov-int/
+	tar cvzf coverity-res-naxsi.tgz cov-int/ ; \
 	curl --form token=$(CAK) \
 	  --form email=$(CAN) \
 	  --form file=@/tmp/nginx/coverity-res-naxsi.tgz \

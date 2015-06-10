@@ -49,12 +49,13 @@ re: clean nginx_config nginx_build
 clean:
 	rm -rf /tmp/naxsi_ut/
 
-deploy:
-	cd /tmp/nginx ; make install
+deploy: deploy_config
+
+deploy_config:
 	echo "$$NAXSI_CFG" > /tmp/naxsi_ut/nginx.conf
 
 nginx_build:
-	cd /tmp/nginx && make
+	cd /tmp/nginx && make && make install
 
 # RUN UNIT TESTS
 # - generate coverage report if option is on

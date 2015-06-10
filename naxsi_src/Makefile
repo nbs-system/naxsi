@@ -1,41 +1,133 @@
-CORE_VERS	 :=	$(shell grep NAXSI_VERSION naxsi.h | cut -d '"' -f 2)
-MOD_PATH :=	$(shell pwd)
-#Enables lcov for unit test code coverage
-COV := 0
-TEST := "23*.t"
-build:
-	@if test -d /tmp/nginx ; then \
-		cd /tmp/nginx && make; \
-	else \
-		echo "nginx source tree must be in /tmp/nginx"; \
-	fi
+CORE_VERS	:=	$(shell grep NAXSI_VERSION naxsi.h | cut -d '"' -f 2)
+MOD_PATH 	:=	$(shell pwd)
+#Extract l/key for coverity - out of repo ;)
+CAK 		:= $(shell cat ../../coverity.key | cut -d ':' -f2)
+CAN 		:= $(shell cat ../../coverity.key | cut -d ':' -f1)
+#1 : LCOV is enabled, and coverage report is generated.
+COV 		:= 0
+#Allows to force for specific UT only
+#TEST 		:= "23*.t"
+define NAXSI_CFG=
+master_process off;
+worker_processes  1;
+events {
+ worker_connections  1024;
+}
+http {
+ include /etc/nginx/naxsi_core.rules;
+ include       mime.types;
+ default_type  application/octet-stream;
+ sendfile        on;
+ keepalive_timeout  65;
+ server {
+  listen 4242;
+  server_name  localhost;
+  location / {
+   LearningMode;
+   SecRulesEnabled;
+   DeniedUrl "/50x.html";
+   CheckRule "$SQL >= 8" BLOCK;
+   CheckRule "$RFI >= 8" BLOCK;
+   CheckRule "$TRAVERSAL >= 4" BLOCK;
+   CheckRule "$EVADE >= 4" BLOCK;
+   CheckRule "$XSS >= 8" BLOCK;
+   error_log /tmp/ngx_error.log debug;
+   access_log /tmp/ngx_access.log;
+   root   html;
+   index  index.html index.htm;
+  }
+  error_page   500 502 503 504  /50x.html;
+  location = /50x.html {
+   root   html;
+  }
+ }
+}
+endef
+export NAXSI_CFG
 
+re: clean nginx_config nginx_build
 
-test:
-	@if [ $(COV) -eq 1 ] ; then  \
-	echo "[!] BUILDING WITH -LGCOV" ; \
-	lcov --directory /tmp/nginx --zerocounters ; fi
-	@export PATH="/tmp/nginx/objs/:"$(PATH) ; \
-	export PERL5LIB=/usr/local/share/perl/5.14.2/ ; \
-	cd .. ; echo "-->" $(TEST) ; \
-	if [ $(TEST) ] ; then prove -r "t/$(TEST)" ; else \
-	prove -r t/*.t ; fi
-	@if [ $(COV) -eq 1 ] ; then \
-	lcov --directory /tmp/nginx/objs/addon/naxsi_src/ --capture --output-file naxsi.info --base-directory /tmp/nginx ; \
-	genhtml -s -o /tmp/naxsicov.html naxsi.info ; \
-	echo "Coverage report is in /tmp/naxsicov.html" ; fi
-
-re:
-	@echo "Nginx source tree : /tmp/nginx" 
-	@if [ $(COV) -eq 1 ] ; then echo "[!] BUILDING WITH -LGCOV" ; \
-	cd /tmp/nginx && ./configure --with-cc-opt="--coverage" --with-ld-opt=-lgcov  --conf-path=/tmp/naxsi_ut/nginx.conf  --add-module=$(MOD_PATH) --error-log-path=/tmp/naxsi_ut/error.log     --http-client-body-temp-path=/tmp/naxsi_ut/body/     --http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/     --http-log-path=/tmp/naxsi_ut/access.log     --http-proxy-temp-path=/tmp/naxsi_ut/proxy/     --lock-path=/tmpnginx.lock     --pid-path=/tmp/naxsi_ut/nginx.pid     --with-http_ssl_module     --without-mail_pop3_module     --without-mail_smtp_module     --without-mail_imap_module     --without-http_uwsgi_module     --without-http_scgi_module     --with-ipv6  --prefix=/tmp --with-debug && make \
-	; else cd /tmp/nginx && ./configure --conf-path=/tmp/naxsi_ut/nginx.conf  --add-module=$(MOD_PATH) --error-log-path=/tmp/naxsi_ut/error.log     --http-client-body-temp-path=/tmp/naxsi_ut/body/     --http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/     --http-log-path=/tmp/naxsi_ut/access.log     --http-proxy-temp-path=/tmp/naxsi_ut/proxy/     --lock-path=/tmpnginx.lock     --pid-path=/tmp/naxsi_ut/nginx.pid     --with-http_ssl_module     --without-mail_pop3_module     --without-mail_smtp_module     --without-mail_imap_module     --without-http_uwsgi_module     --without-http_scgi_module     --with-ipv6  --prefix=/tmp --with-debug && make ; fi
-
-
+clean:
+	rm -rf /tmp/naxsi_ut/
 
 deploy:
-	@cd /tmp/nginx && make install
-	@cat /tmp/naxsi_ut/nginx.conf | grep -v '#' | sed -e 's@http {@http {\ninclude /etc/nginx/naxsi_core.rules;\n@' | sed -e 's@listen.*80;@listen 4242;@' | sed '1i\master_process off;' > /tmp/naxsi_ut/nginx.conf.tmp
-	@cat /tmp/naxsi_ut/nginx.conf.tmp | sed  's@location / {@location / {\nLearningMode;\nSecRulesEnabled;\nDeniedUrl "/50x.html";\nCheckRule "$$SQL >= 8" BLOCK;\nCheckRule "$$RFI >= 8" BLOCK;\nCheckRule "$$TRAVERSAL >= 4" BLOCK;\nCheckRule "$$EVADE >= 4" BLOCK;\nCheckRule "$$XSS >= 8" BLOCK;\nerror_log /tmp/ngx_error.log debug;\naccess_log /tmp/ngx_access.log;\n@'  > /tmp/naxsi_ut/nginx.conf
-	@mkdir -p /tmp/naxsi_ut/body/ /tmp/naxsi_ut/fastcgi/ /tmp/naxsi_ut/proxy/ 
+	cd /tmp/nginx ; make install
+	echo "$$NAXSI_CFG" > /tmp/naxsi_ut/nginx.conf
 
+nginx_build:
+	cd /tmp/nginx && make
+
+# RUN UNIT TESTS
+# - generate coverage report if option is on
+test:
+	if [ $(COV) -eq 1 ] ; then  \
+	lcov --directory /tmp/nginx --zerocounters ; fi
+
+	if [ ! $(TEST) ] ; then TEST="*.t" ; fi
+
+	export PATH="/tmp/nginx/objs/:"$(PATH) ; \
+	export PERL5LIB=/usr/local/share/perl/5.14.2/ ; \
+	cd .. ; prove -r "t/$(TEST)"
+
+	if [ $(COV) -eq 1 ] ; then \
+	lcov --directory /tmp/nginx/objs/addon/naxsi_src/ --capture \
+	--output-file naxsi.info --base-directory /tmp/nginx ; \
+	genhtml -s -o /tmp/naxsicov.html naxsi.info ; fi
+
+nginx_config:
+	if [ $(COV) -eq 1 ] ; then \
+	CC_OPT="--coverage" ; \
+	LD_OPT="-lgcov" ; \
+	else CC_OPT="" ; \
+	LD_OPT="" ; fi
+	cd /tmp/nginx ; \
+	./configure --with-cc-opt=$(CC_OPT) \
+	--with-ld-opt=$(LD_OPT) \
+	--conf-path=/tmp/naxsi_ut/nginx.conf \
+	--add-module=$(MOD_PATH) \
+	--error-log-path=/tmp/naxsi_ut/error.log \
+	--http-client-body-temp-path=/tmp/naxsi_ut/body/ \
+	--http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/ \
+	--http-log-path=/tmp/naxsi_ut/access.log \
+	--http-proxy-temp-path=/tmp/naxsi_ut/proxy/ \
+	--lock-path=/tmpnginx.lock \
+	--pid-path=/tmp/naxsi_ut/nginx.pid \
+	--with-http_ssl_module \
+	--without-mail_pop3_module \
+	--without-mail_smtp_module \
+	--without-mail_imap_module \
+	--without-http_uwsgi_module \
+	--without-http_scgi_module \
+	--with-ipv6  --prefix=/tmp \
+	--with-debug
+
+
+#Build for coverity and submit build !
+coverity:
+	-wget -nc  https://scan.coverity.com/download/linux-64 --post-data "token="$(CAK)"&project=nbs-system%2Fnaxsi" -O /tmp/coverity.tgz
+	-mkdir /tmp/cov && cd /tmp/cov && cat ../coverity.tgz  | tar --strip-components=1 -xvzf -
+	cd /tmp/nginx ; \
+	./configure --conf-path=/tmp/naxsi_ut/nginx.conf  --add-module=$(MOD_PATH) \
+	 --error-log-path=/tmp/naxsi_ut/error.log \
+	 --http-client-body-temp-path=/tmp/naxsi_ut/body/   \
+	 --http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/  \
+	 --http-log-path=/tmp/naxsi_ut/access.log \
+	 --http-proxy-temp-path=/tmp/naxsi_ut/proxy/ \
+	 --lock-path=/tmpnginx.lock  \
+	 --pid-path=/tmp/naxsi_ut/nginx.pid \
+	 --with-http_ssl_module \
+	 --without-mail_pop3_module \
+	 --without-mail_smtp_module \
+	 --without-mail_imap_module \
+	 --without-http_uwsgi_module \
+	 --without-http_scgi_module \
+	 --with-ipv6  --prefix=/tmp \
+	 --with-debug && \
+	/tmp/cov/bin/cov-build --dir cov-int make && \
+	tar cvzf coverity-res-naxsi.tgz cov-int/
+	curl --form token=$(CAK) \
+	  --form email=$(CAN) \
+	  --form file=@/tmp/nginx/coverity-res-naxsi.tgz \
+	  --form version="$(CORE_VERS)" \
+	  --form description="Automatically submitted" \
+	  https://scan.coverity.com/builds?project=nbs-system%2Fnaxsi

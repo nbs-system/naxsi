@@ -1,0 +1,21 @@
+language: perl
+perl: 5.20
+
+env:
+  - VER_NGINX=1.9.1
+
+before_install:
+  - sudo apt-get update -qq
+
+install:
+  - wget "http://nginx.org/download/nginx-${VER_NGINX}.tar.gz" && cd tar -xf "nginx-${VER_NGINX}.tar.gz" -C /tmp/nginx
+  - cd "./nginx-${VER_NGINX}"
+  - ./configure --conf-path=/tmp/naxsi_ut/nginx.conf --add-module=../naxsi/naxsi_src/ --error-log-path=/tmp/naxsi_ut/error.log --http-client-body-temp-path=/tmp/naxsi_ut/body/ --http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/ --http-log-path=/tmp/naxsi_ut/access.log --http-proxy-temp-path=/tmp/naxsi_ut/proxy/ --lock-path=/tmpnginx.lock --pid-path=/tmp/naxsi_ut/nginx.pid --with-http_ssl_module --without-mail_pop3_module --without-mail_smtp_module --without-mail_imap_module --without-http_uwsgi_module --without-http_scgi_module --with-ipv6  --prefix=/tmp
+  - sudo make install
+  - cd ../naxsi/naxsi_src
+  - make deploy
+  - cpanm -v --notest Test::Nginx
+
+script: cd ../../naxsi/naxsi_src/ && make test
+
+

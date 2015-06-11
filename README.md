@@ -2,6 +2,11 @@
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/1883/badge.svg"/>
 </a>
+<a href="https://travis-ci.org/nbs-system/naxsi.svg">
+  <img alt="Travis Build Status"
+       src="https://travis-ci.org/nbs-system/naxsi.svg"/>
+</a>
+   
 
 
 ### We need your help

@@ -8,17 +8,26 @@ before_install:
   - sudo apt-get update -qq
 
 install:
+  - sudo apt-get install lcov
+  - sudo gem install coveralls-lcov
   - sudo mkdir -p /etc/nginx/
   - sudo cp naxsi_config/naxsi_core.rules /etc/nginx/
   - wget "http://nginx.org/download/nginx-${VER_NGINX}.tar.gz" && tar -xf "nginx-${VER_NGINX}.tar.gz"
   - cd "nginx-${VER_NGINX}"
-  - ./configure --conf-path=/tmp/naxsi_ut/nginx.conf --add-module=../naxsi_src/ --error-log-path=/tmp/naxsi_ut/error.log --http-client-body-temp-path=/tmp/naxsi_ut/body/ --http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/ --http-log-path=/tmp/naxsi_ut/access.log --http-proxy-temp-path=/tmp/naxsi_ut/proxy/ --lock-path=/tmpnginx.lock --pid-path=/tmp/naxsi_ut/nginx.pid --with-http_ssl_module --without-mail_pop3_module --without-mail_smtp_module --without-mail_imap_module --without-http_uwsgi_module --without-http_scgi_module --with-ipv6  --prefix=/tmp
+  - ./configure --with-cc-opt="--coverage" --with-ld-opt="-lgcov" --conf-path=/tmp/naxsi_ut/nginx.conf --add-module=../naxsi_src/ --error-log-path=/tmp/naxsi_ut/error.log --http-client-body-temp-path=/tmp/naxsi_ut/body/ --http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/ --http-log-path=/tmp/naxsi_ut/access.log --http-proxy-temp-path=/tmp/naxsi_ut/proxy/ --lock-path=/tmpnginx.lock --pid-path=/tmp/naxsi_ut/nginx.pid --with-http_ssl_module --without-mail_pop3_module --without-mail_smtp_module --without-mail_imap_module --without-http_uwsgi_module --without-http_scgi_module --with-ipv6  --prefix=/tmp
   - make install
   - export PATH=$PATH":/tmp/sbin/"
   - cd ../naxsi_src
   - make deploy
   - cpanm -v --notest Test::Nginx
 
+before_script:
+  - lcov --directory "../nginx-${VER_NGINX}" --zerocounters
+
 script: make test
 
+after_success:
+  - lcov --directory  "../nginx-${VER_NGINX}/objs/addon/naxsi_src/" --capture --output-file naxsi.info --base-directory "../nginx-${VER_NGINX}/"
+  - lcov --list naxsi.info
+  - coveralls-lcov --repo-token ${COVERALLS_TOKEN} naxsi.info
 

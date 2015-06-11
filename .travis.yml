@@ -8,9 +8,8 @@ before_install:
   - sudo apt-get update -qq
 
 install:
-  - sudo apt-get install ruby
   - sudo apt-get install lcov
-  - sudo gem install coveralls-lcov
+  - gem install coveralls-lcov
   - sudo mkdir -p /etc/nginx/
   - sudo cp naxsi_config/naxsi_core.rules /etc/nginx/
   - wget "http://nginx.org/download/nginx-${VER_NGINX}.tar.gz" && tar -xf "nginx-${VER_NGINX}.tar.gz"

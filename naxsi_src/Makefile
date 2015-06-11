@@ -3,7 +3,7 @@ MOD_PATH 	:=	$(shell pwd)
 CAN		:=
 CAK		:=
 #1 : LCOV is enabled, and coverage report is generated.
-COV 		:= 0
+COV 		:= 1
 #Allows to force for specific UT only
 #TEST 		:= "23*.t"
 define NAXSI_CFG=
@@ -75,14 +75,16 @@ test:
 	genhtml -s -o /tmp/naxsicov.html naxsi.info ; fi
 
 nginx_config:
-	if [ $(COV) -eq 1 ] ; then \
+	@if [ $(COV) -eq 1 ] ; then \
+	echo "[Enabling CODE COVERAGE]" ; \
 	CC_OPT="--coverage" ; \
 	LD_OPT="-lgcov" ; \
 	else CC_OPT="" ; \
-	LD_OPT="" ; fi
+	LD_OPT="" ; fi ; \
 	cd /tmp/nginx ; \
-	./configure --with-cc-opt=$(CC_OPT) \
-	--with-ld-opt=$(LD_OPT) \
+	echo "CC_OPT: $$CC_OPT / LD_OPT: $$LD_OPT" ; \
+	./configure --with-cc-opt="$$CC_OPT" \
+	--with-ld-opt="$$LD_OPT" \
 	--conf-path=/tmp/naxsi_ut/nginx.conf \
 	--add-module=$(MOD_PATH) \
 	--error-log-path=/tmp/naxsi_ut/error.log \
@@ -104,10 +106,11 @@ nginx_config:
 
 #Build for coverity and submit build !
 coverity: 
-	CAK=$(shell cat ../../coverity.key | cut -d ':' -f2) ; \
+	@CAK=$(shell cat ../../coverity.key | cut -d ':' -f2) ; \
 	CAN=$(shell cat ../../coverity.key | cut -d ':' -f1) ; \
-	-wget -nc  https://scan.coverity.com/download/linux-64 --post-data "token="$(CAK)"&project=nbs-system%2Fnaxsi" -O /tmp/coverity.tgz ; \
-	-mkdir /tmp/cov && cd /tmp/cov && cat ../coverity.tgz  | tar --strip-components=1 -xvzf - ; \
+	echo "Coverity token/login : $$CAK and $$CAN"; \
+	wget -nc  https://scan.coverity.com/download/linux-64 --post-data "token=$$CAK&project=nbs-system%2Fnaxsi" -O /tmp/coverity.tgz ; \
+	mkdir /tmp/cov && cd /tmp/cov && cat ../coverity.tgz  | tar --strip-components=1 -xvzf - ; \
 	cd /tmp/nginx ; \
 	./configure --conf-path=/tmp/naxsi_ut/nginx.conf  --add-module=$(MOD_PATH) \
 	 --error-log-path=/tmp/naxsi_ut/error.log \
@@ -127,8 +130,8 @@ coverity:
 	 --with-debug && \
 	/tmp/cov/bin/cov-build --dir cov-int make && \
 	tar cvzf coverity-res-naxsi.tgz cov-int/ ; \
-	curl --form token=$(CAK) \
-	  --form email=$(CAN) \
+	curl --form token="$$CAK" \
+	  --form email="$$CAN" \
 	  --form file=@/tmp/nginx/coverity-res-naxsi.tgz \
 	  --form version="$(CORE_VERS)" \
 	  --form description="Automatically submitted" \

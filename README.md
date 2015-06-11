@@ -1,3 +1,6 @@
+<img alt="naxsi logo" src="https://www.nbs-system.com/wp-content/uploads/nbs-logo-naxsi1.png" align="center"/>   
+
+
 <a href="https://scan.coverity.com/projects/1883">
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/1883/badge.svg"/>
@@ -9,7 +12,6 @@
 <a href='https://coveralls.io/r/nbs-system/naxsi?branch=master'><img src='https://coveralls.io/repos/nbs-system/naxsi/badge.svg?branch=master' alt='Coverage Status' /></a>
 
 
-<img alt="naxsi logo" src="https://www.nbs-system.com/wp-content/uploads/nbs-logo-naxsi1.png" align="center"/>   
 
 
 ### We need your help

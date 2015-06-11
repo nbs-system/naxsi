@@ -8,6 +8,7 @@ before_install:
   - sudo apt-get update -qq
 
 install:
+  - sudo apt-get install ruby
   - sudo apt-get install lcov
   - sudo gem install coveralls-lcov
   - sudo mkdir -p /etc/nginx/

@@ -286,11 +286,11 @@ ngx_http_dummy_create_main_conf(ngx_conf_t *cf)
   
   mc = ngx_pcalloc(cf->pool, sizeof(ngx_http_dummy_main_conf_t));
   if (!mc)
-    return (NGX_CONF_ERROR);
+    return (NGX_CONF_ERROR); /*LCOV_EXCL_LINE*/
   mc->locations = ngx_array_create(cf->pool, DEFAULT_MAX_LOC_T, 
 				   sizeof(ngx_http_dummy_loc_conf_t *));
   if (!mc->locations)
-    return (NGX_CONF_ERROR);
+    return (NGX_CONF_ERROR); /*LCOV_EXCL_LINE*/
   return (mc);
 }
 
@@ -350,12 +350,12 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_naxsi_module);
   if (cmcf == NULL || 
       main_cf == NULL)
-    return (NGX_ERROR);
+    return (NGX_ERROR); /*LCOV_EXCL_LINE*/
   
   /* Register for access phase */
   h = ngx_array_push(&cmcf->phases[NGX_HTTP_REWRITE_PHASE].handlers);
   if (h == NULL) 
-    return (NGX_ERROR);
+    return (NGX_ERROR); /*LCOV_EXCL_LINE*/
   
   *h = ngx_http_dummy_access_handler;
   /* Go with each locations registred in the srv_conf. */
@@ -363,9 +363,11 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   
   for (i = 0; i < main_cf->locations->nelts; i++) {
     if (loc_cf[i]->enabled && (!loc_cf[i]->denied_url || loc_cf[i]->denied_url->len <= 0)) {
+      /* LCOV_EXCL_START */
       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 			 "Missing DeniedURL, abort.");
       return (NGX_ERROR);
+      /* LCOV_EXCL_STOP */
     }
     loc_cf[i]->flag_enable_h = ngx_hash_key_lc((u_char *)RT_ENABLE, strlen(RT_ENABLE));
     loc_cf[i]->flag_learning_h = ngx_hash_key_lc((u_char *)RT_LEARNING, strlen(RT_LEARNING));
@@ -375,9 +377,11 @@ ngx_http_dummy_init(ngx_conf_t *cf)
     loc_cf[i]->flag_libinjection_sql_h = ngx_hash_key_lc((u_char *)RT_LIBINJECTION_SQL, strlen(RT_LIBINJECTION_SQL));
     
     if(ngx_http_dummy_create_hashtables_n(loc_cf[i], cf) != NGX_OK) {
+      /* LCOV_EXCL_START */
       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 			 "WhiteList Hash building failed");
       return (NGX_ERROR);
+      /* LCOV_EXCL_STOP */
     }
   }
   
@@ -395,7 +399,7 @@ ngx_http_dummy_init(ngx_conf_t *cf)
 						     sizeof(ngx_http_special_score_t));
   nx_int__libinject_xss->sscores = ngx_array_create(cf->pool, 2,
 						    sizeof(ngx_http_special_score_t));
-  if (!nx_int__libinject_sql->sscores || !nx_int__libinject_xss->sscores ) return (NGX_ERROR);
+  if (!nx_int__libinject_sql->sscores || !nx_int__libinject_xss->sscores ) return (NGX_ERROR); /* LCOV_EXCL_LINE */
   /* internal ID sqli - 17*/
   nx_int__libinject_sql->rule_id = 17;
   /* internal ID xss - 18*/
@@ -403,13 +407,13 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   /* libinjection sqli/xss - special score init */
   ngx_http_special_score_t *libjct_sql = ngx_array_push(nx_int__libinject_sql->sscores);
   ngx_http_special_score_t *libjct_xss = ngx_array_push(nx_int__libinject_xss->sscores);
-  if (!libjct_sql || !libjct_xss) return (NGX_ERROR);
+  if (!libjct_sql || !libjct_xss) return (NGX_ERROR); /* LCOV_EXCL_LINE */
   libjct_sql->sc_tag = ngx_pcalloc(cf->pool, sizeof(ngx_str_t));
   libjct_xss->sc_tag = ngx_pcalloc(cf->pool, sizeof(ngx_str_t));
-  if (!libjct_sql->sc_tag || !libjct_xss->sc_tag) return (NGX_ERROR);
+  if (!libjct_sql->sc_tag || !libjct_xss->sc_tag) return (NGX_ERROR); /* LCOV_EXCL_LINE */
   libjct_sql->sc_tag->data = ngx_pcalloc(cf->pool, 18 /* LIBINJECTION_SQL */);
   libjct_xss->sc_tag->data = ngx_pcalloc(cf->pool, 18 /* LIBINJECTION_XSS */);
-  if (!libjct_sql->sc_tag->data || !libjct_xss->sc_tag->data) return (NGX_ERROR);
+  if (!libjct_sql->sc_tag->data || !libjct_xss->sc_tag->data) return (NGX_ERROR); /* LCOV_EXCL_LINE */
   strncpy((char *)libjct_sql->sc_tag->data, (char *)"$LIBINJECTION_SQL", 17);
   strncpy((char *)libjct_xss->sc_tag->data, (char *)"$LIBINJECTION_XSS", 17);
   libjct_xss->sc_tag->len = 17;
@@ -449,13 +453,13 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   }
 #endif
   if (!alcf || !cf)
-    return (NGX_CONF_ERROR); 
+    return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
   value = cf->args->elts;
   main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_naxsi_module);
   if (!alcf->pushed) { 
     bar = ngx_array_push(main_cf->locations);
     if (!bar)
-      return (NGX_CONF_ERROR);
+      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     *bar = alcf;
     alcf->pushed = 1;
   }
@@ -469,8 +473,10 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     if (ngx_http_dummy_cfg_parse_one_rule(cf, value, &rule, 
 					  cf->args->nelts) != NGX_CONF_OK)
       {
+	/* LCOV_EXCL_START */
 	ngx_http_dummy_line_conf_error(cf, value);
 	return (NGX_CONF_ERROR);
+	/* LCOV_EXCL_STOP */
       }
     /* push in whitelist rules, as it have a whitelist ID array */
     if (rule.wlid_array && rule.wlid_array->nelts > 0) {
@@ -483,12 +489,12 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	alcf->whitelist_rules = ngx_array_create(cf->pool, 2,
 						 sizeof(ngx_http_rule_t));
 	if (alcf->whitelist_rules == NULL) {
-	  return NGX_CONF_ERROR;
+	  return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	}
       }
       rule_r = ngx_array_push(alcf->whitelist_rules);
       if (!rule_r) {
-	return (NGX_CONF_ERROR);
+	return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
       }
       memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
     }
@@ -504,10 +510,10 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	  alcf->header_rules = ngx_array_create(cf->pool, 2,
 						sizeof(ngx_http_rule_t));
 	  if (alcf->header_rules == NULL) 
-	    return NGX_CONF_ERROR;
+	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	}
 	rule_r = ngx_array_push(alcf->header_rules);
-	if (!rule_r) return (NGX_CONF_ERROR);
+	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
       }
       /* push in body match rules (POST/PUT) */
@@ -520,10 +526,10 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	  alcf->body_rules = ngx_array_create(cf->pool, 2,
 					      sizeof(ngx_http_rule_t));
 	  if (alcf->body_rules == NULL) 
-	    return NGX_CONF_ERROR;
+	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	}
 	rule_r = ngx_array_push(alcf->body_rules);
-	if (!rule_r) return (NGX_CONF_ERROR);
+	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
       }
       /* push in generic rules, as it's matching the URI */
@@ -537,10 +543,10 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	  alcf->generic_rules = ngx_array_create(cf->pool, 2,
 						 sizeof(ngx_http_rule_t));
 	  if (alcf->generic_rules == NULL) 
-	    return NGX_CONF_ERROR;
+	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	}
 	rule_r = ngx_array_push(alcf->generic_rules);
-	if (!rule_r) return (NGX_CONF_ERROR);
+	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
       }
       /* push in GET arg rules, but we should push in POST rules too  */
@@ -553,10 +559,10 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	  alcf->get_rules = ngx_array_create(cf->pool, 2,
 					     sizeof(ngx_http_rule_t));
 	  if (alcf->get_rules == NULL) 
-	    return NGX_CONF_ERROR;
+	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	}
 	rule_r = ngx_array_push(alcf->get_rules);
-	if (!rule_r) return (NGX_CONF_ERROR);
+	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
       }
       /* push in custom locations. It's a rule matching a VAR_NAME or an EXACT_URI :
@@ -574,10 +580,10 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	      alcf->get_rules = ngx_array_create(cf->pool, 2,
 						 sizeof(ngx_http_rule_t));
 	      if (alcf->get_rules == NULL) 
-		return NGX_CONF_ERROR;
+		return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	    }
 	    rule_r = ngx_array_push(alcf->get_rules);
-	    if (!rule_r) return (NGX_CONF_ERROR);
+	    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	    memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
 	  }
 	  if (location[i].body_var) {
@@ -585,10 +591,10 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	      alcf->body_rules = ngx_array_create(cf->pool, 2,
 						  sizeof(ngx_http_rule_t));
 	      if (alcf->body_rules == NULL) 
-		return NGX_CONF_ERROR;
+		return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	    }
 	    rule_r = ngx_array_push(alcf->body_rules);
-	    if (!rule_r) return (NGX_CONF_ERROR);
+	    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	    memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
 		      
 	  }
@@ -597,10 +603,10 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	      alcf->header_rules = ngx_array_create(cf->pool, 2,
 						    sizeof(ngx_http_rule_t));
 	      if (alcf->header_rules == NULL) 
-		return NGX_CONF_ERROR;
+		return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	    }
 	    rule_r = ngx_array_push(alcf->header_rules);
-	    if (!rule_r) return (NGX_CONF_ERROR);
+	    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	    memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
 	  }
 	}
@@ -634,7 +640,7 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   if (!alcf->pushed) { 
     bar = ngx_array_push(main_cf->locations);
     if (!bar)
-      return (NGX_CONF_ERROR);
+      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     *bar = alcf;
     alcf->pushed = 1;
   }
@@ -652,9 +658,9 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     alcf->check_rules = ngx_array_create(cf->pool, 2, 
 					 sizeof(ngx_http_check_rule_t));
   if (!alcf->check_rules)
-    return (NGX_CONF_ERROR);
+    return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
   rule_c = ngx_array_push(alcf->check_rules);
-  if (!rule_c) return (NGX_CONF_ERROR);
+  if (!rule_c) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
   memset(rule_c, 0, sizeof(ngx_http_check_rule_t));
   /* process the first word : score rule */
   if (value[1].data[i] == '$') {
@@ -664,19 +670,22 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     
     
     var_end = (u_char *) ngx_strchr((value[1].data)+i, ' ');
-    if (!var_end) {
+    if (!var_end) { /* LCOV_EXCL_START */
       ngx_http_dummy_line_conf_error(cf, value);
       return (NGX_CONF_ERROR);
+      /* LCOV_EXCL_STOP */
     }
     rule_c->sc_tag.len = var_end - value[1].data;
     rule_c->sc_tag.data = ngx_pcalloc(cf->pool, rule_c->sc_tag.len + 1);
     if (!rule_c->sc_tag.data)
-      return (NGX_CONF_ERROR);
+      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_c->sc_tag.data, value[1].data, rule_c->sc_tag.len);
     i += rule_c->sc_tag.len + 1;
   } else {
+    /* LCOV_EXCL_START */
     ngx_http_dummy_line_conf_error(cf, value);
-    return (NGX_CONF_ERROR);
+    return (NGX_CONF_ERROR); 
+    /* LCOV_EXCL_STOP */
   }
   // move to next word
   while (value[1].data[i] && value[1].data[i] == ' ')
@@ -715,8 +724,10 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   else if (ngx_strstr(value[2].data, "DROP"))
     rule_c->drop = 1;
   else {
+    /* LCOV_EXCL_START */
     ngx_http_dummy_line_conf_error(cf, value);
     return (NGX_CONF_ERROR);
+    /* LCOV_EXCL_STOP */
   }
   return (NGX_CONF_OK);
 }
@@ -732,13 +743,13 @@ ngx_http_naxsi_ud_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   ngx_str_t			*value;
 
   if (!alcf || !cf)
-    return (NGX_CONF_ERROR); 
+    return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
   value = cf->args->elts;
   main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_naxsi_module);
   if (!alcf->pushed) { 
     bar = ngx_array_push(main_cf->locations);
     if (!bar)
-      return (NGX_CONF_ERROR);
+      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     *bar = alcf;
     alcf->pushed = 1;
   }
@@ -749,10 +760,10 @@ ngx_http_naxsi_ud_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
        && value[1].len) {
     alcf->denied_url = ngx_pcalloc(cf->pool, sizeof(ngx_str_t));
     if (!alcf->denied_url)
-      return (NGX_CONF_ERROR);
+      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     alcf->denied_url->data = ngx_pcalloc(cf->pool, value[1].len+1);
     if (!alcf->denied_url->data)
-      return (NGX_CONF_ERROR);
+      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(alcf->denied_url->data, value[1].data, value[1].len);
     alcf->denied_url->len = value[1].len;
     return (NGX_CONF_OK);
@@ -779,7 +790,7 @@ ngx_http_naxsi_flags_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   if (!alcf->pushed) { 
     bar = ngx_array_push(main_cf->locations);
     if (!bar)
-      return (NGX_CONF_ERROR);
+      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     *bar = alcf;
     alcf->pushed = 1;
   }
@@ -857,8 +868,10 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   
   if (ngx_http_dummy_cfg_parse_one_rule(cf/*, alcf*/, value, &rule, 
 					cf->args->nelts) != NGX_CONF_OK) {
+    /* LCOV_EXCL_START */
     ngx_http_dummy_line_conf_error(cf, value);
     return (NGX_CONF_ERROR);
+    /* LCOV_EXCL_STOP */
   }
   
   if (rule.br->headers) {
@@ -870,10 +883,10 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       alcf->header_rules = ngx_array_create(cf->pool, 2,
 					    sizeof(ngx_http_rule_t));
       if (alcf->header_rules == NULL) 
-	return NGX_CONF_ERROR;
+	return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
     }
     rule_r = ngx_array_push(alcf->header_rules);
-    if (!rule_r) return (NGX_CONF_ERROR);
+    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
   }
   /* push in body match rules (POST/PUT) */
@@ -886,10 +899,10 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       alcf->body_rules = ngx_array_create(cf->pool, 2,
 					  sizeof(ngx_http_rule_t));
       if (alcf->body_rules == NULL) 
-	return NGX_CONF_ERROR;
+	return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
     }
     rule_r = ngx_array_push(alcf->body_rules);
-    if (!rule_r) return (NGX_CONF_ERROR);
+    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
   }
   /* push in generic rules, as it's matching the URI */
@@ -902,10 +915,10 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       alcf->generic_rules = ngx_array_create(cf->pool, 2,
 					     sizeof(ngx_http_rule_t));
       if (alcf->generic_rules == NULL) 
-	return NGX_CONF_ERROR;
+	return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
     }
     rule_r = ngx_array_push(alcf->generic_rules);
-    if (!rule_r) return (NGX_CONF_ERROR);
+    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
   }
   /* push in GET arg rules, but we should push in POST rules too  */
@@ -918,10 +931,10 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       alcf->get_rules = ngx_array_create(cf->pool, 2,
 					 sizeof(ngx_http_rule_t));
       if (alcf->get_rules == NULL) 
-	return NGX_CONF_ERROR;
+	return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
     }
     rule_r = ngx_array_push(alcf->get_rules);
-    if (!rule_r) return (NGX_CONF_ERROR);
+    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
   }
   /* push in custom locations. It's a rule matching a VAR_NAME or an EXACT_URI :
@@ -939,10 +952,10 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	  alcf->get_rules = ngx_array_create(cf->pool, 2,
 					     sizeof(ngx_http_rule_t));
 	  if (alcf->get_rules == NULL) 
-	    return NGX_CONF_ERROR;
+	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	}
 	rule_r = ngx_array_push(alcf->get_rules);
-	if (!rule_r) return (NGX_CONF_ERROR);
+	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
       }
       if (location[i].body_var)	{
@@ -950,10 +963,10 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	  alcf->body_rules = ngx_array_create(cf->pool, 2,
 					      sizeof(ngx_http_rule_t));
 	  if (alcf->body_rules == NULL) 
-	    return NGX_CONF_ERROR;
+	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	}
 	rule_r = ngx_array_push(alcf->body_rules);
-	if (!rule_r) return (NGX_CONF_ERROR);
+	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
 		      
       }
@@ -962,10 +975,10 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	  alcf->header_rules = ngx_array_create(cf->pool, 2,
 						sizeof(ngx_http_rule_t));
 	  if (alcf->header_rules == NULL) 
-	    return NGX_CONF_ERROR;
+	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	}
 	rule_r = ngx_array_push(alcf->header_rules);
-	if (!rule_r) return (NGX_CONF_ERROR);
+	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
       }
     }

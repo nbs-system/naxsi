@@ -27,5 +27,5 @@ before_script:
 script: make test
 
 after_success:
-  - codecov
+ - bash <(curl -s https://codecov.io/bash)
 

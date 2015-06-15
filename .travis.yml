@@ -9,7 +9,7 @@ before_install:
 
 install:
   - sudo apt-get install lcov
-  - pip install codecov
+  - sudo pip install codecov
   - sudo mkdir -p /etc/nginx/
   - sudo cp naxsi_config/naxsi_core.rules /etc/nginx/
   - wget "http://nginx.org/download/nginx-${VER_NGINX}.tar.gz" && tar -xf "nginx-${VER_NGINX}.tar.gz"

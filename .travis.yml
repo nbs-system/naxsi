@@ -9,7 +9,7 @@ before_install:
 
 install:
   - sudo apt-get install lcov
-  - gem install coveralls-lcov
+  - pip install codecov
   - sudo mkdir -p /etc/nginx/
   - sudo cp naxsi_config/naxsi_core.rules /etc/nginx/
   - wget "http://nginx.org/download/nginx-${VER_NGINX}.tar.gz" && tar -xf "nginx-${VER_NGINX}.tar.gz"
@@ -27,7 +27,5 @@ before_script:
 script: make test
 
 after_success:
-  - lcov --directory  "../nginx-${VER_NGINX}/objs/addon/naxsi_src/" --capture --output-file naxsi.info --base-directory "../nginx-${VER_NGINX}/"
-  - lcov --list naxsi.info
-  - coveralls-lcov --repo-token ${COVERALLS_TOKEN} naxsi.info
+  - codecov
 

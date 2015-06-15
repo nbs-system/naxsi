@@ -9,9 +9,8 @@
   <img alt="Travis Build Status"
        src="https://travis-ci.org/nbs-system/naxsi.svg"/>
 </a>
-<a href='https://coveralls.io/r/nbs-system/naxsi?branch=master'><img src='https://coveralls.io/repos/nbs-system/naxsi/badge.svg?branch=master' alt='Coverage Status' /></a>
 
-
+<a href="http://codecov.io/github/nbs-system/naxsi?branch=master"><img src="http://codecov.io/github/nbs-system/naxsi/coverage.svg?branch=master" alt="Coverage via codecov.io" /></a>
 
 
 ### We need your help

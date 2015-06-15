@@ -27,5 +27,7 @@ before_script:
 script: make test
 
 after_success:
+ - lcov --directory  "../nginx-${VER_NGINX}/objs/addon/naxsi_src/" --capture --output-file naxsi.lcov --base-directory "../nginx-${VER_NGINX}/"
+ - lcov --list naxsi.lcov
  - bash <(curl -s https://codecov.io/bash)
 

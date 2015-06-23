@@ -225,7 +225,7 @@ class NxTranslate():
                                 if ( len(results['success']) > len(results['warnings']) and results["deny"] == False) or self.cfg["naxsi"]["strict"] == "false":
                                     #print "?deny "+str(results['deny'])
                                     self.fancy_display(genrule, results, template)
-                                    print self.grn.format(self.tpl2wl(genrule['rule']).encode('utf-8', errors='replace'), template)
+                                    print self.grn.format(self.tpl2wl(genrule['rule']).encode('utf-8', 'replace'), template)
 
 
     def wl_on_type(self):
@@ -243,7 +243,7 @@ class NxTranslate():
                 if not x in full_wl.keys():
                     continue
                 for y in full_wl[x]:
-                    print "#"+x+" : "+unicode(y).encode("utf-8", errors='replace')
+                    print "#"+x+" : "+unicode(y).encode("utf-8", 'replace')
 
 #        pprint.pprint(scores)
         for x in scores['success']:

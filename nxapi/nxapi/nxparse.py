@@ -467,15 +467,15 @@ class NxGeoLoc():
         self.cfg = cfg
         try:
             import GeoIP
-            self.gi = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
-        except:
+        except ImportError:
             logging.warning("""Python's GeoIP module is not present.
             'World Map' reports won't work,
             and you can't use per-country filters.""")
-            raise ValueError
+            raise
         if not os.path.isfile(self.cfg["naxsi"]["geoipdb_path"]):
             logging.error("Unable to load GeoIPdb.")
             raise ValueError
+        self.gi = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
     def cc2ll(self, country):
         """ translates countrycode to lagitude, longitude """
         # pun intended

@@ -3,7 +3,7 @@
 import glob, fcntl, termios
 import sys
 import socket
-import elasticsearch 
+import elasticsearch
 import time
 from optparse import OptionParser, OptionGroup
 from nxapi.nxtransform import *
@@ -37,8 +37,11 @@ def macquire(line):
     if z is not None:
         for event in z['events']:
             event['date'] = z['date']
-            event['coords'] = geoloc.ip2ll(event['ip'])
-            event['country'] = geoloc.ip2cc(event['ip'])
+            try:
+                event['coords'] = geoloc.ip2ll(event['ip'])
+                event['country'] = geoloc.ip2cc(event['ip'])
+            except NameError:
+                pass
         # print "Got data :)"
         # pprint.pprint(z)
         #print ".",
@@ -205,7 +208,7 @@ if options.ips is not None:
     tpl = {}
     count = 0
 #    esq = translate.tpl2esq(cfg.cfg["global_filters"])
-    
+
     for wlf in ip_files:
         try:
             wlfd = open(wlf, "r")
@@ -256,7 +259,6 @@ if options.files_in is not None or options.fifo_in is not None or options.stdin 
         geoloc = NxGeoLoc(cfg.cfg)
     except:
         print "Unable to get GeoIP"
-        sys.exit(-1)
 
 if options.files_in is not None:
     reader = NxReader(macquire, lglob=[options.files_in])
@@ -298,5 +300,3 @@ if options.stdin is True:
 
 opt.print_help()
 sys.exit(1)
-
-

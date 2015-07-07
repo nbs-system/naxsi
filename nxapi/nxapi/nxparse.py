@@ -18,7 +18,7 @@ import copy
 from elasticsearch.helpers import bulk
 import os
 import socket
-        
+
 class NxReader():
     """ Feeds the given injector from logfiles """
     def __init__(self, acquire_fct, stdin=False, lglob=[], fd=None,
@@ -43,6 +43,7 @@ class NxReader():
             logging.warning("Reading from supplied FD (fifo ?)")
         if self.syslog is not None:
             logging.warning("Reading from syslog socket")
+
     def read_fd(self, fd):
         if self.timeout is not None:
             rlist, _, _ = select([fd], [], [], self.timeout)
@@ -52,11 +53,12 @@ class NxReader():
         if rlist:
             s = fd.readline()
             if s == '':
-                return False
+                return s
             self.acquire_fct(s)
             return True
         else:
             return False
+
     def read_syslog(self, syslog):
         if self.syslogport is not None:
           host = self.sysloghost
@@ -76,20 +78,16 @@ class NxReader():
         syslog = conn.recv(1024)
         if syslog == '':
             return False
-        conn.send(syslog)     
+        conn.send(syslog)
         self.acquire_fct(syslog)
         return True
 
     def read_files(self):
-        if self.stdin is True:
-            ret = ""
-            while self.read_fd(sys.stdin) is True:
-                pass
-            return 0
         if self.fd is not None:
-            ret = ""
-            while self.read_fd(self.fd) is True:
-                pass
+            while True:
+                ret = self.read_fd(self.fd)
+                if ret == '':
+                    return False
             return 0
         if self.syslog is not None:
             ret = ""
@@ -139,7 +137,7 @@ class NxParser():
         self.bad_line = 0
 
     def unify_date(self, date):
-        """ tries to parse a text date, 
+        """ tries to parse a text date,
         returns date object or None on error """
         idx = 0
         res = ""
@@ -177,7 +175,7 @@ class NxParser():
     # returns line, ready for parsing.
     # returns none if line contains no naxsi data
     def clean_line(self, line):
-        """ returns an array of [date, "NAXSI_..."] from a 
+        """ returns an array of [date, "NAXSI_..."] from a
         raw log line. 2nd item starts at first naxsi keyword
         found. """
         ret = [None, None]
@@ -189,7 +187,7 @@ class NxParser():
                 break
         if idx == -1:
             return None
-            
+
         line = line.rstrip('\n')
         for mark in self.sod_marker:
             date_end = line.find(mark)
@@ -244,7 +242,7 @@ class NxParser():
             # naxsi fmt is very long, at least 3 lines
             self.fragmented_lines += 1
             if self.multiline_buf.get(event['seed_end']) is None:
-                logging.critical("Orphans end {0} / start {1}".format(event['seed_end'], 
+                logging.critical("Orphans end {0} / start {1}".format(event['seed_end'],
                                                                       event['seed_start']))
                 return demult
             self.multiline_buf[event['seed_end']].update(event)
@@ -262,11 +260,11 @@ class NxParser():
             event = self.multiline_buf[event['seed_end']]
             del self.multiline_buf[event['seed_end']]
         entry = {}
-        
+
         for x in ['uri', 'server', 'content', 'ip', 'date', 'var_name', 'country']:
             entry[x] = event.get(x, '')
         clean = entry
-        
+
         # NAXSI_EXLOG lines only have one triple (zone,id,var_name), but has non-empty content
         if 'zone' in event.keys():
             if 'var_name' in event.keys():
@@ -275,7 +273,7 @@ class NxParser():
             entry['id'] = event['id']
             demult.append(entry)
             return demult
-        
+
         # NAXSI_FMT can have many (zone,id,var_name), but does not have content
         # we iterate over triples.
         elif 'zone0' in event.keys():
@@ -310,7 +308,7 @@ class NxParser():
             return demult
 
     def tokenize_log(self, line):
-        """Parses a naxsi exception to a dict, 
+        """Parses a naxsi exception to a dict,
         1 on error, 0 on success"""
         odict = urlparse.parse_qs(line)
         # one value per key, reduce.
@@ -340,7 +338,7 @@ class NxParser():
                 break
         return odict
 
-  
+
 class NxInjector():
     def __init__(self, auto_commit_limit=400):
         self.nlist = []
@@ -397,7 +395,7 @@ class ESInject(NxInjector):
     #         #print resp
     #         logging.critical("Unable to emit request.")
     #         sys.exit(-1)
-            
+
     #         return False
     #     return True
     def set_mappings(self):
@@ -416,10 +414,10 @@ class ESInject(NxInjector):
             self.es.indices.put_mapping(
                 index=self.cfg["elastic"]["index"],
                 doc_type=self.cfg["elastic"]["doctype"],
-                body={ 
-                    "events" : { 
+                body={
+                    "events" : {
                         "_ttl" : { "enabled" : "true", "default" : "4d" },
-                        "properties" : { "var_name" : {"type": "string", "index" : "not_analyzed"}, 
+                        "properties" : { "var_name" : {"type": "string", "index" : "not_analyzed"},
                                          "uri" : {"type": "string", "index" : "not_analyzed"},
                                          "zone" : {"type": "string", "index" : "not_analyzed"},
                                          "server" : {"type": "string", "index" : "not_analyzed"},
@@ -451,7 +449,7 @@ class ESInject(NxInjector):
         mapfunc = partial(json.dumps, ensure_ascii=False)
         try:
             full_body = "\n".join(map(mapfunc,items)) + "\n"
-        except: 
+        except:
             print "Unexpected error:", sys.exc_info()[0]
             print "Unable to json.dumps : "
             pprint.pprint(items)
@@ -460,7 +458,7 @@ class ESInject(NxInjector):
         logging.debug("Written "+str(self.total_commits)+" events")
         print "Written "+str(self.total_commits)+" events"
         del self.nlist[0:len(self.nlist)]
-        
+
 
 class NxGeoLoc():
     def __init__(self, cfg):
@@ -502,4 +500,3 @@ class NxGeoLoc():
         return country
     def ip2ll(self, ip):
         return self.cc2ll(self.ip2cc(ip))
-

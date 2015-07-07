@@ -3,7 +3,7 @@
 import glob, fcntl, termios
 import sys
 import socket
-import elasticsearch 
+import elasticsearch
 import time
 from optparse import OptionParser, OptionGroup
 from nxapi.nxtransform import *
@@ -37,11 +37,15 @@ def macquire(line):
     if z is not None:
         for event in z['events']:
             event['date'] = z['date']
-            event['coords'] = geoloc.ip2ll(event['ip'])
-            event['country'] = geoloc.ip2cc(event['ip'])
+            try:
+                event['coords'] = geoloc.ip2ll(event['ip'])
+                event['country'] = geoloc.ip2cc(event['ip'])
+            except NameError:
+                pass
         # print "Got data :)"
         # pprint.pprint(z)
         #print ".",
+        print z
         injector.insert(z)
     else:
         pass
@@ -133,13 +137,13 @@ translate = NxTranslate(es, cfg)
 
 if options.type_wl is True:
     translate.wl_on_type()
-    sys.exit(1)
+    sys.exit(0)
 
 # whitelist generation options
 if options.full_auto is True:
     translate.load_cr_file(translate.cfg["naxsi"]["rules_path"])
     translate.full_auto()
-    sys.exit(1)
+    sys.exit(0)
 
 if options.template is not None:
     scoring = NxRating(cfg.cfg, es, translate)
@@ -172,7 +176,7 @@ if options.template is not None:
                 #print "?deny "+str(scores['deny'])
                 translate.fancy_display(genrule, scores, tpl)
                 print translate.grn.format(translate.tpl2wl(genrule['rule'], tpl)).encode('utf-8')
-    sys.exit(1)
+    sys.exit(0)
 
 # tagging options
 
@@ -197,7 +201,7 @@ if options.wl_file is not None:
                 count += translate.tag_events(esq, "Whitelisted", tag=options.tag)
         print translate.grn.format(str(count)) + " items tagged ..."
         count = 0
-    sys.exit(1)
+    sys.exit(0)
 
 if options.ips is not None:
     ip_files = []
@@ -205,7 +209,7 @@ if options.ips is not None:
     tpl = {}
     count = 0
 #    esq = translate.tpl2esq(cfg.cfg["global_filters"])
-    
+
     for wlf in ip_files:
         try:
             wlfd = open(wlf, "r")
@@ -221,7 +225,7 @@ if options.ips is not None:
             count += translate.tag_events(esq, "BadIPS", tag=options.tag)
         print translate.grn.format(str(count)) + " items to be tagged ..."
         count = 0
-    sys.exit(1)
+    sys.exit(0)
 
 # statistics
 if options.stats is True:
@@ -235,7 +239,7 @@ if options.stats is True:
     translate.fetch_top(cfg.cfg["global_filters"], "zone", limit=10)
     print translate.red.format("# Top Peer(s) :")
     translate.fetch_top(cfg.cfg["global_filters"], "ip", limit=10)
-    sys.exit(1)
+    sys.exit(0)
 
 # input options, only setup injector if one input option is present
 if options.files_in is not None or options.fifo_in is not None or options.stdin is not None or options.syslog_in is not None:
@@ -256,13 +260,13 @@ if options.files_in is not None or options.fifo_in is not None or options.stdin 
         geoloc = NxGeoLoc(cfg.cfg)
     except:
         print "Unable to get GeoIP"
-        sys.exit(-1)
 
 if options.files_in is not None:
     reader = NxReader(macquire, lglob=[options.files_in])
     reader.read_files()
     injector.stop()
-    sys.exit(1)
+    sys.exit(0)
+
 if options.fifo_in is not None:
     fd = open_fifo(options.fifo_in)
     if options.infinite_flag is True:
@@ -271,10 +275,12 @@ if options.fifo_in is not None:
         reader = NxReader(macquire, fd=fd)
     while True:
         print "start-",
-        reader.read_files()
+        if reader.read_files() == False:
+            break
         print "stop"
+    print 'End of fifo input...'
     injector.stop()
-    sys.exit(1)
+    sys.exit(0)
 
 if options.syslog_in is not None:
     sysloghost = cfg.cfg["syslogd"]["host"]
@@ -283,20 +289,21 @@ if options.syslog_in is not None:
       reader = NxReader(macquire, syslog=True, syslogport=syslogport, sysloghost=sysloghost)
       reader.read_files()
     injector.stop()
-    sys.exit(1)
+    sys.exit(0)
 
 if options.stdin is True:
     if options.infinite_flag:
-        reader = NxReader(macquire, lglob=[], stdin=True, stdin_timeout=None)
+        reader = NxReader(macquire, lglob=[], fd=sys.stdin, stdin_timeout=None)
     else:
-        reader = NxReader(macquire, lglob=[], stdin=True)
+        reader = NxReader(macquire, lglob=[], fd=sys.stdin)
     while True:
         print "start-",
-        reader.read_files()
+        if reader.read_files() == False:
+            break
         print "stop"
-    sys.exit(1)
+    print 'End of stdin input...'
+    injector.stop()
+    sys.exit(0)
 
 opt.print_help()
-sys.exit(1)
-
-
+sys.exit(0)

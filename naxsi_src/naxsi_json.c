@@ -1,10 +1,10 @@
 /*
  * NAXSI, a web application firewall for NGINX
- * Copyright (C) 2011, Thibault 'bui' Koechlin
+ * Copyright (C) 2011-2015, Thibault 'bui' Koechlin
  *  
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
  * In addition, as a special exception, the copyright holders give

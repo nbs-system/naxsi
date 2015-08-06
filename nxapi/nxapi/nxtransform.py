@@ -326,7 +326,7 @@ class NxTranslate():
                     self.core_msg[i[pos + 3:i[pos + 3].find(';') - 1]] = i[pos_msg + 4:][:i[pos_msg + 4:].find('"')]
             fd.close()
         except:
-            logging.error("Unable to open rules file")
+            logging.warning("Unable to open rules file")
     def tpl2esq(self, ob, full=True):
         ''' receives template or a rule, returns a valid 
         ElasticSearch query '''

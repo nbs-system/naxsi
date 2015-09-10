@@ -3,7 +3,7 @@ MOD_PATH 	:=	$(shell pwd)
 CAN		:=
 CAK		:=
 #1 : LCOV is enabled, and coverage report is generated.
-COV 		:= 1
+COV 		:= 0
 #Allows to force for specific UT only
 #TEST 		:= "23*.t"
 define NAXSI_CFG=

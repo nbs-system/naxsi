@@ -3,7 +3,7 @@ MOD_PATH 	:=	$(shell pwd)
 CAN		:=
 CAK		:=
 #1 : LCOV is enabled, and coverage report is generated.
-COV 		:= 0
+COV 		:= 1
 #Allows to force for specific UT only
 #TEST 		:= "23*.t"
 define NAXSI_CFG=
@@ -25,11 +25,11 @@ http {
    LearningMode;
    SecRulesEnabled;
    DeniedUrl "/50x.html";
-   CheckRule "$SQL >= 8" BLOCK;
-   CheckRule "$RFI >= 8" BLOCK;
-   CheckRule "$TRAVERSAL >= 4" BLOCK;
-   CheckRule "$EVADE >= 4" BLOCK;
-   CheckRule "$XSS >= 8" BLOCK;
+   CheckRule "$$SQL >= 8" BLOCK;
+   CheckRule "$$RFI >= 8" BLOCK;
+   CheckRule "$$TRAVERSAL >= 4" BLOCK;
+   CheckRule "$$EVADE >= 4" BLOCK;
+   CheckRule "$$XSS >= 8" BLOCK;
    error_log /tmp/ngx_error.log debug;
    access_log /tmp/ngx_access.log;
    root   html;
@@ -52,7 +52,7 @@ clean:
 deploy: deploy_config
 
 deploy_config:
-	echo "$$NAXSI_CFG" > /tmp/naxsi_ut/nginx.conf
+	@echo "$$NAXSI_CFG" > /tmp/naxsi_ut/nginx.conf
 
 nginx_build:
 	cd /tmp/nginx && make && make install
@@ -77,7 +77,7 @@ test:
 nginx_config:
 	@if [ $(COV) -eq 1 ] ; then \
 	echo "[Enabling CODE COVERAGE]" ; \
-	CC_OPT="--coverage" ; \
+	CC_OPT="--coverage -g3" ; \
 	LD_OPT="-lgcov" ; \
 	else CC_OPT="" ; \
 	LD_OPT="" ; fi ; \

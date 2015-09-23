@@ -44,7 +44,7 @@ class Typificator(object):
                 body = {'query': {}}
                 for k,v in self.cfg['global_filters'].iteritems():
                     body['query'].update({'match':{k:v}})
-                data = self.es_instance.search(index='nxapi', doc_type='events',
+                data = self.es_instance.search(index=self.cfg["elastic"]["index"], doc_type='events',
                                                size=size, from_=position,
                                                body=body)
                 data = data['hits']['hits']  # we don't care about metadata

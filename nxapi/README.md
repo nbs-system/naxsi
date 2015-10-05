@@ -52,18 +52,31 @@ $ cat nxapi.json
     }
     }
 
+# Prequisites
+
+## Set up ElasticSearch
+* Download the archive with the binary files from https://www.elastic.co/downloads/elasticsearch
+* Extract the archive
+* Start ElasticSearch by executing `bin/elasticsearch` in the extracted folder
+* Check whether ElasticSearch is running correctly:  
+	`curl -XGET http://localhost:9200/`
+* Add a nxapi index with the following command:  
+	`curl -XPUT 'http://localhost:9200/nxapi/'`
+
+## Populating ElasticSearch with data
+* Enable learning mode
+* Browse website to generate data in the logfile
+* Change into nxapi directory
+* Load the data from the log file into ElasticSearch with the folloing command:  
+	`./nxtool.py -x --colors -c nxapi.json --files=/PATH/TO/LOGFILE.LOG`
+* Check if data was added correctly:  
+	`curl -XPOST "http://ELASTICSEARCH/nxapi/events/_search?pretty" -d '{}' `
 
 # Simple usage approach
 
-## Checklist
-  * Your ElasticSearch instance is up & running
-  * Your database is running, and you already have some data inside :
-`  curl -XPOST "http://ELASTICSEARCH/nxapi/events/_search?pretty" -d '{}' `
-
-
 ##1. Get infos about db
 
-    $ nxtool.py -x --colors
+    $ nxtool.py -x --colors -c nxapi.json
 Will issue a summary of database content, including :
 
   * Ratio between tagged/untagged events.

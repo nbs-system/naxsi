@@ -602,7 +602,6 @@ class NxTranslate():
                 body['comments'] += ","+msg+":"+str(datetime.datetime.now())
                 body['whitelisted'] = "true"
                 if tag is True:
-#                    print "Tagging id: "+eid
                     self.index(body, eid)
                 else:
                     print eid+",",
@@ -611,7 +610,11 @@ class NxTranslate():
             if total_events - count < size:
                 size = total_events - count
         print ""
-        return count
+        #--
+        if tag is False:
+            return 0
+        else:
+            return count
 
 
     def gen_wl(self, tpl, rule={}):

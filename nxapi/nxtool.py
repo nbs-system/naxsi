@@ -198,7 +198,13 @@ if options.wl_file is not None:
         for wl in wlfd:
             [res, esq] = translate.wl2esq(wl)
             if res is True:
-                count += translate.tag_events(esq, "Whitelisted", tag=options.tag)
+                count = 0
+                while True:
+                    x = translate.tag_events(esq, "Whitelisted", tag=options.tag)
+                    count += x
+                    if x == 0:
+                        break
+                    
         print translate.grn.format(str(count)) + " items tagged ..."
         count = 0
     sys.exit(0)

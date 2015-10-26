@@ -68,10 +68,11 @@ $ cat nxapi.json
 * Browse website to generate data in the logfile
 * Change into nxapi directory
 * Load the data from the log file into ElasticSearch with the folloing command:  
-	`./nxtool.py -x --colors -c nxapi.json --files=/PATH/TO/LOGFILE.LOG`
+	`./nxtool.py -c nxapi.json --files=/PATH/TO/LOGFILE.LOG`
 * Check if data was added correctly:  
 	`curl -XPOST "http://ELASTICSEARCH/nxapi/events/_search?pretty" -d '{}' `
-
+* Check if nxtool sees it correctly:
+  	`./nxtool.py -c nxapi.json -x`
 # Simple usage approach
 
 ##1. Get infos about db

@@ -96,6 +96,8 @@ opt.add_option_group(p)
 (options, args) = opt.parse_args()
 
 
+
+
 try:
     cfg = NxConfig(options.cfg_path)
 except ValueError:
@@ -103,6 +105,17 @@ except ValueError:
 
 if options.server is not None:
     cfg.cfg["global_filters"]["server"] = options.server
+
+# https://github.com/nbs-system/naxsi/issues/231
+mutally_exclusive = ['stats', 'full_auto', 'template', 'wl_file', 'ips', 'files_in', 'fifo_in', 'syslog_in']
+count=0
+for x in mutally_exclusive:
+    if options.ensure_value(x, None) is not None:
+        count += 1
+if count > 1:
+    print "Mutually exclusive options are present (ie. import and stats), aborting."
+    sys.exit(-1)
+
 
 cfg.cfg["output"]["colors"] = str(options.colors).lower()
 cfg.cfg["naxsi"]["strict"] = str(options.slack).lower()
@@ -133,6 +146,7 @@ if options.filter is not None:
 
 es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"])
 translate = NxTranslate(es, cfg)
+
 
 
 if options.type_wl is True:

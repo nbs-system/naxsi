@@ -357,6 +357,11 @@ ngx_http_wlr_identify(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 			 "whitelist has body_var %V", &(custloc_array(curr->br->custom_locations->elts)[i].target));
 #endif
+      /*#217 : scream on incorrect rules*/
+      if (*name_idx != -1) {
+	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist can't target more than one BODY item.");
+	return (NGX_ERROR);
+      }
       *name_idx = i;
       *zone = BODY;
     }
@@ -365,6 +370,11 @@ ngx_http_wlr_identify(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 			 "whitelist has header_var %V", &(custloc_array(curr->br->custom_locations->elts)[i].target));
 #endif
+      /*#217 : scream on incorrect rules*/
+      if (*name_idx != -1) {
+	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist can't target more than one HEADER item.");
+	return (NGX_ERROR);
+      }
       *name_idx = i;
       *zone = HEADERS;
     }
@@ -373,6 +383,12 @@ ngx_http_wlr_identify(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 			 "whitelist has arg_var %V", &(custloc_array(curr->br->custom_locations->elts)[i].target));
 #endif
+      /*#217 : scream on incorrect rules*/
+      if (*name_idx != -1) {
+	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist can't target more than one ARGS item.");
+	return (NGX_ERROR);
+      }
+
       *name_idx = i;
       *zone = ARGS;
     }

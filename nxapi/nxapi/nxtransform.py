@@ -179,13 +179,13 @@ class NxTranslate():
         self.es_max_size = self.cfg.get("elastic").get("max_size", 1000)
         print "# size :"+str(self.es_max_size)
         # purely for output coloring
-        self.red = '{0}'
-        self.grn = '{0}'
-        self.blu = '{0}'
+        self.red = u'{0}'
+        self.grn = u'{0}'
+        self.blu = u'{0}'
         if self.cfg["output"]["colors"] == "true":
-            self.red = "\033[91m{0}\033[0m"
-            self.grn = "\033[92m{0}\033[0m"
-            self.blu = "\033[94m{0}\033[0m"
+            self.red = u"\033[91m{0}\033[0m"
+            self.grn = u"\033[92m{0}\033[0m"
+            self.blu = u"\033[94m{0}\033[0m"
         # Attempt to parse provided core rules file
         self.load_cr_file(self.cfg["naxsi"]["rules_path"])
 

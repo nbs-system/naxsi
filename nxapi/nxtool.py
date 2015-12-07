@@ -103,6 +103,10 @@ try:
 except ValueError:
     sys.exit(-1)
 
+if cfg.cfg["elastic"].get("version", None) is None:
+    print "Specify version '1' or '2' in [elasticsearch] section."
+    sys.exit(-1)
+
 if options.server is not None:
     cfg.cfg["global_filters"]["server"] = options.server
 

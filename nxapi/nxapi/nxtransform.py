@@ -7,6 +7,7 @@ import pprint
 import shlex
 import datetime
 import glob
+import sys
 
 from nxtypificator import Typificator
 
@@ -525,25 +526,68 @@ class NxTranslate():
         esq = self.tpl2esq(template)
         if x is not None:
             template[field] = x
-        esq['facets'] =  { "facet_results" : {"terms": { "field": field, "size" : self.es_max_size} }}
+        if self.cfg["elastic"].get("version", None) == "1":
+            esq['facets'] =  { "facet_results" : {"terms": { "field": field, "size" : self.es_max_size} }}
+        elif self.cfg["elastic"].get("version", None) == "2":
+            esq['aggregations'] =  { "agg1" : {"terms": { "field": field, "size" : self.es_max_size} }}
+        else:
+            print "Unknown / Unspecified ES version in nxapi.json : {0}".format(self.cfg["elastic"].get("version", "#UNDEFINED"))
+            sys.exit(1)
+            
         res = self.search(esq)
-        total = res['facets']['facet_results']['total']
+
+        if self.cfg["elastic"].get("version", None) == "1":
+            total = res['facets']['facet_results']['total']
+        elif self.cfg["elastic"].get("version", None) == "2":
+            total = res['hits']['total']
+        else:
+            print "Unknown / Unspecified ES version in nxapi.json : {0}".format(self.cfg["elastic"].get("version", "#UNDEFINED"))
+            sys.exit(1)
+
         count = 0
-        for x in res['facets']['facet_results']['terms']:
-            print "# "+self.grn.format(x['term'])+" "+str(round( (float(x['count']) / total) * 100.0, 2))+" % (total:"+str(x['count'])+"/"+str(total)+")"
-            count += 1
-            if count > limit:
-                break
+        if self.cfg["elastic"].get("version", None) == "1":
+            for x in res['facets']['facet_results']['terms']:
+                print "# "+self.grn.format(x['term'])+" "+str(round( (float(x['count']) / total) * 100.0, 2))+" % (total:"+str(x['count'])+"/"+str(total)+")"
+                count += 1
+                if count > limit:
+                    break
+        elif self.cfg["elastic"].get("version", None) == "2":
+            for x in res['aggregations']['agg1']['buckets']:
+                print "# "+self.grn.format(x['key'])+" "+str(round( (float(x['doc_count']) / total) * 100.0, 2))+" % (total:"+str(x['doc_count'])+"/"+str(total)+")"
+                count += 1
+                if count > limit:
+                    break
+        else:
+            print "Unknown / Unspecified ES version in nxapi.json : {0}".format(self.cfg["elastic"].get("version", "#UNDEFINED"))
+            sys.exit(1) 
+           
     def fetch_uniques(self, rule, key):
         """ shortcut function to gather unique
         values and their associated match count """
         uniques = []
         esq = self.tpl2esq(rule)
-        esq['facets'] =  { "facet_results" : {"terms": { "field": key, "size" : 50000} }}
+        #
+        if self.cfg["elastic"].get("version", None) == "1":
+            esq['facets'] =  { "facet_results" : {"terms": { "field": key, "size" : 50000} }}
+        elif self.cfg["elastic"].get("version", None) == "2":
+            esq['aggregations'] =  { "agg1" : {"terms": { "field": key, "size" : 50000} }}
+        else:
+            print "Unknown / Unspecified ES version in nxapi.json : {0}".format(self.cfg["elastic"].get("version", "#UNDEFINED"))
+            sys.exit(1)
+
         res = self.search(esq)
-        for x in res['facets']['facet_results']['terms']:
-            if x['term'] not in uniques:
-                uniques.append(x['term'])
+        if self.cfg["elastic"].get("version", None) == "1":
+            for x in res['facets']['facet_results']['terms']:
+                if x['term'] not in uniques:
+                    uniques.append(x['term'])
+        elif self.cfg["elastic"].get("version", None) == "2":
+            for x in res['aggregations']['agg1']['buckets']:
+                if x['key'] not in uniques:
+                    uniques.append(x['key'])
+        else:
+            print "Unknown / Unspecified ES version in nxapi.json : {0}".format(self.cfg["elastic"].get("version", "#UNDEFINED"))
+            sys.exit(1)
+            
         return { 'list' : uniques, 'total' :  len(uniques) }
     def index(self, body, eid):
         return self.es.index(index=self.cfg["elastic"]["index"], doc_type=self.cfg["elastic"]["doctype"], body=body, id=eid)

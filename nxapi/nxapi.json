@@ -4,7 +4,8 @@
  "index" : "nxapi",
  "doctype" : "events",
  "default_ttl" : "7200",
- "max_size" : "1000"
+ "max_size" : "1000",
+ "version" : "2"
 },
 "syslogd": {
  "host" : "0.0.0.0",

@@ -37,6 +37,29 @@ location /RequestDenied {
 --- request
 GET /?a=foobar
 --- error_code: 200
+=== WL TEST 1.0.1: [ARGS zone WhiteList] Adding a test rule in http_config (ARGS zone) and disable rule.
+--- http_config
+include /etc/nginx/naxsi_core.rules;
+MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 BasicRule wl:1999;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /?foobar=a
+--- error_code: 200
 === WL TEST 1.1: Adding a test rule in http_config (ARGS zone) and WL it on arg name only.
 --- http_config
 include /etc/nginx/naxsi_core.rules;

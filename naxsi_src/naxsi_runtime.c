@@ -584,8 +584,11 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
       if (nx_check_ids(r->rule_id, dr[i]->wlid_array)) {
 
 	naxsi_whitelist_debug("rule %d is disabled somewhere", r->rule_id);
-	if (!dr[i]->br || dr[i]->br->target_name != target_name)
+	/* if it doesn't specify zone, skip zone-check */
+	if (!dr[i]->br) {
+	  naxsi_whitelist_debug("no zone, skip zone-check");
 	  continue;
+	}
 	
 	/* If rule target nothing, it's whitelisted everywhere */
 	if (!(dr[i]->br->args ||  dr[i]->br->headers || 
@@ -593,6 +596,11 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 	  naxsi_whitelist_debug("rule %d is fully disabled", r->rule_id);
 	  return (1); 
 	}
+	
+	/* if exc is in name, but rule is not specificaly disabled for name (and targets a zone)  */
+	if (target_name != dr[i]->br->target_name)
+	  continue;
+
 	switch (zone) {
 	case ARGS:
 	  if (dr[i]->br->args) {

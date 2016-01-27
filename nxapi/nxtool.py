@@ -5,6 +5,12 @@ import sys
 import socket
 import elasticsearch
 import time
+import os
+import tempfile
+import subprocess
+import json
+
+from collections import defaultdict
 from optparse import OptionParser, OptionGroup
 from nxapi.nxtransform import *
 from nxapi.nxparse import *
@@ -92,10 +98,11 @@ opt.add_option_group(p)
 p = OptionGroup(opt, "Statistics Generation")
 p.add_option('-x', '--stats', dest="stats", action="store_true", help="Generate statistics about current's db content.")
 opt.add_option_group(p)
-
+# group : interactive generation
+p = OptionGroup(opt, "Interactive Whitelists Generation")
+p.add_option('-g', '--interactive-generation', dest="int_gen", action="store_true", help="Interactively generate whitelists")
+opt.add_option_group(p)
 (options, args) = opt.parse_args()
-
-
 
 
 try:
@@ -121,16 +128,16 @@ if count > 1:
     sys.exit(-1)
 
 
-cfg.cfg["output"]["colors"] = str(options.colors).lower()
+cfg.cfg["output"]["colors"] = "false" if options.int_gen else str(options.colors).lower()
 cfg.cfg["naxsi"]["strict"] = str(options.slack).lower()
 
-if options.filter is not None:
+def get_filter(arg_filter):
     x = {}
     to_parse = []
     kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'country', 'date',
               '?server', '?uri', '?var_name', '?content']
     try:
-        for argstr in options.filter:
+        for argstr in arg_filter:
             argstr = ' '.join(argstr.split())
             to_parse += argstr.split(' ')
         if [a for a in kwlist if a in to_parse]:
@@ -142,11 +149,10 @@ if options.filter is not None:
     except:
         logging.critical('option --filter must have at least one option')
         sys.exit(-1)
-    for z in x.keys():
-        cfg.cfg["global_filters"][z] = x[z]
-    #print "-- modified global filters : "
-    #pprint.pprint(cfg.cfg["global_filters"])
+    return x
 
+if options.filter is not None:
+    cfg.cfg["global_filters"].update(get_filter(options.filter))
 
 es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"])
 translate = NxTranslate(es, cfg)
@@ -228,7 +234,7 @@ if options.wl_file is not None:
                     count += x
                     if x == 0:
                         break
-                    
+
         print translate.grn.format(str(count)) + " items tagged ..."
         count = 0
     sys.exit(0)
@@ -279,6 +285,115 @@ if options.stats is True:
         print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
     sys.exit(0)
 
+
+def writing_generated_wl(filename, results):
+    with open('/tmp/{0}'.format(filename), 'w') as wl_file:
+        print 'Writing in file: {0}'.format(wl_file.name)
+        for elem in results:
+            wl_file.write(elem)
+        wl_file.flush()
+
+# TODO automatic wl generation
+# TODO factorize writting and reading from temporary file
+if options.int_gen is True:
+    editor = os.environ.get('EDITOR', 'vi')
+
+    welcome_sentences = '{0}\n{1}\n\n'.format(
+        '# all deleted line or starting with a # will be ignore',
+        '# if you want to use slack option you have to specify it on the command line options'
+    )
+    try:
+        with tempfile.NamedTemporaryFile(mode='rw+', suffix='.tmp') as server_selection:
+            # top servers selection
+            top_server = translate.fetch_top(cfg.cfg["global_filters"], "server", limit=10)
+            server_selection.write(welcome_sentences)
+            for elem in top_server:
+                server_selection.write('{0}\n'.format(elem))
+            server_selection.flush()
+            subprocess.call([editor, server_selection.name])
+            server_selection.seek(len(welcome_sentences))
+            servers = []
+            for line in server_selection:
+                if not line.startswith('#'):
+                    servers.append(line.strip().split()[0])
+
+        # iterate on each line of servers to isolate top uri for each one
+        uris = {}
+        for server in servers:
+            uris[server] = []
+            with tempfile.NamedTemporaryFile(suffix='.tmp') as uri_selection:
+                uri_selection.write(welcome_sentences)
+                cfg.cfg["global_filters"]["server"] = server
+                top_uri = translate.fetch_top(cfg.cfg["global_filters"], "uri", limit=10)
+                for elem in top_uri:
+                    uri_selection.write('{0}\n'.format(elem))
+                uri_selection.flush()
+                subprocess.call([editor, uri_selection.name])
+                uri_selection.seek(len(welcome_sentences))
+                for line in uri_selection:
+                    if not line.startswith('#'):
+                        uris[server].append(line.strip().split()[0])
+
+        zones = {}
+        for server in servers:
+            zones[server] = []
+            with tempfile.NamedTemporaryFile(suffix='.tmp') as zone_selection:
+                zone_selection.write(welcome_sentences)
+                cfg.cfg["global_filters"]["server"] = server
+                top_zone = translate.fetch_top(cfg.cfg["global_filters"], "zone", limit=10)
+                for elem in top_zone:
+                    zone_selection.write('{0}\n'.format(elem))
+                zone_selection.flush()
+                subprocess.call([editor, zone_selection.name])
+                zone_selection.seek(len(welcome_sentences))
+                for line in zone_selection:
+                    if not line.startswith('#'):
+                        zones[server].append(line.strip().split()[0])
+
+        # refactor this `thing` also :/
+        if uris:
+            for key, uris in uris.iteritems():
+                global_filters_context = cfg.cfg["global_filters"]
+                global_filters_context["server"] = key
+                for idx, uri in enumerate(uris):
+                    global_filters_context["uri"] = uri
+                    translate.cfg["global_filters"] = global_filters_context
+                    print 'generating with filters: {0}'.format(translate.cfg["global_filters"])
+                    res = translate.full_auto()
+                    writing_generated_wl("server_{0}_uri_{1}.wl".format(key, idx), res)
+                    del global_filters_context["uri"]
+
+        if zones:
+            for key, zones in zones.iteritems():
+                global_filters_context = cfg.cfg["global_filters"]
+                global_filters_context["server"] = key
+                for zone in zones:
+                    global_filters_context["zone"] = zone
+                    translate.cfg["global_filters"] = global_filters_context
+                    print 'generating with filters: {0}'.format(translate.cfg["global_filters"])
+                    res = translate.full_auto()
+                    writing_generated_wl("server_{0}_zone_{1}.wl".format(key, zone), res)
+
+                del global_filters_context
+
+        if not uris and not zones:
+            for server in servers:
+                translate.cfg["global_filters"]["server"] = server
+                print 'generating with filters: {0}'.format(translate.cfg["global_filters"])
+                res = translate.full_auto()
+                writing_generated_wl("server_{0}.wl".format(server), res)
+
+        # uris or zones dict are empty generate all wl with selected servers
+        # don\'t forget to change the translate.cfg before calling full_auto
+
+            # with open('/tmp/generated_wl.txt', 'w') as results:
+            #     for e in res:
+            #         results.write('{0}\n'.format(e))
+            #     results.flush()
+            # print 'The file with white list results is in {0}'.format(results.name)
+
+    except IndexError:
+        sys.exit(1)
     sys.exit(0)
 
 # input options, only setup injector if one input option is present

@@ -194,57 +194,66 @@ class NxTranslate():
         If templates has hit, peers or url(s) ratio > 15%,
         attempts to generate whitelists.
         Only displays the wl that did not raise warnings, ranked by success"""
-        
+
         # gather total IPs, total URIs, total hit count
         scoring = NxRating(self.cfg, self.es, self)
-        
+
         strict = True
         if self.cfg.get("naxsi").get("strict", "") == "false":
             strict = False
 
         scoring.refresh_scope("global", self.cfg["global_filters"])
         if scoring.get("global", "ip") <= 0:
-            print "No hits for this filter."
-            return
+            return []
+        output = []
         for sdir in self.cfg["naxsi"]["template_path"]:
             for root, dirs, files in os.walk(sdir):
                 for file in files:
                     if file.endswith(".tpl"):
-                        print "# "+self.grn.format(" template :")+root+"/"+file+" "
+                        output.append("# {0}{1}/{2} ".format(
+                            self.grn.format(" template :"),
+                            root,
+                            file
+                        ))
                         template = self.load_tpl_file(root+"/"+file)
                         scoring.refresh_scope('template', self.tpl2esq(template))
-                        print "Nb of hits :"+str(scoring.get('template', 'total'))
+                        output.append("Nb of hits : {0}".format(scoring.get('template', 'total')))
                         if scoring.get('template', 'total') > 0:
-                            print self.grn.format("#  template matched, generating all rules.")
+                            output.append('{0}'.format(self.grn.format("#  template matched, generating all rules.")))
                             whitelists = self.gen_wl(template, rule={})
-                            #x add here 
-                            print str(len(whitelists))+" whitelists ..."
+                            # x add here
+                            output.append('{0}'.format(len(whitelists))+" whitelists ...")
                             for genrule in whitelists:
                                 scoring.refresh_scope('rule', genrule['rule'])
                                 results = scoring.check_rule_score(template)
-                                #XX1
-                                if ( len(results['success']) > len(results['warnings']) and results["deny"] == False) or self.cfg["naxsi"]["strict"] == "false":
-                                    #print "?deny "+str(results['deny'])
-                                    self.fancy_display(genrule, results, template)
-                                    print self.grn.format(self.tpl2wl(genrule['rule']).encode('utf-8', 'replace'), template)
-
+                                # XX1
+                                if (len(results['success']) > len(results['warnings']) and results["deny"] == False) or self.cfg["naxsi"]["strict"] == "false":
+                                    # print "?deny "+str(results['deny'])
+                                    try:
+                                        output.append(self.fancy_display(genrule, results, template))
+                                        output.append('{0}'.format(self.grn.format(self.tpl2wl(genrule['rule']).encode('utf-8', 'replace'), template)))
+                                    except UnicodeDecodeError:
+                                        logging.warning('WARNING: Unprocessable string found in the elastic search')
+        return output
 
     def wl_on_type(self):
         for rule in Typificator(self.es, self.cfg).get_rules():
             print 'BasicRule negative "rx:{0}" "msg:{1}" "mz:${2}_VAR:{3}" "s:BLOCK";'.format(*rule)
-                                
+
     def fancy_display(self, full_wl, scores, template=None):
+        output = []
         if template is not None and '_msg' in template.keys():
-            print "#msg: "+template['_msg']
+            output.append("#msg: {0}\n".format(template['_msg']))
         rid = full_wl['rule'].get('id', "0")
-        print "#Rule ("+rid+") "+self.core_msg.get(rid, 'Unknown ..')
+        output.append("#Rule ({0}) {1}\n".format(rid, self.core_msg.get(rid, 'Unknown ..')))
         if self.cfg["output"]["verbosity"] >= 4:
-            print "#total hits "+str(full_wl['total_hits'])
-            for x in [ "content", "peers", "uri", "var_name" ]:
-                if not x in full_wl.keys():
+            output.append("#total hits {0}\n".format(full_wl['total_hits']))
+            for x in ["content", "peers", "uri", "var_name"]:
+                if x not in full_wl.keys():
                     continue
                 for y in full_wl[x]:
-                    print "#"+x+" : "+unicode(y).encode("utf-8", 'replace')
+                    output.append("#{0} : {1}\n".format(x, unicode(y).encode("utf-8", 'replace')))
+        return ''.join(output)
 
 #        pprint.pprint(scores)
         for x in scores['success']:
@@ -545,22 +554,24 @@ class NxTranslate():
             sys.exit(1)
 
         count = 0
+        ret = []
         if self.cfg["elastic"].get("version", None) == "1":
             for x in res['facets']['facet_results']['terms']:
-                print "# "+self.grn.format(x['term'])+" "+str(round( (float(x['count']) / total) * 100.0, 2))+" % (total:"+str(x['count'])+"/"+str(total)+")"
+                ret.append('{0} {1}% (total: {2}/{3})'.format(x['term'], round((float(x['count']) / total) * 100, 2), x['count'], total))
                 count += 1
                 if count > limit:
                     break
         elif self.cfg["elastic"].get("version", None) == "2":
             for x in res['aggregations']['agg1']['buckets']:
-                print "# "+self.grn.format(x['key'])+" "+str(round( (float(x['doc_count']) / total) * 100.0, 2))+" % (total:"+str(x['doc_count'])+"/"+str(total)+")"
+                ret.append('{0} {1}% (total: {2}/{3})'.format(x['key'], round((float(x['doc_count']) / total) * 100, 2), x['doc_count'], total))
                 count += 1
                 if count > limit:
                     break
         else:
             print "Unknown / Unspecified ES version in nxapi.json : {0}".format(self.cfg["elastic"].get("version", "#UNDEFINED"))
-            sys.exit(1) 
-           
+            sys.exit(1)
+        return ret
+
     def fetch_uniques(self, rule, key):
         """ shortcut function to gather unique
         values and their associated match count """

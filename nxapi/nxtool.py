@@ -160,7 +160,13 @@ if options.type_wl is True:
 # whitelist generation options
 if options.full_auto is True:
     translate.load_cr_file(translate.cfg["naxsi"]["rules_path"])
-    translate.full_auto()
+    res = translate.full_auto()
+    if res:
+        for e in res:
+            print e
+    else:
+        print "No hits for this filter."
+        sys.exit(1)
     sys.exit(0)
 
 if options.template is not None:
@@ -192,7 +198,7 @@ if options.template is not None:
             scores = scoring.check_rule_score(tpl)
             if (len(scores['success']) > len(scores['warnings']) and scores['deny'] == False) or cfg.cfg["naxsi"]["strict"] == "false":
                 #print "?deny "+str(scores['deny'])
-                translate.fancy_display(genrule, scores, tpl)
+                print translate.fancy_display(genrule, scores, tpl)
                 print translate.grn.format(translate.tpl2wl(genrule['rule'], tpl)).encode('utf-8')
     sys.exit(0)
 
@@ -256,13 +262,23 @@ if options.stats is True:
     print translate.red.format("# Whitelist(ing) ratio :")
     translate.fetch_top(cfg.cfg["global_filters"], "whitelisted", limit=2)
     print translate.red.format("# Top servers :")
-    translate.fetch_top(cfg.cfg["global_filters"], "server", limit=10)
+    for e in translate.fetch_top(cfg.cfg["global_filters"], "server", limit=10):
+        list_e = e.split()
+        print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
     print translate.red.format("# Top URI(s) :")
-    translate.fetch_top(cfg.cfg["global_filters"], "uri", limit=10)
+    for e in translate.fetch_top(cfg.cfg["global_filters"], "uri", limit=10):
+        list_e = e.split()
+        print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
     print translate.red.format("# Top Zone(s) :")
-    translate.fetch_top(cfg.cfg["global_filters"], "zone", limit=10)
+    for e in translate.fetch_top(cfg.cfg["global_filters"], "zone", limit=10):
+        list_e = e.split()
+        print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
     print translate.red.format("# Top Peer(s) :")
-    translate.fetch_top(cfg.cfg["global_filters"], "ip", limit=10)
+    for e in translate.fetch_top(cfg.cfg["global_filters"], "ip", limit=10):
+        list_e = e.split()
+        print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+    sys.exit(0)
+
     sys.exit(0)
 
 # input options, only setup injector if one input option is present

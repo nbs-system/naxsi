@@ -290,7 +290,7 @@ def writing_generated_wl(filename, results):
     with open('/tmp/{0}'.format(filename), 'w') as wl_file:
         print 'Writing in file: {0}'.format(wl_file.name)
         for elem in results:
-            wl_file.write(elem)
+            wl_file.write('{0}\n'.format(elem))
         wl_file.flush()
 
 # TODO automatic wl generation
@@ -319,8 +319,10 @@ if options.int_gen is True:
 
         # iterate on each line of servers to isolate top uri for each one
         uris = {}
+        zones = {}
         for server in servers:
             uris[server] = []
+            zones[server] = []
             with tempfile.NamedTemporaryFile(suffix='.tmp') as uri_selection:
                 uri_selection.write(welcome_sentences)
                 cfg.cfg["global_filters"]["server"] = server
@@ -333,10 +335,6 @@ if options.int_gen is True:
                 for line in uri_selection:
                     if not line.startswith('#'):
                         uris[server].append(line.strip().split()[0])
-
-        zones = {}
-        for server in servers:
-            zones[server] = []
             with tempfile.NamedTemporaryFile(suffix='.tmp') as zone_selection:
                 zone_selection.write(welcome_sentences)
                 cfg.cfg["global_filters"]["server"] = server

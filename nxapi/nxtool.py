@@ -316,9 +316,10 @@ def ask_user_for_server_selection(editor, welcome_sentences, selection):
 def ask_user_for_selection(editor, welcome_sentences, selection, servers):
     ret = {}
     for server in servers:
+        server_reminder = "server: {0}\n\n".format(server)
         ret[server] = []
         with tempfile.NamedTemporaryFile(suffix='.tmp') as temporary_file:
-            temporary_file.write(welcome_sentences)
+            temporary_file.write(welcome_sentences + server_reminder)
             cfg.cfg["global_filters"]["server"] = server
             top_selection = translate.fetch_top(cfg.cfg["global_filters"],
                                 selection,
@@ -328,7 +329,7 @@ def ask_user_for_selection(editor, welcome_sentences, selection, servers):
                 temporary_file.write('{0}\n'.format(line))
             temporary_file.flush()
             subprocess.call([editor, temporary_file.name])
-            temporary_file.seek(len(welcome_sentences))
+            temporary_file.seek(len(welcome_sentences) + len(server_reminder))
             for line in temporary_file:
                 if not line.startswith('#'):
                     ret[server].append(line.strip().split()[0])
@@ -349,12 +350,10 @@ def generate_wl(selection, selection_dict):
                                         idx if (selection == "uri") else "zone_{0}".format(item),
                                 ), res)
 
-# TODO automatic wl generation
-# TODO factorize writting and reading from temporary file
 if options.int_gen is True:
     editor = os.environ.get('EDITOR', 'vi')
 
-    welcome_sentences = '{0}\n{1}\n\n'.format(
+    welcome_sentences = '{0}\n{1}\n'.format(
         '# all deleted line or starting with a # will be ignore',
         '# if you want to use slack option you have to specify it on the command line options'
     )
@@ -368,7 +367,8 @@ if options.int_gen is True:
         generate_wl("uri", uris)
     if zones:
         generate_wl("zone", zones)
-    # in case the user let uri and zone files empty
+    # in case the user let uri and zone files empty generate wl for all
+    # selected server(s)
     if not uris and not zones:
         for server in servers:
             translate.cfg["global_filters"]["server"] = server

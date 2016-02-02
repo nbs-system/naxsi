@@ -165,8 +165,30 @@ nxtool attempts to provide extra information to allow user to decides wether it'
   * var_name : exemple(s) of variable names in which the content was triggered
   * success and warnings : nxapi will inform provide you scoring informations (see 'scores').
 
+##3. Interactive whitelist generation
 
-##3. Tagging events
+Another way of creating whitelist is to use the -g option this option provide
+an interactive way to generate whitelist. This option use the EDITOR env
+variable and use it to iterate over all the server avaible inside your elastic
+search instance (if the EDITOR env variable isn't set it will try to use `vi`.
+You can either delete or comment with a `#` at the beginning the line you don't
+want to keep. After the server selection it will iterate on each of avaible uri
+and zone for earch server. If you want to use regex, only available for uri,
+you can add a `?` at the beginning of each line where you want to use a regex:
+
+    uri /fr/foo/ ...
+    ?uri /[a-z]{2,}/foo ...
+
+The -g options once all the selection over will attempt to generate the wl
+with the same behaviour as -f option, and write the result inside the path the
+typical output when generating wl is:
+
+    generating wl with filters {u'whitelisted': u'false', 'uri': '/fr/foo', 'server': 'x.com'}
+    Writing in file: /tmp/server_x.com_0.wl
+
+As you can see you'll see each filter and each file for each selections.
+
+##4. Tagging events
 
 Once I chose the whitelists that I think are appropriate, I will write them down to a whitelist file. 
 Then, I can tag corresponding events :

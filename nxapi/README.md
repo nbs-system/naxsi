@@ -167,12 +167,12 @@ nxtool attempts to provide extra information to allow user to decides wether it'
 
 ##3. Interactive whitelist generation
 
-Another way of creating whitelist is to use the -g option this option provide
+Another way of creating whitelist is to use the -g option. This option provide
 an interactive way to generate whitelist. This option use the EDITOR env
 variable and use it to iterate over all the server avaible inside your elastic
 search instance (if the EDITOR env variable isn't set it will try to use `vi`.
 You can either delete or comment with a `#` at the beginning the line you don't
-want to keep. After the server selection it will iterate on each of avaible uri
+want to keep. After the server selection it will iterate on each avaible uri
 and zone for earch server. If you want to use regex, only available for uri,
 you can add a `?` at the beginning of each line where you want to use a regex:
 

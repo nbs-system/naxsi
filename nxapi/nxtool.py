@@ -295,7 +295,6 @@ def write_generated_wl(filename, results):
         wl_file.flush()
 
 def ask_user_for_server_selection(editor, welcome_sentences, selection):
-
     with tempfile.NamedTemporaryFile(suffix='.tmp') as temporary_file:
         top_selection = translate.fetch_top(cfg.cfg["global_filters"],
                             selection,
@@ -314,41 +313,46 @@ def ask_user_for_server_selection(editor, welcome_sentences, selection):
     return ret
 
 def ask_user_for_selection(editor, welcome_sentences, selection, servers):
+    regex_message = "# as in the --filter option you can add ? for regex\n"
     ret = {}
     for server in servers:
         server_reminder = "server: {0}\n\n".format(server)
         ret[server] = []
         with tempfile.NamedTemporaryFile(suffix='.tmp') as temporary_file:
-            temporary_file.write(welcome_sentences + server_reminder)
+            temporary_file.write(welcome_sentences + regex_message + server_reminder)
             cfg.cfg["global_filters"]["server"] = server
             top_selection = translate.fetch_top(cfg.cfg["global_filters"],
                                 selection,
                                 limit=10
                             )
             for line in top_selection:
-                temporary_file.write('{0}\n'.format(line))
+                temporary_file.write('{0} {1}\n'.format(selection, line))
             temporary_file.flush()
             subprocess.call([editor, temporary_file.name])
-            temporary_file.seek(len(welcome_sentences) + len(server_reminder))
+            temporary_file.seek(len(welcome_sentences) + len(server_reminder) + len(regex_message))
             for line in temporary_file:
                 if not line.startswith('#'):
-                    ret[server].append(line.strip().split()[0])
+                    res = line.strip().split()
+                    ret[server].append((res[0], res[1]))
     return ret
 
-def generate_wl(selection, selection_dict):
+# handle file name because a regex cannot be a filename
+def generate_wl(selection_dict):
     for key, items in selection_dict.iteritems():
+        if not items:
+            return False
         global_filters_context = cfg.cfg["global_filters"]
         global_filters_context["server"] = key
-        for idx, item in enumerate(items):
-            global_filters_context[selection] = item
-            translate.cfg["global_filters"] = global_filters_context
-            print 'generating wl with filters {0}'.format(global_filters_context)
-            res = translate.full_auto()
-            del global_filters_context[selection]
-            write_generated_wl("server_{0}_{1}.wl".format(
-                                        key,
-                                        idx if (selection == "uri") else "zone_{0}".format(item),
-                                ), res)
+        for idx, (selection, item) in enumerate(items):
+           global_filters_context[selection] = item
+           translate.cfg["global_filters"] = global_filters_context
+           print 'generating wl with filters {0}'.format(global_filters_context)
+           res = translate.full_auto()
+           del global_filters_context[selection]
+           write_generated_wl("server_{0}_{1}.wl".format(
+                                       key,
+                                       idx if (selection == "uri") else "zone_{0}".format(item),
+                               ), res)
 
 if options.int_gen is True:
     editor = os.environ.get('EDITOR', 'vi')
@@ -364,9 +368,9 @@ if options.int_gen is True:
     zones = ask_user_for_selection(editor, welcome_sentences, "zone", servers)
 
     if uris:
-        generate_wl("uri", uris)
+        generate_wl(uris)
     if zones:
-        generate_wl("zone", zones)
+        generate_wl(zones)
     # in case the user let uri and zone files empty generate wl for all
     # selected server(s)
     if not uris and not zones:

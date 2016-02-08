@@ -19,7 +19,6 @@ F_SETPIPE_SZ = 1031  # Linux 2.6.35+
 F_GETPIPE_SZ = 1032  # Linux 2.6.35+
 
 
-
 def open_fifo(fifo):
     try:
         os.mkfifo(fifo)
@@ -167,10 +166,10 @@ if options.type_wl is True:
 # whitelist generation options
 if options.full_auto is True:
     translate.load_cr_file(translate.cfg["naxsi"]["rules_path"])
-    res = translate.full_auto()
-    if res:
-        for e in res:
-            print e
+    results = translate.full_auto()
+    if results:
+        for result in results:
+            print "{}".format(result)
     else:
         print "No hits for this filter."
         sys.exit(1)
@@ -288,10 +287,16 @@ if options.stats is True:
 
 
 def write_generated_wl(filename, results):
+
     with open('/tmp/{0}'.format(filename), 'w') as wl_file:
-        print 'Writing in file: {0}'.format(wl_file.name)
-        for elem in results:
-            wl_file.write('{0}\n'.format(elem))
+        for result in results:
+            for key, items in result.iteritems():
+                if items:
+                    print "{} {}".format(key, items)
+                    if key == 'genrule':
+                        wl_file.write("# {}\n{}\n".format(key, items))
+                    else:
+                        wl_file.write("# {} {}\n".format(key, items))
         wl_file.flush()
 
 def ask_user_for_server_selection(editor, welcome_sentences, selection):
@@ -336,7 +341,6 @@ def ask_user_for_selection(editor, welcome_sentences, selection, servers):
                     ret[server].append((res[0], res[1]))
     return ret
 
-# handle file name because a regex cannot be a filename
 def generate_wl(selection_dict):
     for key, items in selection_dict.iteritems():
         if not items:
@@ -347,12 +351,16 @@ def generate_wl(selection_dict):
            global_filters_context[selection] = item
            translate.cfg["global_filters"] = global_filters_context
            print 'generating wl with filters {0}'.format(global_filters_context)
-           res = translate.full_auto()
+           wl_dict_list = []
+           res = translate.full_auto(wl_dict_list)
            del global_filters_context[selection]
-           write_generated_wl("server_{0}_{1}.wl".format(
-                                       key,
-                                       idx if (selection == "uri") else "zone_{0}".format(item),
-                               ), res)
+           write_generated_wl(
+               "server_{0}_{1}.wl".format(
+                                    key,
+                                    idx if (selection == "uri") else "zone_{0}".format(item),
+                                ),
+               wl_dict_list
+           )
 
 if options.int_gen is True:
     editor = os.environ.get('EDITOR', 'vi')

@@ -189,7 +189,7 @@ class NxTranslate():
         # Attempt to parse provided core rules file
         self.load_cr_file(self.cfg["naxsi"]["rules_path"])
 
-    def full_auto(self):
+    def full_auto(self, to_fill_list=None):
         """ Loads all tpl within template_path
         If templates has hit, peers or url(s) ratio > 15%,
         attempts to generate whitelists.
@@ -230,10 +230,14 @@ class NxTranslate():
                                 if (len(results['success']) > len(results['warnings']) and results["deny"] == False) or self.cfg["naxsi"]["strict"] == "false":
                                     # print "?deny "+str(results['deny'])
                                     try:
-                                        output.append(self.fancy_display(genrule, results, template))
-                                        output.append('{0}'.format(self.grn.format(self.tpl2wl(genrule['rule']).encode('utf-8', 'replace'), template)))
+                                        str_genrule = '{0}'.format(self.grn.format(self.tpl2wl(genrule['rule']).encode('utf-8', 'replace'), template))
                                     except UnicodeDecodeError:
                                         logging.warning('WARNING: Unprocessable string found in the elastic search')
+                                    output.append(self.fancy_display(genrule, results, template))
+                                    output.append(str_genrule)
+                                    if to_fill_list is not None:
+                                        genrule.update({'genrule': str_genrule})
+                                        to_fill_list.append(genrule)
         return output
 
     def wl_on_type(self):

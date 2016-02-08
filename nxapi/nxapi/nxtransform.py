@@ -666,7 +666,7 @@ class NxTranslate():
                 size = total_events - count
         print ""
         #--
-        if tag is False:
+        if not tag or tag is False:
             return 0
         else:
             return count

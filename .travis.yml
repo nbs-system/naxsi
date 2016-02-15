@@ -16,6 +16,7 @@ install:
   - cd "nginx-${VER_NGINX}"
   - ./configure --with-cc-opt="--coverage" --with-ld-opt="-lgcov" --conf-path=/tmp/naxsi_ut/nginx.conf --add-dynamic-module=../naxsi_src/ --error-log-path=/tmp/naxsi_ut/error.log  --http-client-body-temp-path=/tmp/naxsi_ut/body/ --http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/ --http-log-path=/tmp/naxsi_ut/access.log --http-proxy-temp-path=/tmp/naxsi_ut/proxy/ --lock-path=/tmpnginx.lock --pid-path=/tmp/naxsi_ut/nginx.pid --with-http_ssl_module --without-mail_pop3_module --without-mail_smtp_module --without-mail_imap_module --without-http_uwsgi_module --without-http_scgi_module --with-ipv6  --prefix=/tmp --modules-path=/tmp/naxsi_ut/modules/
   - make
+  - ls -alR .
   - make install
   - export PATH=$PATH":/tmp/sbin/"
   - cd ../naxsi_src

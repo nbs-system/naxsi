@@ -17,6 +17,8 @@ run_tests();
 
 __DATA__
 === TEST 1: Basic GET request
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -38,6 +40,8 @@ location /RequestDenied {
 GET /?a=buibui
 --- error_code: 200
 === TEST 2: DENY : Obvious GET XSS
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -59,6 +63,8 @@ location /RequestDenied {
 GET /?a="><ScRiPt>alert(1)</scRiPt>
 --- error_code: 412
 === TEST 2.1: DENY : Obvious RFI
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -80,6 +86,8 @@ location /RequestDenied {
 GET /?a=http://evil.com/eva.txt
 --- error_code: 412
 === TEST 2.3: DENY : Obvious LFI
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -101,6 +109,8 @@ location /RequestDenied {
 GET /?a=../../../../../bar.txt
 --- error_code: 412
 === TEST 3: OBVIOUS GET SQL INJECTION
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -122,6 +132,8 @@ location /RequestDenied {
 GET /?a=1'+Or+'1'='1
 --- error_code: 412
 === TEST 3bis: OBVIOUS (quoteless) GET SQL INJECTION
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config

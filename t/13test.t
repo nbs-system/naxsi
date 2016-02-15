@@ -17,6 +17,8 @@ __DATA__
 eh yo
 >>> bla
 eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:1998" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1998;
@@ -48,6 +50,8 @@ GET /bla?blx=1998&1999=bla
 eh yo
 >>> bla
 eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:1998" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1998;

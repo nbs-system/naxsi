@@ -15,6 +15,8 @@ $ENV{TEST_NGINX_SERVROOT} = server_root();
 run_tests();
 __DATA__
 === WL TEST 1.0: Obvious test in arg
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -38,6 +40,8 @@ GET /?foobar=a
 --- error_code: 412
 
 === WL TEST 1.1: Obvious test in arg
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;

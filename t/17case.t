@@ -15,6 +15,8 @@ $ENV{TEST_NGINX_SERVROOT} = server_root();
 run_tests();
 __DATA__
 === WL TEST X.0: URL case sensitive wl
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -39,6 +41,8 @@ GET /foobar/tableDropdown
 --- error_code: 404
 
 === WL TEST X.1: URL case sensitive wl
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -67,6 +71,8 @@ GET /wp-content/plugins/ultimate-tinymce/tableDropdown/editor_plugin.js
 eh yo
 >>> bla
 eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:1998" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1998;

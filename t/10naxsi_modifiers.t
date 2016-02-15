@@ -16,6 +16,8 @@ run_tests();
 
 __DATA__
 === TEST 1.0 : Runtime Learning force (per ip)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -40,6 +42,8 @@ GET /?a=<>
 --- error_code: 200
 
 === TEST 1.01 : Runtime Learning force (absolute)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -63,6 +67,8 @@ GET /?a=<>
 
 
 === TEST 1.1: Runtime Learning force (fail - per ip)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -88,6 +94,8 @@ GET /?a=<>
 --- error_code: 412
 
 === TEST 1.2: Runtime Learning force (fail - in location)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -114,6 +122,8 @@ GET /?a=<>
 
 
 === TEST 1.3: Runtime Learning disable (per ip)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -139,6 +149,8 @@ GET /?a=<>
 --- error_code: 412
 
 === TEST 1.4: Runtime Learning disable (fail - per ip)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -164,6 +176,8 @@ GET /?a=<>
 --- error_code: 200
 
 === TEST 2.00 : Check that SecRulesDisabled correctly works
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -186,6 +200,8 @@ GET /?a=<>
 --- error_code: 200
 
 === TEST 2: Runtime disable force (absolute)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -208,6 +224,8 @@ GET /?a=<>
 --- error_code: 200
 
 === TEST 2.2: Runtime enable force
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -231,6 +249,8 @@ GET /?a=<>
 --- error_code: 412
 
 === TEST 2.3: Runtime enable force, with static learning (which is pointless)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -255,6 +275,8 @@ GET /?a=<>
 --- error_code: 200
 
 === TEST 2.4: Runtime enable + learning mode (absolute)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -279,6 +301,8 @@ GET /?a=<>
 --- error_code: 200
 
 === TEST 3.0: Runtime enable + learning mode (per ip)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -305,6 +329,8 @@ GET /?a=<>
 --- error_code: 200
 
 === TEST 3.1: Runtime enable + learning mode (per ip)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -331,6 +357,8 @@ GET /?a=<>
 --- error_code: 200
 
 === TEST 3.2: Runtime enable + learning mode (per ip)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -357,6 +385,8 @@ GET /?a=<>
 --- error_code: 200
 
 === TEST 3.3: Runtime enable (success) + learning mode (fail - per ip)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config

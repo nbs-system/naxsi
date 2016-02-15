@@ -11,6 +11,8 @@ $ENV{TEST_NGINX_SERVROOT} = server_root();
 run_tests();
 __DATA__
 === WL TEST 1.0: weird request in URL
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -32,6 +34,8 @@ GET /?&&&&a&&&&&
 --- error_code: 412
 
 === WL TEST 1.01: weird request in URL (wl on fullzone)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -54,6 +58,8 @@ GET /?&&&&a&&&&&
 --- error_code: 200
 
 === WL TEST 1.02: weird request in URL (wl on zone+URL)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -76,6 +82,8 @@ GET /?&&&&a&&&&&
 --- error_code: 200
 
 === WL TEST 1.03: weird request in URL (fail wl on zone+bad URL)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config
@@ -98,6 +106,8 @@ GET /?&&&&a&&&&&
 --- error_code: 412
 
 === WL TEST 1.04: weird request in URL (fail wl on bad zone+URL)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 --- config

@@ -15,6 +15,8 @@ $ENV{TEST_NGINX_SERVROOT} = server_root();
 run_tests();
 __DATA__
 === WL TEST 1.0: Obvious test in arg
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -38,6 +40,8 @@ GET /?foobar=a
 --- error_code: 412
 
 === WL TEST 1.01: Check non-collision of zone and 'name' flag
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule id:5 "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42";
@@ -60,6 +64,8 @@ GET /?a=foobar
 --- error_code: 412
 
 === WL TEST 1.1: Generic whitelist in ARGS_NAME
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -85,6 +91,8 @@ GET /?foobar=a
 
 
 === WL TEST 1.11: Generic whitelist in ARGS_NAME, limit
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -109,6 +117,8 @@ GET /?foobar=a
 --- error_code: 412
 
 === WL TEST 1.12: Generic whitelist in ARGS_NAME, limit
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -133,6 +143,8 @@ GET /?a=foobar
 --- error_code: 412
 
 === WL TEST 1.2: whitelist in ARGS_NAME+$URL
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -157,6 +169,8 @@ GET /?foobar=a
 --- error_code: 200
 
 === WL TEST 1.21: whitelist in ARGS_NAME+$URL, limit
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -181,6 +195,8 @@ GET /?foobar=a
 --- error_code: 200
 
 === WL TEST 1.22: whitelist in ARGS_NAME+$URL, limit
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -206,6 +222,8 @@ GET /?a=foobar
 
 
 === WL TEST 1.3: failed whitelist in ARGS_NAME+$URL
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -230,6 +248,8 @@ GET /?foobar=a
 --- error_code: 412
 
 === WL TEST 1.31: failed whitelist in ARGS_NAME+$URL
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -254,6 +274,8 @@ GET /?a=foobar
 --- error_code: 412
 
 === WL TEST 1.32: failed whitelist in ARGS_NAME+$URL
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -278,6 +300,8 @@ GET /?b=foobar
 --- error_code: 412
 
 === WL TEST 1.33: failed whitelist in ARGS_NAME+$URL
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -302,6 +326,8 @@ GET /?foobar=bui
 --- error_code: 200
 
 === WL TEST 1.34: failed whitelist in ARGS_NAME+$URL
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -328,6 +354,8 @@ GET /?foobar=foobra
 --- error_code: 200
 
 === WL TEST 1.35: failed whitelist in ARGS_NAME+$URL
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -354,6 +382,8 @@ GET /?foobar=foobar
 --- error_code: 412
 
 === WL TEST 1.36: failed whitelist in ARGS_NAME+$URL
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -381,6 +411,8 @@ GET /?foobar=foobar
 
 
 === WL TEST 1.4: whitelist in ARGS_NAME+$URL+$ARGS_VAR
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -405,6 +437,8 @@ GET /?foobar=a
 --- error_code: 200
 
 === WL TEST 1.41: whitelist in ARGS_NAME+$URL+$ARGS_VAR
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -431,6 +465,8 @@ GET /?a=foobar
 
 
 === WL TEST 1.5: whitelist in ARGS_NAME+$URL+$ARGS_VAR, limit
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -456,6 +492,8 @@ GET /?foobar=foobar
 
 
 === WL TEST 1.51: whitelist in ARGS_NAME+$URL+$ARGS_VAR, limit
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -480,6 +518,8 @@ GET /?foobar=foo
 --- error_code: 200
 
 === WL TEST 1.6: whitelist in $URL+$ARGS_VAR | NAME, (collision)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -505,6 +545,8 @@ GET /?foobar=foobar
 --- error_code: 200
 
 === WL TEST 1.6.1: whitelist in $URL+ARGS | NAME, (collision)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -530,6 +572,8 @@ GET /?foobar=foobar
 --- error_code: 200
 
 === WL TEST 1.6.2: whitelist in $URL+ARGS | NAME, (collision)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -554,6 +598,8 @@ location /RequestDenied {
 GET /?foobar=lol
 --- error_code: 200
 === WL TEST 1.6.3: whitelist in $URL+ARGS | NAME, (collision)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -578,6 +624,8 @@ location /RequestDenied {
 GET /?lol=foobar
 --- error_code: 200
 === WL TEST 1.6.4: whitelist in $URL+ARGS | NAME, (collision)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -602,6 +650,8 @@ location /RequestDenied {
 GET /?lol=foobar
 --- error_code: 412
 === WL TEST 1.6.5: whitelist in $URL+ARGS | NAME, (collision)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -626,6 +676,8 @@ location /RequestDenied {
 GET /?foobar=lol
 --- error_code: 412
 === WL TEST 1.6.6: whitelist in $URL+ARGS | NAME, (collision)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
@@ -650,6 +702,8 @@ location /RequestDenied {
 GET /?lol=foobar
 --- error_code: 200
 === WL TEST 1.6.7: whitelist in $URL+ARGS | NAME, (collision)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /etc/nginx/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;

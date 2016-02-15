@@ -5,7 +5,7 @@ CAK		:=
 #1 : LCOV is enabled, and coverage report is generated.
 COV 		:= 0
 #Allows to force for specific UT only
-#TEST 		:= "23*.t"
+#TEST 		:= "00*.t"
 define NAXSI_CFG=
 master_process off;
 worker_processes  1;
@@ -86,7 +86,7 @@ nginx_config:
 	./configure --with-cc-opt="$$CC_OPT" \
 	--with-ld-opt="$$LD_OPT" \
 	--conf-path=/tmp/naxsi_ut/nginx.conf \
-	--add-module=$(MOD_PATH) \
+	--add-dynamic-module=$(MOD_PATH) \
 	--error-log-path=/tmp/naxsi_ut/error.log \
 	--http-client-body-temp-path=/tmp/naxsi_ut/body/ \
 	--http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/ \
@@ -94,6 +94,7 @@ nginx_config:
 	--http-proxy-temp-path=/tmp/naxsi_ut/proxy/ \
 	--lock-path=/tmpnginx.lock \
 	--pid-path=/tmp/naxsi_ut/nginx.pid \
+	--modules-path=/tmp/naxsi_ut/modules/ \
 	--with-http_ssl_module \
 	--without-mail_pop3_module \
 	--without-mail_smtp_module \
@@ -112,22 +113,24 @@ coverity:
 	wget -nc  https://scan.coverity.com/download/linux-64 --post-data "token=$$CAK&project=nbs-system%2Fnaxsi" -O /tmp/coverity.tgz ; \
 	mkdir /tmp/cov && cd /tmp/cov && cat ../coverity.tgz  | tar --strip-components=1 -xvzf - ; \
 	cd /tmp/nginx ; \
-	./configure --conf-path=/tmp/naxsi_ut/nginx.conf  --add-module=$(MOD_PATH) \
-	 --error-log-path=/tmp/naxsi_ut/error.log \
-	 --http-client-body-temp-path=/tmp/naxsi_ut/body/   \
-	 --http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/  \
-	 --http-log-path=/tmp/naxsi_ut/access.log \
-	 --http-proxy-temp-path=/tmp/naxsi_ut/proxy/ \
-	 --lock-path=/tmpnginx.lock  \
-	 --pid-path=/tmp/naxsi_ut/nginx.pid \
-	 --with-http_ssl_module \
-	 --without-mail_pop3_module \
-	 --without-mail_smtp_module \
-	 --without-mail_imap_module \
-	 --without-http_uwsgi_module \
-	 --without-http_scgi_module \
-	 --with-ipv6  --prefix=/tmp \
-	 --with-debug && \
+	./configure --conf-path=/tmp/naxsi_ut/nginx.conf \
+	--add-dynamic-module=$(MOD_PATH) \
+	--error-log-path=/tmp/naxsi_ut/error.log \
+	--http-client-body-temp-path=/tmp/naxsi_ut/body/   \
+	--http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/  \
+	--http-log-path=/tmp/naxsi_ut/access.log \
+	--http-proxy-temp-path=/tmp/naxsi_ut/proxy/ \
+	--lock-path=/tmpnginx.lock  \
+	--pid-path=/tmp/naxsi_ut/nginx.pid \
+	--with-http_ssl_module \
+	--without-mail_pop3_module \
+	--without-mail_smtp_module \
+	--without-mail_imap_module \
+	--without-http_uwsgi_module \
+	--without-http_scgi_module \
+	--with-ipv6  --prefix=/tmp \
+	--modules-path=/tmp/naxsi_ut/modules/ \
+	--with-debug && \
 	/tmp/cov/bin/cov-build --dir cov-int make && \
 	tar cvzf coverity-res-naxsi.tgz cov-int/ ; \
 	curl --form token="$$CAK" \

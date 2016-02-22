@@ -269,20 +269,32 @@ if options.stats is True:
     translate.fetch_top(cfg.cfg["global_filters"], "whitelisted", limit=2)
     print translate.red.format("# Top servers :")
     for e in translate.fetch_top(cfg.cfg["global_filters"], "server", limit=10):
-        list_e = e.split()
-        print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+        try:
+            list_e = e.split()
+            print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+        except:
+            print "--malformed--"
     print translate.red.format("# Top URI(s) :")
     for e in translate.fetch_top(cfg.cfg["global_filters"], "uri", limit=10):
-        list_e = e.split()
-        print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+        try:
+            list_e = e.split()
+            print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+        except:
+            print "--malformed--"
     print translate.red.format("# Top Zone(s) :")
     for e in translate.fetch_top(cfg.cfg["global_filters"], "zone", limit=10):
-        list_e = e.split()
-        print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+        try:
+            list_e = e.split()
+            print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+        except:
+            print "--malformed--"
     print translate.red.format("# Top Peer(s) :")
     for e in translate.fetch_top(cfg.cfg["global_filters"], "ip", limit=10):
-        list_e = e.split()
-        print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+        try:
+            list_e = e.split()
+            print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+        except:
+            print "--malformed--"
     sys.exit(0)
 
 

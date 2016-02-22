@@ -4,6 +4,6 @@
 "var_name" : "?",
 "id" : "?",
 "uri" : "?",
-"_warnings" : { "template_uri" : [ ">", "5"],
-	      	"template_var_name" : [ ">", "5"]}
+"_warnings" : { "template_uri" : [ "<", "5"],
+	      	"template_var_name" : [ "<", "5"]}
 }

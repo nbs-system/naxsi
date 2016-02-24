@@ -3,14 +3,18 @@
 
 <a href="https://scan.coverity.com/projects/1883">
   <img alt="Coverity Scan Build Status"
-       src="https://scan.coverity.com/projects/1883/badge.svg"/>
-</a>
-<a href="https://travis-ci.org/nbs-system/naxsi.svg">
-  <img alt="Travis Build Status"
-       src="https://travis-ci.org/nbs-system/naxsi.svg"/>
+      src="https://scan.coverity.com/projects/1883/badge.svg"/>
 </a>
 
-<a href="http://codecov.io/github/nbs-system/naxsi?branch=master"><img src="http://codecov.io/github/nbs-system/naxsi/coverage.svg?branch=master" alt="Coverage via codecov.io" /></a>
+<a href="https://travis-ci.org/nbs-system/naxsi">
+  <img alt="Travis Build Status"
+      src="https://travis-ci.org/nbs-system/naxsi.svg"/>
+</a>
+
+<a href="http://codecov.io/github/nbs-system/naxsi?branch=master">
+  <img alt="Coverage via codecov.io" 
+      src="http://codecov.io/github/nbs-system/naxsi/coverage.svg?branch=master"/>
+</a>
 
 
 ### We need your help

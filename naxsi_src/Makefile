@@ -6,6 +6,27 @@ CAK		:=
 COV 		:= 0
 #Allows to force for specific UT only
 #TEST 		:= "00*.t"
+
+NGINX_OPTIONS="--error-log-path=/tmp/naxsi_ut/error.log"
+NGINX_OPTIONS+="--conf-path=/tmp/naxsi_ut/nginx.conf"
+NGINX_OPTIONS+="--http-client-body-temp-path=/tmp/naxsi_ut/body/"
+NGINX_OPTIONS+="--http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/"
+NGINX_OPTIONS+="--http-log-path=/tmp/naxsi_ut/access.log"
+NGINX_OPTIONS+="--http-proxy-temp-path=/tmp/naxsi_ut/proxy/"
+NGINX_OPTIONS+="--lock-path=/tmpnginx.lock"
+NGINX_OPTIONS+="--pid-path=/tmp/naxsi_ut/nginx.pid"
+NGINX_OPTIONS+="--modules-path=/tmp/naxsi_ut/modules/"
+NGINX_OPTIONS+="--with-http_ssl_module"
+NGINX_OPTIONS+="--without-mail_pop3_module"
+NGINX_OPTIONS+="--without-mail_smtp_module"
+NGINX_OPTIONS+="--without-mail_imap_module"
+NGINX_OPTIONS+="--without-http_uwsgi_module"
+NGINX_OPTIONS+="--without-http_scgi_module"
+NGINX_OPTIONS+="--add-dynamic-module=$(MOD_PATH)"
+NGINX_OPTIONS+="--with-ipv6"
+NGINX_OPTIONS+="prefix=/tmp"
+NGINX_OPTIONS+="--with-debug"
+
 define NAXSI_CFG=
 master_process off;
 worker_processes  1;
@@ -44,6 +65,8 @@ http {
 endef
 export NAXSI_CFG
 
+all: re
+
 re: clean nginx_config nginx_build
 
 clean:
@@ -60,8 +83,7 @@ nginx_build:
 # RUN UNIT TESTS
 # - generate coverage report if option is on
 test:
-	if [ $(COV) -eq 1 ] ; then  \
-	lcov --directory /tmp/nginx --zerocounters ; fi
+	if [ $(COV) -eq 1 ] ; then lcov --directory /tmp/nginx --zerocounters ; fi
 
 	if [ ! $(TEST) ] ; then TEST="*.t" ; fi
 
@@ -83,27 +105,7 @@ nginx_config:
 	LD_OPT="" ; fi ; \
 	cd /tmp/nginx ; \
 	echo "CC_OPT: $$CC_OPT / LD_OPT: $$LD_OPT" ; \
-	./configure --with-cc-opt="$$CC_OPT" \
-	--with-ld-opt="$$LD_OPT" \
-	--conf-path=/tmp/naxsi_ut/nginx.conf \
-	--add-dynamic-module=$(MOD_PATH) \
-	--error-log-path=/tmp/naxsi_ut/error.log \
-	--http-client-body-temp-path=/tmp/naxsi_ut/body/ \
-	--http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/ \
-	--http-log-path=/tmp/naxsi_ut/access.log \
-	--http-proxy-temp-path=/tmp/naxsi_ut/proxy/ \
-	--lock-path=/tmpnginx.lock \
-	--pid-path=/tmp/naxsi_ut/nginx.pid \
-	--modules-path=/tmp/naxsi_ut/modules/ \
-	--with-http_ssl_module \
-	--without-mail_pop3_module \
-	--without-mail_smtp_module \
-	--without-mail_imap_module \
-	--without-http_uwsgi_module \
-	--without-http_scgi_module \
-	--with-ipv6  --prefix=/tmp \
-	--with-debug
-
+	./configure --with-cc-opt="$$CC_OPT" --with-ld-opt="$$LD_OPT" $(NGINX_OPTIONS)
 
 #Build for coverity and submit build !
 coverity: 
@@ -113,24 +115,7 @@ coverity:
 	wget -nc  https://scan.coverity.com/download/linux-64 --post-data "token=$$CAK&project=nbs-system%2Fnaxsi" -O /tmp/coverity.tgz ; \
 	mkdir /tmp/cov && cd /tmp/cov && cat ../coverity.tgz  | tar --strip-components=1 -xvzf - ; \
 	cd /tmp/nginx ; \
-	./configure --conf-path=/tmp/naxsi_ut/nginx.conf \
-	--add-dynamic-module=$(MOD_PATH) \
-	--error-log-path=/tmp/naxsi_ut/error.log \
-	--http-client-body-temp-path=/tmp/naxsi_ut/body/   \
-	--http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/  \
-	--http-log-path=/tmp/naxsi_ut/access.log \
-	--http-proxy-temp-path=/tmp/naxsi_ut/proxy/ \
-	--lock-path=/tmpnginx.lock  \
-	--pid-path=/tmp/naxsi_ut/nginx.pid \
-	--with-http_ssl_module \
-	--without-mail_pop3_module \
-	--without-mail_smtp_module \
-	--without-mail_imap_module \
-	--without-http_uwsgi_module \
-	--without-http_scgi_module \
-	--with-ipv6  --prefix=/tmp \
-	--modules-path=/tmp/naxsi_ut/modules/ \
-	--with-debug && \
+	./configure $(NGINX_OPTIONS) && \
 	/tmp/cov/bin/cov-build --dir cov-int make && \
 	tar cvzf coverity-res-naxsi.tgz cov-int/ ; \
 	curl --form token="$$CAK" \

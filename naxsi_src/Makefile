@@ -13,7 +13,7 @@ events {
  worker_connections  1024;
 }
 http {
- include /etc/nginx/naxsi_core.rules;
+ include /tmp/naxsi_ut/naxsi_core.rules;
  include       mime.types;
  default_type  application/octet-stream;
  sendfile        on;
@@ -53,6 +53,7 @@ deploy: deploy_config
 
 deploy_config:
 	@echo "$$NAXSI_CFG" > /tmp/naxsi_ut/nginx.conf
+	@cp ../naxsi_config/naxsi_core.rules /tmp/naxsi_ut/naxsi_core.rules
 
 nginx_build:
 	cd /tmp/nginx && make && make install

@@ -2,7 +2,7 @@ language: perl
 perl: 5.20-shrplib
 
 env:
-  - VER_NGINX=1.9.1
+  - VER_NGINX=1.9.11
 
 before_install:
   - sudo apt-get update -qq

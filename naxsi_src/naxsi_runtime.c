@@ -1475,10 +1475,6 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	 (zone == BODY && r[i].br->body && !r[i].br->file_ext) ||
 	 (zone == FILE_EXT && r[i].br->file_ext) ) {
 
-      /* #ifdef basestr_ruleset_debug */
-      /* 	ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0,  */
-      /* 		      "XX-check [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match);  */
-      /* #endif */
 
 #ifdef basestr_ruleset_debug
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 

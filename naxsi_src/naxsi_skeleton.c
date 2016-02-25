@@ -425,6 +425,9 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   return (NGX_OK);
 }
 
+
+#define readconf_debug
+
 /*
 ** my hugly configuration parsing function.
 ** should be rewritten, cause code is hugly and not bof proof at all
@@ -463,6 +466,9 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     *bar = alcf;
     alcf->pushed = 1;
   }
+  /*
+  ** if it's a basic rule
+  */
   if (!ngx_strcmp(value[0].data, TOP_BASIC_RULE_T) ||
       !ngx_strcmp(value[0].data, TOP_BASIC_RULE_N)) {
 #ifdef readconf_debug
@@ -498,7 +504,7 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       }
       memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
     }
-    /* else push in appropriate ruleset */
+    /* else push in appropriate ruleset : it's a normal rule */
     else {
       if (rule.br->headers) {
 #ifdef readconf_debug
@@ -529,6 +535,22 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
 	}
 	rule_r = ngx_array_push(alcf->body_rules);
+	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
+	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
+      }
+      /* push in raw body match rules (POST/PUT) */
+      if (rule.br->raw_body) {
+#ifdef readconf_debug
+	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
+			   "pushing rule %d in (read conf) raw_body rules", rule.rule_id);  
+#endif
+	if (alcf->raw_body_rules == NULL) {
+	  alcf->raw_body_rules = ngx_array_create(cf->pool, 2,
+						  sizeof(ngx_http_rule_t));
+	  if (alcf->raw_body_rules == NULL) 
+	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
+	}
+	rule_r = ngx_array_push(alcf->raw_body_rules);
 	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
       }
@@ -649,10 +671,11 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       ngx_strcmp(value[0].data, TOP_CHECK_RULE_N))
     return (NGX_CONF_ERROR);
   
-#ifdef readconf_debug
-  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-		     "pushing rule %d in check rules", rule.rule_id);  
-#endif
+/* #ifdef readconf_debug */
+/*   ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,  */
+/* 		     "pushing rule %d in check rules", rule.rule_id);   */
+/* #endif */
+
   i = 0;
   if (!alcf->check_rules)
     alcf->check_rules = ngx_array_create(cf->pool, 2, 
@@ -734,6 +757,9 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 
 
 
+/*
+** URL denied
+*/
 static char * 
 ngx_http_naxsi_ud_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 			   void *conf)
@@ -775,6 +801,9 @@ ngx_http_naxsi_ud_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 }
 
 
+/*
+** handle flags that can be set/modified at runtime
+*/
 static char *
 ngx_http_naxsi_flags_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 			      void *conf)
@@ -839,7 +868,9 @@ ngx_http_naxsi_flags_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	    return (NGX_CONF_ERROR);
 }
 
-//#define main_conf_debug
+
+#define main_conf_debug
+
 static char *
 ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd, 
 			      void *conf)
@@ -902,6 +933,22 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
     }
     rule_r = ngx_array_push(alcf->body_rules);
+    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
+    memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
+  }
+  /* push in raw body match rules (POST/PUT) xx*/
+  if (rule.br->raw_body) {
+#ifdef main_conf_debug
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
+		       "pushing rule %d in raw (main) body rules", rule.rule_id);  
+#endif
+    if (alcf->raw_body_rules == NULL) {
+      alcf->raw_body_rules = ngx_array_create(cf->pool, 2,
+					  sizeof(ngx_http_rule_t));
+      if (alcf->raw_body_rules == NULL) 
+	return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
+    }
+    rule_r = ngx_array_push(alcf->raw_body_rules);
     if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
   }

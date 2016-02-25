@@ -57,6 +57,23 @@ extern ngx_module_t ngx_http_naxsi_module;
 
 
 /*
+** as the #ifdef #endif for debug are getting really messy ...
+*/
+
+#define _naxsi_rawbody 1
+#define _naxsi_wlrx_debug 0
+
+
+#ifndef __NAXSI_DEBUG
+#define __NAXSI_DEBUG
+#define NX_DEBUG(FEATURE, DEF, LOG, ST, ...) do { if (FEATURE)  ngx_log_debug(DEF, LOG, ST, __VA_ARGS__); } while (0)
+#endif
+
+
+
+
+
+/*
 ** Here is globally how the structures are organized :
 **
 ** [[ngx_http_dummy_main_conf_t]] is the main structure for the module.
@@ -85,6 +102,7 @@ enum DUMMY_MATCH_ZONE {
   URL,
   ARGS,
   BODY,
+  RAW_BODY,
   FILE_EXT,
   UNKNOWN
 };
@@ -187,6 +205,7 @@ typedef struct
   ngx_int_t			zone;
   /* match in full body (POST DATA) */
   ngx_flag_t		body:1;
+  ngx_flag_t		raw_body:1;
   ngx_flag_t		body_var:1;
   /* match in all headers */
   ngx_flag_t		headers:1;
@@ -287,6 +306,8 @@ typedef struct
   ngx_array_t	*body_rules;
   ngx_array_t	*header_rules;
   ngx_array_t	*generic_rules; 
+  ngx_array_t	*raw_body_rules;
+  
   ngx_array_t	*locations; /*ngx_http_dummy_loc_conf_t*/
   ngx_log_t	*log;
   
@@ -296,8 +317,12 @@ typedef struct
 /* TOP level configuration structure */
 typedef struct
 {
+  /*
+  ** basicrule / mainrules, sorted by target zone
+  */
   ngx_array_t	*get_rules;
   ngx_array_t	*body_rules;
+  ngx_array_t	*raw_body_rules;
   ngx_array_t	*header_rules;
   ngx_array_t	*generic_rules;
   ngx_array_t	*check_rules;

@@ -31,6 +31,7 @@
 
 #include "naxsi.h"
 
+#define rawbody_debug
 
 void
 ngx_http_dummy_rawbody_parse(ngx_http_request_ctx_t *ctx, 
@@ -43,11 +44,11 @@ ngx_http_dummy_rawbody_parse(ngx_http_request_ctx_t *ctx,
   ngx_http_dummy_main_conf_t		*main_cf;
   ngx_str_t				empty = ngx_string("");
   
-  
-  NX_DEBUG(_naxsi_rawbody, NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "XX-RAWBODY CALLED");
+#ifdef rawbody_debug
+  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "XX-RAWBODY CALLED");
+#endif
   if (len <= 0 || !src)
     return;
-  NX_DEBUG(_naxsi_rawbody, NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "XX-RAWBODY PARSE");
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
 

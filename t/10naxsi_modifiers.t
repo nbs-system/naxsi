@@ -19,7 +19,7 @@ __DATA__
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 if ($remote_addr = "127.0.0.1") {
  set $naxsi_flag_learning 1;
@@ -45,7 +45,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_learning 1;
 location / {
@@ -70,7 +70,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 if ($remote_addr = "127.0.0.42") {
  set $naxsi_flag_learning 1;
@@ -97,7 +97,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
  # this will not work, as naxsi
@@ -125,7 +125,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 if ($remote_addr = "127.0.0.1") {
  set $naxsi_flag_learning 0;
@@ -152,7 +152,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 if ($remote_addr = "127.0.0.42") {
  set $naxsi_flag_learning 0;
@@ -179,7 +179,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 SecRulesEnabled;
@@ -203,7 +203,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_enable 0;
 location / {
@@ -227,7 +227,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_enable 1;
 location / {
@@ -252,7 +252,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_enable 1;
 location / {
@@ -278,7 +278,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_learning 1;
 set $naxsi_flag_enable 1;
@@ -304,7 +304,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 if ($remote_addr = "127.0.0.1") {
 set $naxsi_flag_enable 1;
@@ -332,7 +332,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 if ($remote_addr = "127.0.0.42") {
 set $naxsi_flag_enable 1;
@@ -360,7 +360,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_enable 1;
 if ($remote_addr = "127.0.0.1") {
@@ -388,7 +388,7 @@ GET /?a=<>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_enable 1;
 if ($remote_addr = "127.0.0.42") {

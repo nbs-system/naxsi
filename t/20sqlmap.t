@@ -16,7 +16,7 @@ __DATA__
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -38,7 +38,7 @@ GET /?I/**/N/**/SERT
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -60,7 +60,7 @@ GET /?SELECT+id+FROM+users
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -82,7 +82,7 @@ GET /?1++++UNION+++++SELECT+++foobar
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -104,7 +104,7 @@ GET /?MScgQU5EIFNMRUVQKDUpIw==
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -126,7 +126,7 @@ GET /?1+AND+A+NOT+BETWEEN+0+AND+B--
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -148,7 +148,7 @@ GET /?1%bf%27+AND+1=1--+
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -170,7 +170,7 @@ GET /?1+AND+1=1%00
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -192,7 +192,7 @@ GET /?-1+UNION+SELECT
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -214,7 +214,7 @@ GET /?1+AND+GREATEST(A,B+1)=A
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -236,7 +236,7 @@ GET /?%2553%2545%254C%2545%2543%2554%2520%2546%2549%2545%254C%2544%2520%2546%255
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -258,7 +258,7 @@ GET /?SELECT/**/id/**/FROM/**/users
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -280,7 +280,7 @@ GET /?1+AND+%00%271%00%27=%00%271
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -302,7 +302,7 @@ GET /?SELECT%09id+FROM+users+where+id+LIKE+1
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -324,7 +324,7 @@ GET /?/*!0UNION/*!0ALL/*!0SELECT/*!0CONCAT(/*!0CHAR(58,107,112,113,58),/*!0IFNUL
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -346,7 +346,7 @@ GET /?1--nVNaVoPYeva%0AAND--ngNvzqu%0A9227=9227
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -368,7 +368,7 @@ GET /?SELECT%0Did%0DFROM%0Ausers
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -390,7 +390,7 @@ GET /?INseRt+UnIon+plz
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -412,7 +412,7 @@ GET /?1/*!UNION*//*!ALL*//*!SELECT*//*!NULL*/,/*!NULL*/,/*!CONCAT*/(/*!CHAR*/(58
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -434,7 +434,7 @@ GET /?%S%E%L%E%C%T+%F%I%E%L%D+%F%R%O%M+%T%A%B%L%E
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -456,7 +456,7 @@ GET /?IF(ISNULL(1),2,1)
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -478,7 +478,7 @@ GET /?SELECT+*+FROM+users+WHERE+id+LIKE+1
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -500,7 +500,7 @@ GET /?SELECT%0Bid%0DFROM%0Cusers
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -522,7 +522,7 @@ GET /?SELECT%0Eid%0DFROM%07users
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -544,7 +544,7 @@ GET /?1%23nVNaVoPYeva%0AAND%23ngNvzqu%0A9227=9227
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -566,7 +566,7 @@ GET /?1+/*!30874AND+2>1*/--
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -588,7 +588,7 @@ GET /?1/*!UNION*//*!ALL*//*!SELECT*//*!NULL*/,/*!NULL*/,+CONCAT(CHAR(58,104,116,
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -610,7 +610,7 @@ GET /?1+AND+%EF%BC%871%EF%BC%87=%EF%BC%871
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -632,7 +632,7 @@ GET /?1%23ngNvzqu%0AAND%23nVNaVoPYeva%0A%23lujYFWfv%0A9227=9227
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -654,7 +654,7 @@ GET /?0having=0having
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -676,7 +676,7 @@ GET /?1+AND+9227=9227--+sp_password
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -698,7 +698,7 @@ GET /?1+UNIOUNIONN+SELESELECTCT+2--
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -720,7 +720,7 @@ GET /?%53%45%4C%45%43%54%20%46%49%45%4C%44%20%46%52%4F%4D%20%54%41%42%4C%45
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -742,7 +742,7 @@ GET /?1+/*!00000AND+2>1*/--
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -764,7 +764,7 @@ GET /?%u0053%u0045%u004C%u0045%u0043%u0054%u0020%u0046%u0049%u0045%u004C%u0044%u
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -786,7 +786,7 @@ GET /?1--%0AAND--%0A9227=9227
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;

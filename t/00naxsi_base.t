@@ -22,7 +22,7 @@ __DATA__
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 SecRulesEnabled;
@@ -45,7 +45,7 @@ GET /?a=buibui
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -68,7 +68,7 @@ GET /?a="><ScRiPt>alert(1)</scRiPt>
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -91,7 +91,7 @@ GET /?a=http://evil.com/eva.txt
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -114,7 +114,7 @@ GET /?a=../../../../../bar.txt
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -137,7 +137,7 @@ GET /?a=1'+Or+'1'='1
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -160,7 +160,7 @@ GET /?a=1+UnIoN+SeLeCt+1
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -183,7 +183,7 @@ GET /?a=[]();--
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -211,7 +211,7 @@ foo1=bar1&foo2=bar2"
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -239,7 +239,7 @@ foo1=' OR '1'='1"
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -267,7 +267,7 @@ foo1='><script>alert(1)</script>"
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:ARGS" "s:$SQL:42" id:1999;
 --- config
 location / {
@@ -291,7 +291,7 @@ GET /?a=foobar
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:URL" "s:$SQL:42" id:1999;
 --- config
 location / {
@@ -315,7 +315,7 @@ GET /foobar?aa
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule "str:foobar" "msg:foobar test pattern" "mz:BODY" "s:$SQL:42" id:1999;
 --- config
 location / {
@@ -346,7 +346,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule negative "rx:application/x-www-form-urlencoded|multipart/form-data" "msg:foobar test pattern" "mz:$HEADERS_VAR:Content-type" "s:$SQL:42" id:1999;
 --- config
 location / {
@@ -379,7 +379,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule negative "rx:application/x-www-form-urlencoded|multipart/form-data" "msg:foobar test pattern" "mz:$HEADERS_VAR:Content-type" "s:$SQL:42" id:1999;
 --- config
 location / {
@@ -412,7 +412,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule negative "rx:application/x-www-form-urlencoded|multipart/form-data" "msg:foobar test pattern" "mz:$HEADERS_VAR:Content-type" "s:$SQL:42" id:1999;
 --- config
 location / {
@@ -445,7 +445,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule negative "rx:application/x-www-form-urlencoded|multipart/form-data" "msg:foobar test pattern" "mz:$HEADERS_VAR:Content-type" "s:$SQL:42" id:1999;
 --- config
 location / {
@@ -472,7 +472,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule negative "rx:application/x-www-form-urlencoded|multipart/form-data" "msg:foobar test pattern" "mz:$HEADERS_VAR:Content-type" "s:$SQL:42" id:1999;
 --- config
 location / {
@@ -504,7 +504,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule "str:yesone" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:21" id:1999;
 MainRule "str:yestwo" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:21" id:1998;
 --- config
@@ -533,7 +533,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule "str:yesone" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:21" id:2999;
 MainRule "str:yestwo" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:21" id:2998;
 --- config
@@ -562,7 +562,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -593,7 +593,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -625,7 +625,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -656,7 +656,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -689,7 +689,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -721,7 +721,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -752,7 +752,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -783,7 +783,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -814,7 +814,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -842,7 +842,7 @@ use URI::Escape;
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 #LearningMode;
@@ -873,7 +873,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule "str:yesone" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:42" id:1999;
 --- config
 location / {
@@ -901,7 +901,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule "str:yesone" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:42" id:1999;
 --- config
 location / {
@@ -929,7 +929,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule "str:yesone" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:42" id:1999;
 --- config
 location / {
@@ -957,7 +957,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule "str:yesone" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:42" id:1999;
 --- config
 location / {
@@ -985,7 +985,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule "str:yesone" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:42" id:1999;
 --- config
 location / {
@@ -1013,7 +1013,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule "str:yesone" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:42" id:1999;
 --- config
 location / {
@@ -1041,7 +1041,7 @@ eh yo
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 #MainRule "str:yesone" "msg:foobar test pattern" "mz:ARGS" "s:$TESTSCORE:42" id:1999;
 --- config
 location / {

@@ -22,7 +22,7 @@ __DATA__
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 SecRulesEnabled;
@@ -46,7 +46,7 @@ GET /RJyIdIFfpCvCmE3FCglyolhQpjAFGPqj/GHMjmX551MaZ703Zgik2hfRuJABMShON/Z5wR2X5bF
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 SecRulesEnabled;
@@ -70,7 +70,7 @@ GET /x?RJyIdIFfpCvCmE3FCglyolhQpjAFGPqj/GHMjmX551MaZ703Zgik2hfRuJABMShON/Z5wR2X5
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 SecRulesEnabled;
@@ -94,7 +94,7 @@ GET /x?RJyIdIFfpCvCmE3FCglyolhQpjAFGPqj/GHMjmX551MaZ703Zgik2hfRuJABMShON/Z5wR2X5
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 SecRulesEnabled;
@@ -119,7 +119,7 @@ GET /x?lol=RJyIdIFfpCvCmE3FCglyolhQpjAFGPqj/GHMjmX551MaZ703Zgik2hfRuJABMShON/Z5w
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 SecRulesEnabled;
@@ -147,7 +147,7 @@ GET /x?lol=RJyIdIFfpCvCmE3FCglyolhQpjAFGPqj/GHMjmX551MaZ703Zgik2hfRuJABMShON/Z5w
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          #LearningMode;
@@ -176,7 +176,7 @@ foAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          #LearningMode;
@@ -205,7 +205,7 @@ foAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          #LearningMode;
@@ -234,7 +234,7 @@ x=foAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          #LearningMode;

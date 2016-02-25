@@ -22,7 +22,7 @@ __DATA__
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -46,7 +46,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -71,7 +71,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_libinjection_xss 0;
 location / {
@@ -97,7 +97,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_libinjection_xss 1;
 location / {
@@ -121,7 +121,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -145,7 +145,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
          SecRulesEnabled;
@@ -170,7 +170,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_libinjection_sql 0;
 location / {
@@ -194,7 +194,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_libinjection_sql 1;
 location / {
@@ -217,7 +217,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_libinjection_sql 1;
 location / {
@@ -240,7 +240,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_libinjection_xss 1;
 location / {
@@ -264,7 +264,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_libinjection_xss 1;
 location / {
@@ -289,7 +289,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_libinjection_sql 1;
 location / {
@@ -314,7 +314,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_libinjection_sql 1;
 location / {
@@ -339,7 +339,7 @@ location /RequestDenied {
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 set $naxsi_flag_libinjection_xss 1;
 location / {

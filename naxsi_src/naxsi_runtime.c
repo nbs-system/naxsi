@@ -155,7 +155,11 @@ void			ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
 void			naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *req, 
 					    ngx_http_rule_t *rule, enum DUMMY_MATCH_ZONE zone, 
 					    ngx_int_t target_name);
-
+void
+ngx_http_dummy_rawbody_parse(ngx_http_request_ctx_t *ctx, 
+			     ngx_http_request_t	 *r,
+			     u_char			*src,
+			     u_int			 len);
 
 
 /*
@@ -1373,6 +1377,8 @@ void ngx_http_libinjection(ngx_pool_t *pool,
   }
 }
 
+#define basestr_ruleset_debug 1
+
 int 
 ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 			   ngx_str_t	*name,
@@ -1391,7 +1397,8 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		"XX-check check [%V]=[%V] in zone %s", name, value,
 		zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : zone == URL ? "URL" :
-		zone == ARGS ? "ARGS" : zone == FILE_EXT ? "FILE_EXT" : "UNKNOWN"); 
+		zone == ARGS ? "ARGS" : zone == FILE_EXT ? "FILE_EXT" : 
+		zone == RAW_BODY ? "RAW_BODY" : "UNKNOWN"); 
 #endif
   
   if (!rules) {
@@ -1402,7 +1409,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
   r = rules->elts;
 #ifdef basestr_ruleset_debug 
   ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		"XX-checking rules ..."); 
+		"XX-checking %d rules ...", rules->nelts); 
 #endif
   
   
@@ -1464,6 +1471,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
     if ( (zone == HEADERS && r[i].br->headers) ||
 	 (zone == URL && r[i].br->url) ||
 	 (zone == ARGS && r[i].br->args) ||
+	 (zone == RAW_BODY && r[i].br->raw_body) ||
 	 (zone == BODY && r[i].br->body && !r[i].br->file_ext) ||
 	 (zone == FILE_EXT && r[i].br->file_ext) ) {
 
@@ -1903,7 +1911,7 @@ ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
   }
 }
 
-//#define dummy_body_parse_debug
+#define dummy_body_parse_debug
 
 void	
 ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx, 
@@ -2029,6 +2037,15 @@ ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		  "[POST] Unknown content-type");
     ngx_http_apply_rulematch_v_n(&nx_int__uncommon_content_type, ctx, r, NULL, NULL, BODY, 1, 0);
+    /*
+    ** Only attempt to process "raw" body if id:nx_int__uncommon_content_type was
+    ** whitelisted. Else, it should be blocking and stop processing here.
+    */
+    if ((!ctx->block || ctx->learning) && !ctx->drop ) {
+      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
+		    "After uncommon content-type");
+      ngx_http_dummy_rawbody_parse(ctx, r, full_body, full_body_len);
+    }
   }
   
 }

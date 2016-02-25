@@ -1,6 +1,10 @@
 language: perl
 perl: 5.20-shrplib
 
+cache:
+  - apt
+  - pip
+
 env:
   - VER_NGINX=1.9.11
 

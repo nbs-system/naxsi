@@ -60,14 +60,14 @@ extern ngx_module_t ngx_http_naxsi_module;
 ** as the #ifdef #endif for debug are getting really messy ...
 */
 
-#define _naxsi_rawbody 1
-#define _naxsi_wlrx_debug 0
+/* #define _naxsi_rawbody 1 */
+/* #define _naxsi_wlrx_debug 0 */
 
 
-#ifndef __NAXSI_DEBUG
-#define __NAXSI_DEBUG
-#define NX_DEBUG(FEATURE, DEF, LOG, ST, ...) do { if (FEATURE)  ngx_log_debug(DEF, LOG, ST, __VA_ARGS__); } while (0)
-#endif
+/* #ifndef __NAXSI_DEBUG */
+/* #define __NAXSI_DEBUG */
+/* #define NX_DEBUG(FEATURE, DEF, LOG, ST, ...) do { if (FEATURE)  ngx_log_debug(DEF, LOG, ST, __VA_ARGS__); } while (0) */
+/* #endif */
 
 
 

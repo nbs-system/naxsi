@@ -426,7 +426,6 @@ ngx_http_dummy_init(ngx_conf_t *cf)
 }
 
 
-#define readconf_debug
 
 /*
 ** my hugly configuration parsing function.
@@ -451,8 +450,8 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 #ifdef readconf_debug
   if (cf) {
     value = cf->args->elts;
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "TOP READ CONF %V %V", 
-		       &(value[0]), &(value[1]));  
+    NX_LOG_DEBUG(readconf_debug, NGX_LOG_EMERG, cf, 0, "TOP READ CONF %V %V", 
+		 &(value[0]), &(value[1]));  
   }
 #endif
   if (!alcf || !cf)
@@ -471,10 +470,6 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   */
   if (!ngx_strcmp(value[0].data, TOP_BASIC_RULE_T) ||
       !ngx_strcmp(value[0].data, TOP_BASIC_RULE_N)) {
-#ifdef readconf_debug
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "XX-TOP READ CONF %s", 
-		       value[0].data);  
-#endif
     memset(&rule, 0, sizeof(ngx_http_rule_t));
     if (ngx_http_dummy_cfg_parse_one_rule(cf, value, &rule, 
 					  cf->args->nelts) != NGX_CONF_OK)
@@ -486,11 +481,6 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       }
     /* push in whitelist rules, as it have a whitelist ID array */
     if (rule.wlid_array && rule.wlid_array->nelts > 0) {
-#ifdef readconf_debug
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-			 "pushing rule %d in whitelist rules", 
-			 rule.rule_id);  
-#endif
       if (alcf->whitelist_rules == NULL) {
 	alcf->whitelist_rules = ngx_array_create(cf->pool, 2,
 						 sizeof(ngx_http_rule_t));
@@ -507,11 +497,6 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     /* else push in appropriate ruleset : it's a normal rule */
     else {
       if (rule.br->headers) {
-#ifdef readconf_debug
-	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-			   "pushing rule %d in header rules", 
-			   rule.rule_id);  
-#endif
 	if (alcf->header_rules == NULL)  {
 	  alcf->header_rules = ngx_array_create(cf->pool, 2,
 						sizeof(ngx_http_rule_t));
@@ -524,10 +509,6 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       }
       /* push in body match rules (POST/PUT) */
       if (rule.br->body || rule.br->body_var) {
-#ifdef readconf_debug
-	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-			   "pushing rule %d in body rules", rule.rule_id);  
-#endif
 	if (alcf->body_rules == NULL) {
 	  alcf->body_rules = ngx_array_create(cf->pool, 2,
 					      sizeof(ngx_http_rule_t));
@@ -540,10 +521,8 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       }
       /* push in raw body match rules (POST/PUT) */
       if (rule.br->raw_body) {
-#ifdef readconf_debug
-	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-			   "pushing rule %d in (read conf) raw_body rules", rule.rule_id);  
-#endif
+	NX_LOG_DEBUG(readconf_debug, NGX_LOG_EMERG, cf, 0,
+		 "pushing rule %d in (read conf) raw_body rules", rule.rule_id);
 	if (alcf->raw_body_rules == NULL) {
 	  alcf->raw_body_rules = ngx_array_create(cf->pool, 2,
 						  sizeof(ngx_http_rule_t));
@@ -556,11 +535,9 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       }
       /* push in generic rules, as it's matching the URI */
       if (rule.br->url) {
-#ifdef readconf_debug
-	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-			   "pushing rule %d in generic rules", 
-			   rule.rule_id);  
-#endif
+	NX_LOG_DEBUG(readconf_debug, NGX_LOG_EMERG, cf, 0,
+		     "pushing rule %d in generic rules",
+		     rule.rule_id);
 	if (alcf->generic_rules == NULL) {
 	  alcf->generic_rules = ngx_array_create(cf->pool, 2,
 						 sizeof(ngx_http_rule_t));
@@ -573,10 +550,8 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       }
       /* push in GET arg rules, but we should push in POST rules too  */
       if (rule.br->args_var || rule.br->args) {
-#ifdef readconf_debug
-	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-			   "pushing rule %d in GET rules", rule.rule_id);  
-#endif
+	NX_LOG_DEBUG(readconf_debug, NGX_LOG_EMERG, cf, 0,
+		     "pushing rule %d in GET rules", rule.rule_id);
 	if (alcf->get_rules == NULL) {
 	  alcf->get_rules = ngx_array_create(cf->pool, 2,
 					     sizeof(ngx_http_rule_t));
@@ -590,11 +565,9 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       /* push in custom locations. It's a rule matching a VAR_NAME or an EXACT_URI :
 	 - GET_VAR, POST_VAR, URI */
       if (rule.br->custom_location) {
-#ifdef readconf_debug
-	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-			   "pushing rule %d in custom_location rules", 
-			   rule.rule_id);  
-#endif
+	NX_LOG_DEBUG(readconf_debug, NGX_LOG_EMERG, cf, 0, 
+		     "pushing rule %d in custom_location rules", 
+		     rule.rule_id);  
 	location = rule.br->custom_locations->elts;
 	for (i = 0; i < rule.br->custom_locations->nelts; i++) {
 	  if (location[i].args_var) {
@@ -687,11 +660,6 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   memset(rule_c, 0, sizeof(ngx_http_check_rule_t));
   /* process the first word : score rule */
   if (value[1].data[i] == '$') {
-#ifdef MDBG
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "XX-special score rule !");
-#endif
-    
-    
     var_end = (u_char *) ngx_strchr((value[1].data)+i, ' ');
     if (!var_end) { /* LCOV_EXCL_START */
       ngx_http_dummy_line_conf_error(cf, value);
@@ -730,11 +698,9 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   while (value[1].data[i] && !(value[1].data[i] >= '0' && 
 			       value[1].data[i] <= '9') && (value[1].data[i] != '-'))
     i++;
-#ifdef readconf_debug
-  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-		     "XX-special score in checkrule:%s from (%d)", 
-		     value[1].data, atoi((const char *)value[1].data+i));
-#endif
+  NX_LOG_DEBUG(readconf_debug,  NGX_LOG_EMERG, cf, 0,
+	       "XX-special score in checkrule:%s from (%d)",
+	       value[1].data, atoi((const char *)value[1].data+i));
   // get the score
   rule_c->sc_score = atoi((const char *)(value[1].data+i));
   /* process the second word : Action rule */
@@ -847,10 +813,8 @@ ngx_http_naxsi_flags_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       else
 	if (!ngx_strcmp(value[0].data, TOP_LIBINJECTION_SQL_T) ||
 	    !ngx_strcmp(value[0].data, TOP_LIBINJECTION_SQL_N)) {
-#ifdef loc_conf_debug
-	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-			     "LibInjectionSql enabled");
-#endif	  
+	  NX_LOG_DEBUG(loc_conf_debug, NGX_LOG_EMERG, cf, 0,
+		       "LibInjectionSql enabled");
 	  alcf->libinjection_sql_enabled = 1;
 	  return (NGX_CONF_OK);
 	}
@@ -858,10 +822,8 @@ ngx_http_naxsi_flags_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	  if (!ngx_strcmp(value[0].data, TOP_LIBINJECTION_XSS_T) ||
 	      !ngx_strcmp(value[0].data, TOP_LIBINJECTION_XSS_N)) {
 	    alcf->libinjection_xss_enabled = 1;
-#ifdef loc_conf_debug
-	    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-			       "LibInjectionXss enabled");
-#endif
+	    NX_LOG_DEBUG(loc_conf_debug, NGX_LOG_EMERG, cf, 0,
+	    	     "LibInjectionXss enabled");
 	    return (NGX_CONF_OK);
 	  }
 	  else	
@@ -869,7 +831,6 @@ ngx_http_naxsi_flags_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 }
 
 
-#define main_conf_debug
 
 static char *
 ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd, 
@@ -886,10 +847,8 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   
   value = cf->args->elts;
   /* parse the line, fill rule struct  */
-#ifdef main_conf_debug
-  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-		     "XX-TOP READ CONF %s", value[0].data);
-#endif
+  NX_LOG_DEBUG(main_conf_debug,  NGX_LOG_EMERG, cf, 0, 
+	   "XX-TOP READ CONF %s", value[0].data);
   if (ngx_strcmp(value[0].data, TOP_MAIN_BASIC_RULE_T) &&
       ngx_strcmp(value[0].data, TOP_MAIN_BASIC_RULE_N)) {
     ngx_http_dummy_line_conf_error(cf, value);
@@ -906,10 +865,8 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   }
   
   if (rule.br->headers) {
-#ifdef main_conf_debug
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-		       "pushing rule %d in header rules", rule.rule_id);  
-#endif
+    NX_LOG_DEBUG(main_conf_debug, NGX_LOG_EMERG, cf, 0, 
+	     "pushing rule %d in header rules", rule.rule_id);  
     if (alcf->header_rules == NULL) {
       alcf->header_rules = ngx_array_create(cf->pool, 2,
 					    sizeof(ngx_http_rule_t));
@@ -922,10 +879,8 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   }
   /* push in body match rules (POST/PUT) */
   if (rule.br->body || rule.br->body_var) {
-#ifdef main_conf_debug
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-		       "pushing rule %d in body rules", rule.rule_id);  
-#endif
+    NX_LOG_DEBUG(main_conf_debug, NGX_LOG_EMERG, cf, 0, 
+	     "pushing rule %d in body rules", rule.rule_id);  
     if (alcf->body_rules == NULL) {
       alcf->body_rules = ngx_array_create(cf->pool, 2,
 					  sizeof(ngx_http_rule_t));
@@ -938,10 +893,8 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   }
   /* push in raw body match rules (POST/PUT) xx*/
   if (rule.br->raw_body) {
-#ifdef main_conf_debug
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-		       "pushing rule %d in raw (main) body rules", rule.rule_id);  
-#endif
+    NX_LOG_DEBUG(main_conf_debug, NGX_LOG_EMERG, cf, 0, 
+	     "pushing rule %d in raw (main) body rules", rule.rule_id);  
     if (alcf->raw_body_rules == NULL) {
       alcf->raw_body_rules = ngx_array_create(cf->pool, 2,
 					  sizeof(ngx_http_rule_t));
@@ -954,10 +907,8 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   }
   /* push in generic rules, as it's matching the URI */
   if (rule.br->url)	{
-#ifdef main_conf_debug
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-		       "pushing rule %d in generic rules", rule.rule_id);  
-#endif
+    NX_LOG_DEBUG(main_conf_debug,    NGX_LOG_EMERG, cf, 0,
+	     "pushing rule %d in generic rules", rule.rule_id);  
     if (alcf->generic_rules == NULL) {
       alcf->generic_rules = ngx_array_create(cf->pool, 2,
 					     sizeof(ngx_http_rule_t));
@@ -970,10 +921,8 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   }
   /* push in GET arg rules, but we should push in POST rules too  */
   if (rule.br->args_var || rule.br->args) {
-#ifdef main_conf_debug
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-		       "pushing rule %d in GET rules", rule.rule_id);  
-#endif
+    NX_LOG_DEBUG(main_conf_debug,    NGX_LOG_EMERG, cf, 0, 
+	     "pushing rule %d in GET rules", rule.rule_id);  
     if (alcf->get_rules == NULL) {
       alcf->get_rules = ngx_array_create(cf->pool, 2,
 					 sizeof(ngx_http_rule_t));
@@ -987,11 +936,9 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   /* push in custom locations. It's a rule matching a VAR_NAME or an EXACT_URI :
      - GET_VAR, POST_VAR, URI */
   if (rule.br->custom_location) {
-#ifdef main_conf_debug
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-		       "pushing rule %d in custom_location rules", 
-		       rule.rule_id);  
-#endif
+    NX_LOG_DEBUG(main_conf_debug,    NGX_LOG_EMERG, cf, 0, 
+	     "pushing rule %d in custom_location rules", 
+	     rule.rule_id);  
     location = rule.br->custom_locations->elts;
     for (i = 0; i < rule.br->custom_locations->nelts; i++) {
       if (location[i].args_var)	{
@@ -1043,8 +990,6 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 ** - check our context struct (with scores & stuff) against custom check rules
 ** - check if the request should be denied
 */
-//#define mechanics_debug 1
-//#define naxsi_modifiers_debug 1
 static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 {
   ngx_http_request_ctx_t	*ctx;
@@ -1068,11 +1013,9 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   
   if (ctx && ctx->over)
     return (NGX_DECLINED);
-  if (ctx && ctx->wait_for_body) {
-#ifdef mechanics_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		  "naxsi:NGX_AGAIN");
-#endif
+  if (ctx && ctx->wait_for_body) {   
+    NX_DEBUG(mechanics_debug, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+	     "naxsi:NGX_AGAIN");
     return (NGX_DONE);
   }
   if (!cf) 
@@ -1099,31 +1042,24 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       return (NGX_DECLINED);
   }
   /* don't process internal requests. */
-  if (r->internal) {
-#ifdef mechanics_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		  "XX-DON'T PROCESS (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
-		  r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
-		  r->internal);
-#endif
+  if (r->internal) {   
+    NX_DEBUG(mechanics_debug, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+	     "XX-DON'T PROCESS (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
+	     r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
+	     r->internal);
     return (NGX_DECLINED);
-  }
-#ifdef mechanics_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-  		"XX-processing (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
-		r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
-		r->internal);
-#endif
+  } 
+  NX_DEBUG(mechanics_debug, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+	   "XX-processing (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
+	   r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
+	   r->internal);
   if (!ctx) {
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_request_ctx_t));
     if (ctx == NULL)
       return NGX_ERROR;
     ngx_http_set_ctx(r, ctx, ngx_http_naxsi_module);
-    
-#ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		  "XX-dummy : orig learning : %d", cf->learning ? 1 : 0);
-#endif
+    NX_DEBUG(naxsi_modifier_debug, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+	     "XX-dummy : orig learning : %d", cf->learning ? 1 : 0);
     /* it seems that nginx will - in some cases - 
      have a variable with empty content but with lookup->not_found set to 0,
     so check len as well */
@@ -1132,36 +1068,35 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     lookup = ngx_http_get_variable(r, &learning_flag, cf->flag_learning_h);
     if (lookup && !lookup->not_found && lookup->len > 0) {
       
-      ctx->learning = lookup->data[0] - '0';
-#ifdef naxsi_modifiers_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		    "XX-dummy : override learning : %d (raw=%d)", 
-		    ctx->learning ? 1 : 0, lookup->len);
-#endif
+      ctx->learning = lookup->data[0] - '0';     
+      NX_DEBUG(naxsi_modifier_debug, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+	       "XX-dummy : override learning : %d (raw=%d)", 
+	       ctx->learning ? 1 : 0, lookup->len);
     }
-#ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+
+    NX_DEBUG( naxsi_modifier_debug, 
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] learning : %d", ctx->learning ? 1 : 0);
-#endif
+
 
     ctx->enabled = cf->enabled;
-#ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    NX_DEBUG( naxsi_modifier_debug, 
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig enabled : %d", ctx->enabled ? 1 : 0);
-#endif
+
     lookup = ngx_http_get_variable(r, &enable_flag, cf->flag_enable_h);
     if (lookup && !lookup->not_found && lookup->len > 0) {
       ctx->enabled = lookup->data[0] - '0';
-#ifdef naxsi_modifiers_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      NX_DEBUG( naxsi_modifier_debug, 
+      NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override enable : %d", ctx->enabled ? 1 : 0);
-#endif
+
 
     }
-#ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    NX_DEBUG( naxsi_modifier_debug, 
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] enabled : %d", ctx->enabled ? 1 : 0);
-#endif
+
 
 
     /*
@@ -1169,81 +1104,81 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     */
     ctx->libinjection_sql = cf->libinjection_sql_enabled;
 
-#ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    NX_DEBUG( naxsi_modifier_debug, 
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig libinjection_sql : %d", ctx->libinjection_sql ? 1 : 0);
-#endif
+
 
     lookup = ngx_http_get_variable(r, &libinjection_sql_flag, cf->flag_libinjection_sql_h);
 
     if (lookup && !lookup->not_found && lookup->len > 0) {
       ctx->libinjection_sql = lookup->data[0] - '0';
-#ifdef naxsi_modifiers_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      NX_DEBUG( naxsi_modifier_debug, 
+      NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override libinjection_sql : %d", ctx->libinjection_sql ? 1 : 0);
-#endif
+
     }
-#ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    NX_DEBUG( naxsi_modifier_debug, 
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] libinjection_sql : %d", ctx->libinjection_sql ? 1 : 0);
-#endif
+
     /*
     ** LIBINJECTION_XSS
     */
     ctx->libinjection_xss = cf->libinjection_xss_enabled;
 
-#ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    NX_DEBUG( naxsi_modifier_debug, 
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig libinjection_xss : %d", ctx->libinjection_xss ? 1 : 0);
-#endif 
+
 
     lookup = ngx_http_get_variable(r, &libinjection_xss_flag, cf->flag_libinjection_xss_h);
     if (lookup && !lookup->not_found && lookup->len > 0) {
       ctx->libinjection_xss = lookup->data[0] - '0';
-#ifdef naxsi_modifiers_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      NX_DEBUG( naxsi_modifier_debug, 
+      NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override libinjection_xss : %d", ctx->libinjection_xss ? 1 : 0);
-#endif
+
     }
-#ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    NX_DEBUG( naxsi_modifier_debug, 
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] libinjection_xss : %d", ctx->libinjection_xss ? 1 : 0);
-#endif
+
 
     /* post_action is off by default. */
     ctx->post_action = 0;
-#ifdef naxsi_modifiers_debug    
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    NX_DEBUG( naxsi_modifier_debug    , 
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig post_action : %d", ctx->post_action ? 1 : 0);
-#endif
+
     lookup = ngx_http_get_variable(r, &post_action_flag, cf->flag_post_action_h);
     if (lookup && !lookup->not_found && lookup->len > 0) {
       ctx->post_action = lookup->data[0] - '0';
-#ifdef naxsi_modifier_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      NX_DEBUG( naxsi_modifier_debug, 
+      NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override post_action : %d", ctx->post_action ? 1 : 0);
-#endif
+
     }
-#ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    NX_DEBUG( naxsi_modifier_debug, 
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] post_action : %d", ctx->post_action ? 1 : 0);
-#endif
-#ifdef naxsi_modifiers_debug    
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+
+    NX_DEBUG( naxsi_modifier_debug    , 
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : orig extensive_log : %d", ctx->extensive_log ? 1 : 0);
-#endif
+
     lookup = ngx_http_get_variable(r, &extensive_log_flag, cf->flag_extensive_log_h);
     if (lookup && !lookup->not_found && lookup->len > 0) {
       ctx->extensive_log = lookup->data[0] - '0';
-#ifdef naxsi_modifier_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+      NX_DEBUG( naxsi_modifier_debug, 
+      NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		    "XX-dummy : override extensive_log : %d", ctx->extensive_log ? 1 : 0);
-#endif
+
     }
-#ifdef naxsi_modifiers_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    NX_DEBUG( naxsi_modifier_debug, 
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] extensive_log : %d", ctx->extensive_log ? 1 : 0);
-#endif
+
 
     /* the module is not enabled here */
     if (!ctx->enabled)
@@ -1252,10 +1187,9 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 
     if  ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) 
 	 && !ctx->ready) {
-#ifdef mechanics_debug
-      ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		    "XX-dummy : body_request : before !");
-#endif
+      NX_DEBUG( mechanics_debug, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		"XX-dummy : body_request : before !");
+      
       rc = ngx_http_read_client_request_body(r, ngx_http_dummy_payload_handler);
       /* this might happen quite often, especially with big files / 
       ** low network speed. our handler is called when headers are read, 
@@ -1267,10 +1201,10 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       */
       if (rc == NGX_AGAIN) {
 	ctx->wait_for_body = 1;
-#ifdef mechanics_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+	NX_DEBUG( mechanics_debug, 
+	NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		      "XX-dummy : body_request : NGX_AGAIN !");
-#endif
+
 	return (NGX_DONE);
       }
       else
@@ -1311,10 +1245,10 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     else if (ctx->log)
       rc = ngx_http_output_forbidden_page(ctx, r);
   }
-#ifdef mechanics_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		"NGX_FINISHED !");
-#endif
+  NX_DEBUG(mechanics_debug, 
+	   NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+	   "NGX_FINISHED !");
+  
 
   return (NGX_DECLINED);
 }

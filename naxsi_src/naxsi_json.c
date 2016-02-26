@@ -161,10 +161,8 @@ ngx_http_nx_json_val(ngx_json_t *js) {
 	  ngx_http_basestr_ruleset_n(js->r->pool, &js->ckey, &val,
 				     js->main_cf->body_rules, js->r, js->ctx, 
 				     BODY);
-#ifdef naxsi_json_debug
-	ngx_log_debug(NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "JSON '%V' : '%V'",
-		      &(js->ckey), &(val));
-#endif
+	NX_DEBUG(naxsi_json_debug, NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "JSON '%V' : '%V'",
+		 &(js->ckey), &(val));
       }
     return (ret);
   }
@@ -184,10 +182,8 @@ ngx_http_nx_json_val(ngx_json_t *js) {
       ngx_http_basestr_ruleset_n(js->r->pool, &js->ckey, &val,
 				 js->main_cf->body_rules, js->r, js->ctx, 
 				 BODY);
-#ifdef naxsi_json_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "JSON '%V' : '%V'",
-		  &(js->ckey), &(val));
-#endif    
+    NX_DEBUG(naxsi_json_debug, NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "JSON '%V' : '%V'",
+	     &(js->ckey), &(val));
     return (NGX_OK);
   }
   if (!strncasecmp((const char *) (js->src + js->off), (const char *) "true", 4) ||
@@ -213,10 +209,8 @@ ngx_http_nx_json_val(ngx_json_t *js) {
       ngx_http_basestr_ruleset_n(js->r->pool, &js->ckey, &val,
 				 js->main_cf->body_rules, js->r, js->ctx, 
 				 BODY);
-#ifdef naxsi_json_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "JSON '%V' : '%V'",
-		  &(js->ckey), &(val));
-#endif        
+    NX_DEBUG(naxsi_json_debug, NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "JSON '%V' : '%V'",
+	     &(js->ckey), &(val));
     return (NGX_OK);
   }
   
@@ -340,9 +334,7 @@ ngx_http_dummy_json_parse(ngx_http_request_ctx_t *ctx,
   }
   if (ngx_http_nx_json_obj(js) != NGX_OK) {
     ngx_http_apply_rulematch_v_n(&nx_int__invalid_json, ctx, r, NULL, NULL, BODY, 1, 0);
-#ifdef naxsi_json_debug
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "nx_json_obj returned error, apply invalid_json.");
-#endif        
+    NX_DEBUG(naxsi_json_debug, NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "nx_json_obj returned error, apply invalid_json.");
     
   }
   /* we are now on closing bracket, check for garbage. */

@@ -58,16 +58,45 @@ extern ngx_module_t ngx_http_naxsi_module;
 
 /*
 ** as the #ifdef #endif for debug are getting really messy ...
+** Bellow are all the possibles debug defines. To enable associated feature
+** debug, just set it to 1. Do not comment the actual define except if you
+** know all the associated debug calls are deleted.
+** The idea is that the compiler will optimize out the do { if (0) ... } while (0);
 */
 
-/* #define _naxsi_rawbody 1 */
-/* #define _naxsi_wlrx_debug 0 */
+#define _naxsi_rawbody 0
+#define basestr_ruleset_debug 0
+#define custom_score_debug 0
+#define dummy_body_parse_debug 0
+#define extensive_log_debug 0
+#define loc_conf_debug 0
+#define main_conf_debug 0
+#define mechanics_debug 0
+#define naxsi_json_debug 0
+#define naxsi_modifier_debug 0
+#define payload_handler_debug 0
+#define post_heavy_debug 0
+#define readconf_debug 0
+#define spliturl_ruleset_debug 0
+#define whitelist_debug 0
+#define whitelist_light_debug 0
+#define wlrx_debug 0
+#define mechanics_debug 0
+#define whitelist_heavy_debug 0
+#define score_debug 0
+#define dummy_zone_debug 0
+#define rx_debug 0
+#define dummy_cfg_parse_one_rule_debug 0
 
+#ifndef __NAXSI_DEBUG
+#define __NAXSI_DEBUG
+#define NX_DEBUG(FEATURE, DEF, LOG, ST, ...) do { if (FEATURE)  ngx_log_debug(DEF, LOG, ST, __VA_ARGS__); } while (0)
+#endif
 
-/* #ifndef __NAXSI_DEBUG */
-/* #define __NAXSI_DEBUG */
-/* #define NX_DEBUG(FEATURE, DEF, LOG, ST, ...) do { if (FEATURE)  ngx_log_debug(DEF, LOG, ST, __VA_ARGS__); } while (0) */
-/* #endif */
+#ifndef __NAXSI_LOG_DEBUG
+#define __NAXSI_LOG_DEBUG
+#define NX_LOG_DEBUG(FEATURE, DEF, LOG, ST, ...) do { if (FEATURE)  ngx_conf_log_error(DEF, LOG, ST, __VA_ARGS__); } while (0)
+#endif
 
 
 

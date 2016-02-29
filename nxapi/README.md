@@ -70,14 +70,14 @@ $ cat nxapi.json
 * Load the data from the log file into ElasticSearch with the folloing command:  
 	`./nxtool.py -c nxapi.json --files=/PATH/TO/LOGFILE.LOG`
 * Check if data was added correctly:  
-	`curl -XPOST "http://ELASTICSEARCH/nxapi/events/_search?pretty" -d '{}' `
+	`curl -XPOST "http://localhost:9200/nxapi/events/_search?pretty" -d '{}' `
 * Check if nxtool sees it correctly:
   	`./nxtool.py -c nxapi.json -x`
 # Simple usage approach
 
 ##1. Get infos about db
 
-    $ nxtool.py -x --colors -c nxapi.json
+    $ ./nxtool.py -x --colors -c nxapi.json
 Will issue a summary of database content, including :
 
   * Ratio between tagged/untagged events.
@@ -100,7 +100,7 @@ List of most active zones of exceptions.
 ##2. Generate whitelists
 Let's say I had the following output :
 
-    nxtool.py -c ./nxapi.json  -x --colors
+    ./nxtool.py -c nxapi.json  -x --colors
     # Whitelist(ing) ratio :
     # false 79.96 % (total:196902/246244)
     # true 20.04 % (total:49342/246244)
@@ -126,7 +126,7 @@ Let's say I had the following output :
 
 I want to generate WLs for x1.fr, so I will get more precise statistics first :
 
-    nxtool.py -c ./nxapi.json  -x --colors -s www.x1.fr
+    ./nxtool.py -c nxapi.json  -x --colors -s www.x1.fr
     ...
     # Top URI(s) :
     # /foo/bar/test 8.55 % (total:16831/196915)
@@ -141,7 +141,7 @@ However, take care, they don't support regexp yet.
 Take note as well of --slack usage, that allows to ignore success/warning criterias, as my website has too few
 visitors, making legitimate exceptions appear as false positives.`
 
-    nxtool.py -c nxapi.json -s www.x1.fr -f --filter 'uri /foo/bar/test' --slack
+    ./nxtool.py -c nxapi.json -s www.x1.fr -f --filter 'uri /foo/bar/test' --slack
     ...
     #msg: A generic whitelist, true for the whole uri
     #Rule (1303) html close tag
@@ -169,10 +169,10 @@ nxtool attempts to provide extra information to allow user to decides wether it'
 
 Another way of creating whitelist is to use the -g option. This option provide
 an interactive way to generate whitelist. This option use the EDITOR env
-variable and use it to iterate over all the server avaible inside your elastic
+variable and use it to iterate over all the server available inside your elastic
 search instance (if the EDITOR env variable isn't set it will try to use `vi`.
 You can either delete or comment with a `#` at the beginning the line you don't
-want to keep. After the server selection it will iterate on each avaible uri
+want to keep. After the server selection it will iterate on each available uri
 and zone for earch server. If you want to use regex, only available for uri,
 you can add a `?` at the beginning of each line where you want to use a regex:
 
@@ -222,7 +222,8 @@ I'm dealing with magento, like a *lot*. One of the recurring patterns is the "on
         "_msg" : "Magento checkout page (BODY|NAME)",
         "?uri" : "/checkout/onepage/.*",
         "zone" : "BODY|NAME",
-        "id" : "1310 OR 1311"}
+        "id" : "1310 OR 1311"
+    }
 
 
 # Supported options
@@ -303,10 +304,11 @@ Templates do have a central role within nxapi.
 By default, only generic ones are provided, but you should create yours.
 Let's first look at a generic one to understand how it work :
 
-      {
-      "zone" : "HEADERS",
-      "var_name" : "cookie",
-      "id" : "?"}
+        {
+                "zone" : "HEADERS",
+                "var_name" : "cookie",
+                "id" : "?"
+        }
 
 Here is how nxtool will use this to generate whitelists:
   1. extract global_filters from nxapi.json, and create the base ES filter :

@@ -30,6 +30,7 @@ NGINX_OPTIONS+="--with-debug"
 define NAXSI_CFG=
 master_process off;
 worker_processes  1;
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 events {
  worker_connections  1024;
 }

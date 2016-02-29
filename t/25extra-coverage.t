@@ -22,7 +22,7 @@ __DATA__
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule id:4241 "str:ratata" "mz:ARGS" "s:$TEST:42";
 #MainRule id:4242 "str:XXX" "s:$SQL:8" "mz:ARGS";
 --- config
@@ -49,7 +49,7 @@ GET /?a=ratataXXX
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 MainRule id:4241 "str:ratata" "mz:ARGS" "s:42";
 --- config
 location / {
@@ -75,7 +75,7 @@ GET /?a=ratataXXX
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-include /etc/nginx/naxsi_core.rules;
+include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
 	 SecRulesEnabled;

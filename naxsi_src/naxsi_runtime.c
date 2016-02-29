@@ -542,7 +542,8 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 
   naxsi_whitelist_debug("is rule [%d] whitelisted in zone %s for item %V", r->rule_id,
 		zone == ARGS ? "ARGS" : zone == HEADERS ? "HEADERS" : zone == BODY ? 
-		"BODY" : zone == URL ? "URL" : zone == FILE_EXT ? "FILE_EXT" : "UNKNOWN",
+			"BODY" : zone == URL ? "URL" : zone == FILE_EXT ? 
+			"FILE_EXT" : zone == RAW_BODY ? "RAW_BODY" : "UNKNOWN",
 		name);
   if (target_name)
     naxsi_whitelist_debug("extra: exception happened in |NAME");
@@ -588,6 +589,12 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 	  }
 	  break;
 	case BODY:
+	  if (dr[i]->br->body) {
+	    naxsi_whitelist_debug("rule %d is disabled in BODY", r->rule_id);
+	    return (1);
+	  }
+	  break;
+	case RAW_BODY:
 	  if (dr[i]->br->body) {
 	    naxsi_whitelist_debug("rule %d is disabled in BODY", r->rule_id);
 	    return (1);
@@ -1375,15 +1382,15 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 			 (const char *) location[z].target.data, 
 			 location[z].target.len)) {
 	    
-	  NX_DEBUG(basestr_ruleset_debug, 	  NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-			"XX-[SPECIFIC] check one rule [%d] iteration %d * %d", r[i].rule_id, i, z);
-
+	  NX_DEBUG(basestr_ruleset_debug, NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
+		   "XX-[SPECIFIC] check one rule [%d] iteration %d * %d", r[i].rule_id, i, z);
+	  
 	  /* match rule against var content, */
 	  ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
 	  if (ret == 1) {
-	    NX_DEBUG(basestr_ruleset_debug, 	    NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			  "XX-apply rulematch [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
-
+	    NX_DEBUG(basestr_ruleset_debug, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		     "XX-apply rulematch [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
+	    
 	    ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);	    
 	  }
 	  
@@ -1413,7 +1420,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
     if ( (zone == HEADERS && r[i].br->headers) ||
 	 (zone == URL && r[i].br->url) ||
 	 (zone == ARGS && r[i].br->args) ||
-	 (zone == RAW_BODY && r[i].br->raw_body) ||
+	 (zone == BODY && r[i].br->raw_body) ||
 	 (zone == BODY && r[i].br->body && !r[i].br->file_ext) ||
 	 (zone == FILE_EXT && r[i].br->file_ext) ) {
 

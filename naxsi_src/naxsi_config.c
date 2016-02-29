@@ -151,6 +151,7 @@ dummy_score(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
     else if ( (tmp_ptr[0] >= '0' && tmp_ptr[0] <= '9') || tmp_ptr[0] == '-') {
       score = atoi((const char *)tmp->data+2);
       rule->score = score;
+      break;
     }
     else
       return (NGX_CONF_ERROR);

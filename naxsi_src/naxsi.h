@@ -49,10 +49,10 @@
 
 extern ngx_module_t ngx_http_naxsi_module;
 
-#ifdef whitelist_debug
-    #define naxsi_whitelist_debug(...)
+#ifdef _debug_whitelist
+    #define naxsi__debug_whitelist(...)
 #else
-    #define naxsi_whitelist_debug(...) ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, __VA_ARGS__)
+    #define naxsi__debug_whitelist(...) ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, __VA_ARGS__)
 #endif
 
 
@@ -65,29 +65,29 @@ extern ngx_module_t ngx_http_naxsi_module;
 */
 
 #define _naxsi_rawbody 0
-#define basestr_ruleset_debug 0
-#define custom_score_debug 0
-#define dummy_body_parse_debug 0
-#define dummy_cfg_parse_one_rule_debug 0
-#define dummy_zone_debug 0
-#define extensive_log_debug 0
-#define loc_conf_debug 0
-#define main_conf_debug 0
-#define mechanics_debug 0
-#define mechanics_debug 0
-#define naxsi_json_debug 0
-#define naxsi_modifier_debug 0
-#define payload_handler_debug 0
-#define post_heavy_debug 0
-#define rawbody_debug 0
-#define readconf_debug 0
-#define rx_debug 0
-#define score_debug 0
-#define spliturl_ruleset_debug 0
-#define whitelist_debug 0
-#define whitelist_heavy_debug 0
-#define whitelist_light_debug 0
-#define wlrx_debug 0
+#define _debug_basestr_ruleset 0
+#define _debug_custom_score 0
+#define _debug_body_parse 0
+#define _debug_cfg_parse_one_rule 0
+#define _debug_zone 0
+#define _debug_extensive_log 0
+#define _debug_loc_conf 0
+#define _debug_main_conf 0
+#define _debug_mechanics 0
+#define _debug_mechanics 0
+#define _debug_json 0
+#define _debug_modifier 0
+#define _debug_payload_handler 0
+#define _debug_post_heavy 0
+#define _debug_rawbody 0
+#define _debug_readconf 0
+#define _debug_rx 0
+#define _debug_score 0
+#define _debug_spliturl_ruleset 0
+#define _debug_whitelist 0
+#define _debug_whitelist_heavy 0
+#define _debug_whitelist_light 0
+#define wl_debug_rx 0
 
 #ifndef __NAXSI_DEBUG
 #define __NAXSI_DEBUG

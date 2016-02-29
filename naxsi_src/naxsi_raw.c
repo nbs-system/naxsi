@@ -1,6 +1,6 @@
 /*
  * NAXSI, a web application firewall for NGINX
- * Copyright (C) 2011, Thibault 'bui' Koechlin
+ * Copyright (C) 2016, Thibault 'bui' Koechlin
  *  
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@
 
 #include "naxsi.h"
 
-#define rawbody_debug
 
 void
 ngx_http_dummy_rawbody_parse(ngx_http_request_ctx_t *ctx, 
@@ -44,9 +43,7 @@ ngx_http_dummy_rawbody_parse(ngx_http_request_ctx_t *ctx,
   ngx_http_dummy_main_conf_t		*main_cf;
   ngx_str_t				empty = ngx_string("");
   
-#ifdef rawbody_debug
-  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "XX-RAWBODY CALLED");
-#endif
+  NX_DEBUG(rawbody_debug, NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "XX-RAWBODY CALLED len:%d",len);
   if (len <= 0 || !src)
     return;
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
@@ -56,14 +53,18 @@ ngx_http_dummy_rawbody_parse(ngx_http_request_ctx_t *ctx,
   body.data = src;
   body.len = len;
   
+  naxsi_unescape(&body);
+  
   /* here we got val name + val content !*/	      
   if (cf->raw_body_rules) {
+    NX_DEBUG(rawbody_debug, NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "XX-(local) RAW BODY RULES");
     ngx_http_basestr_ruleset_n(r->pool, &empty, &body,
-			       cf->raw_body_rules, r, ctx, RAW_BODY);
+			       cf->raw_body_rules, r, ctx, BODY);
   }
 
   if (main_cf->raw_body_rules) {
+    NX_DEBUG(rawbody_debug, NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "XX-(global) RAW BODY RULES");
     ngx_http_basestr_ruleset_n(r->pool, &empty, &body,
-			       main_cf->raw_body_rules, r, ctx, RAW_BODY);
+			       main_cf->raw_body_rules, r, ctx, BODY);
   }
 }

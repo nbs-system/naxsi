@@ -6,6 +6,7 @@ CAK		:=
 COV 		:= 0
 #Allows to force for specific UT only
 #TEST 		:= "00*.t"
+NGINX_VERS := "1.9.11"
 
 NGINX_OPTIONS="--error-log-path=/tmp/naxsi_ut/error.log"
 NGINX_OPTIONS+="--conf-path=/tmp/naxsi_ut/nginx.conf"
@@ -24,9 +25,11 @@ NGINX_OPTIONS+="--without-http_uwsgi_module"
 NGINX_OPTIONS+="--without-http_scgi_module"
 NGINX_OPTIONS+="--add-dynamic-module=$(MOD_PATH)"
 NGINX_OPTIONS+="--with-ipv6"
-NGINX_OPTIONS+="prefix=/tmp"
+NGINX_OPTIONS+="--prefix=/tmp"
 NGINX_OPTIONS+="--with-debug"
 
+
+#yeah, that's ghetto :D
 define NAXSI_CFG=
 master_process off;
 worker_processes  1;
@@ -66,21 +69,39 @@ http {
 endef
 export NAXSI_CFG
 
-all: re
+all: build deploy
 
-re: clean nginx_config nginx_build
+re: clean nginx_config build deploy test
 
 clean:
-	rm -rf /tmp/naxsi_ut/
+	rm -rf "nginx-"$(NGINX_VERS)".tar.gz"
+	rm -rf "nginx-"$(NGINX_VERS)".tar.gz.asc"
+	rm -rf /tmp/naxsi_ut/ /tmp/nginx
 
-deploy: deploy_config
+nginx_config:
+	wget "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz" || exit 1
+	wget "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz.asc" || exit 1
+	gpg --verify "nginx-"$(NGINX_VERS)".tar.gz.asc" "nginx-"$(NGINX_VERS)".tar.gz" || exit 1
+	mkdir /tmp/nginx
+	tar -C /tmp/nginx -xvzf nginx-$(NGINX_VERS).tar.gz  --strip-components=1
+	@if [ $(COV) -eq 1 ] ; then \
+	echo "[Enabling CODE COVERAGE]" ; \
+	CC_OPT="--coverage -g3" ; \
+	LD_OPT="-lgcov" ; \
+	else CC_OPT="" ; \
+	LD_OPT="" ; fi ; \
+	cd /tmp/nginx ; \
+	echo "CC_OPT: $$CC_OPT / LD_OPT: $$LD_OPT" ; \
+	./configure --with-cc-opt="$$CC_OPT" --with-ld-opt="$$LD_OPT" $(NGINX_OPTIONS)
 
-deploy_config:
+build:
+	cd /tmp/nginx && make && make install
+
+
+deploy: 
 	@echo "$$NAXSI_CFG" > /tmp/naxsi_ut/nginx.conf
 	@cp ../naxsi_config/naxsi_core.rules /tmp/naxsi_ut/naxsi_core.rules
 
-nginx_build:
-	cd /tmp/nginx && make && make install
 
 # RUN UNIT TESTS
 # - generate coverage report if option is on
@@ -97,17 +118,6 @@ test:
 	lcov --directory /tmp/nginx/objs/addon/naxsi_src/ --capture \
 	--output-file naxsi.info --base-directory /tmp/nginx ; \
 	genhtml -s -o /tmp/naxsicov.html naxsi.info ; fi
-
-nginx_config:
-	@if [ $(COV) -eq 1 ] ; then \
-	echo "[Enabling CODE COVERAGE]" ; \
-	CC_OPT="--coverage -g3" ; \
-	LD_OPT="-lgcov" ; \
-	else CC_OPT="" ; \
-	LD_OPT="" ; fi ; \
-	cd /tmp/nginx ; \
-	echo "CC_OPT: $$CC_OPT / LD_OPT: $$LD_OPT" ; \
-	./configure --with-cc-opt="$$CC_OPT" --with-ld-opt="$$LD_OPT" $(NGINX_OPTIONS)
 
 #Build for coverity and submit build !
 coverity: 

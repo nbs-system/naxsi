@@ -68,25 +68,26 @@ extern ngx_module_t ngx_http_naxsi_module;
 #define basestr_ruleset_debug 0
 #define custom_score_debug 0
 #define dummy_body_parse_debug 0
+#define dummy_cfg_parse_one_rule_debug 0
+#define dummy_zone_debug 0
 #define extensive_log_debug 0
 #define loc_conf_debug 0
 #define main_conf_debug 0
+#define mechanics_debug 0
 #define mechanics_debug 0
 #define naxsi_json_debug 0
 #define naxsi_modifier_debug 0
 #define payload_handler_debug 0
 #define post_heavy_debug 0
+#define rawbody_debug 0
 #define readconf_debug 0
+#define rx_debug 0
+#define score_debug 0
 #define spliturl_ruleset_debug 0
 #define whitelist_debug 0
+#define whitelist_heavy_debug 0
 #define whitelist_light_debug 0
 #define wlrx_debug 0
-#define mechanics_debug 0
-#define whitelist_heavy_debug 0
-#define score_debug 0
-#define dummy_zone_debug 0
-#define rx_debug 0
-#define dummy_cfg_parse_one_rule_debug 0
 
 #ifndef __NAXSI_DEBUG
 #define __NAXSI_DEBUG

@@ -81,6 +81,7 @@ clean:
 nginx_config:
 	wget "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz" || exit 1
 	wget "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz.asc" || exit 1
+	@gpg --keyserver pgp.mit.edu --recv-keys 0x251a28de2685aed4 0x520A9993A1C052F8
 	gpg --verify "nginx-"$(NGINX_VERS)".tar.gz.asc" "nginx-"$(NGINX_VERS)".tar.gz" || exit 1
 	mkdir /tmp/nginx
 	tar -C /tmp/nginx -xvzf nginx-$(NGINX_VERS).tar.gz  --strip-components=1

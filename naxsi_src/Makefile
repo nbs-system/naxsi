@@ -1,9 +1,14 @@
 CORE_VERS	:=	$(shell grep NAXSI_VERSION naxsi.h | cut -d '"' -f 2)
 MOD_PATH 	:=	$(shell pwd)
+TMP_DIR     := /tmp/nginx/
+
+# Keys for coverity
 CAN		:=
 CAK		:=
-#1 : LCOV is enabled, and coverage report is generated.
+
+#Set to 1 if you want coverage report
 COV 		:= 0
+
 #Allows to force for specific UT only
 #TEST 		:= "00*.t"
 NGINX_VERS := "1.9.11"
@@ -29,96 +34,58 @@ NGINX_OPTIONS+="--prefix=/tmp"
 NGINX_OPTIONS+="--with-debug"
 
 
-#yeah, that's ghetto :D
-define NAXSI_CFG=
-master_process off;
-worker_processes  1;
-load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
-events {
- worker_connections  1024;
-}
-http {
- include /tmp/naxsi_ut/naxsi_core.rules;
- include       mime.types;
- default_type  application/octet-stream;
- sendfile        on;
- keepalive_timeout  65;
- server {
-  listen 4242;
-  server_name  localhost;
-  location / {
-   LearningMode;
-   SecRulesEnabled;
-   DeniedUrl "/50x.html";
-   CheckRule "$$SQL >= 8" BLOCK;
-   CheckRule "$$RFI >= 8" BLOCK;
-   CheckRule "$$TRAVERSAL >= 4" BLOCK;
-   CheckRule "$$EVADE >= 4" BLOCK;
-   CheckRule "$$XSS >= 8" BLOCK;
-   error_log /tmp/ngx_error.log debug;
-   access_log /tmp/ngx_access.log;
-   root   html;
-   index  index.html index.htm;
-  }
-  error_page   500 502 503 504  /50x.html;
-  location = /50x.html {
-   root   html;
-  }
- }
-}
-endef
-export NAXSI_CFG
+all: nginx_download configure build install deploy
 
-all: build deploy
-
-re: clean nginx_config build deploy test
+re: clean all test
 
 clean:
-	rm -rf "nginx-"$(NGINX_VERS)".tar.gz"
-	rm -rf "nginx-"$(NGINX_VERS)".tar.gz.asc"
-	rm -rf /tmp/naxsi_ut/ /tmp/nginx
+	rm -f "nginx-"$(NGINX_VERS)".tar.gz"
+	rm -f "nginx-"$(NGINX_VERS)".tar.gz.asc"
+	rm -rf /tmp/naxsi_ut/
+	rm -rf $(TMP_DIR)/
 
-nginx_config:
+nginx_download:
 	wget "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz" || exit 1
 	wget "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz.asc" || exit 1
-	@gpg --keyserver pgp.mit.edu --recv-keys 0x251a28de2685aed4 0x520A9993A1C052F8
+	gpg --keyserver pgp.mit.edu --recv-keys 0x251a28de2685aed4 0x520A9993A1C052F8
 	gpg --verify "nginx-"$(NGINX_VERS)".tar.gz.asc" "nginx-"$(NGINX_VERS)".tar.gz" || exit 1
-	mkdir /tmp/nginx
-	tar -C /tmp/nginx -xvzf nginx-$(NGINX_VERS).tar.gz  --strip-components=1
-	@if [ $(COV) -eq 1 ] ; then \
-	echo "[Enabling CODE COVERAGE]" ; \
-	CC_OPT="--coverage -g3" ; \
-	LD_OPT="-lgcov" ; \
-	else CC_OPT="" ; \
-	LD_OPT="" ; fi ; \
-	cd /tmp/nginx ; \
-	echo "CC_OPT: $$CC_OPT / LD_OPT: $$LD_OPT" ; \
-	./configure --with-cc-opt="$$CC_OPT" --with-ld-opt="$$LD_OPT" $(NGINX_OPTIONS)
+	mkdir $(TMP_DIR)/
+	tar -C $(TMP_DIR)/ -xvzf nginx-$(NGINX_VERS).tar.gz  --strip-components=1
+
+configure:
+ifeq ($(COV),1)
+	cd $(TMP_DIR)/ && ./configure --with-cc-opt="--coverage -g3" --with-ld-opt="-lgcov" $(NGINX_OPTIONS)
+else
+	cd $(TMP_DIR)/ && ./configure $(NGINX_OPTIONS)
+endif
 
 build:
-	cd /tmp/nginx && make && make install
+	cd $(TMP_DIR)/ && make
 
+install:
+	make install
 
 deploy: 
-	@echo "$$NAXSI_CFG" > /tmp/naxsi_ut/nginx.conf
+	@cp ./nginx.conf.example /tmp/naxsi_ut/nginx.conf
 	@cp ../naxsi_config/naxsi_core.rules /tmp/naxsi_ut/naxsi_core.rules
 
 
 # RUN UNIT TESTS
-# - generate coverage report if option is on
 test:
-	if [ $(COV) -eq 1 ] ; then lcov --directory /tmp/nginx --zerocounters ; fi
+ifeq ($(COV),1)
+	lcov --directory $(TMP_DIR) --zerocounters
+endif
 
 	if [ ! $(TEST) ] ; then TEST="*.t" ; fi
 
-	export PATH="/tmp/nginx/objs/:"$(PATH) ; \
+	export PATH="$(TMP_DIR)/objs/:"$(PATH) ; \
 	export PERL5LIB=/usr/local/share/perl/5.14.2/ ; \
 	cd .. ; prove -r "t/$(TEST)"
 
-	if [ $(COV) -eq 1 ] ; then \
-	lcov --directory /tmp/nginx/objs/addon/naxsi_src/ --capture \
-	--output-file naxsi.info --base-directory /tmp/nginx ; \
-	genhtml -s -o /tmp/naxsicov.html naxsi.info ; fi
+ifeq ($(COV),1)
+	lcov --directory $(TMP_DIR)/objs/addon/naxsi_src/ --capture --output-file naxsi.info --base-directory $(TMP_DIR)
+	genhtml -s -o /tmp/naxsicov.html naxsi.info
+endif
 
 #Build for coverity and submit build !
 coverity: 
@@ -127,13 +94,13 @@ coverity:
 	echo "Coverity token/login : $$CAK and $$CAN"; \
 	wget -nc  https://scan.coverity.com/download/linux-64 --post-data "token=$$CAK&project=nbs-system%2Fnaxsi" -O /tmp/coverity.tgz ; \
 	mkdir /tmp/cov && cd /tmp/cov && cat ../coverity.tgz  | tar --strip-components=1 -xvzf - ; \
-	cd /tmp/nginx ; \
+	cd $(TMP_DIR) ; \
 	./configure $(NGINX_OPTIONS) && \
 	/tmp/cov/bin/cov-build --dir cov-int make && \
 	tar cvzf coverity-res-naxsi.tgz cov-int/ ; \
 	curl --form token="$$CAK" \
 	  --form email="$$CAN" \
-	  --form file=@/tmp/nginx/coverity-res-naxsi.tgz \
+	  --form file=@$(TMP_DIR)/coverity-res-naxsi.tgz \
 	  --form version="$(CORE_VERS)" \
 	  --form description="Automatically submitted" \
 	  https://scan.coverity.com/builds?project=nbs-system%2Fnaxsi

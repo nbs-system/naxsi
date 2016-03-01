@@ -1231,8 +1231,8 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
 	if (ngx_http_apply_rulematch_v_n(&nx_int__uncommon_url, ctx, req, NULL, NULL, zone, 1, 0)) {
 	  dummy_error_fatal(ctx, req, 
 			    "malformed url, possible attack [%s]", str);
-	  return (1);
 	}
+	return (1);
       }
       eq++;
       val.data = (unsigned char *) eq;

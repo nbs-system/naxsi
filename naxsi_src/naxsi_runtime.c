@@ -855,16 +855,16 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
     sub = 0;
     i = 0;
     do {
-      memset(tmp_zone, 0, 30);
+      memset(tmp_zone, 0, sizeof(tmp_zone));
       if (mr[i].body_var) 
 	strcat(tmp_zone, "BODY");
-      if (mr[i].args_var) 
+      else if (mr[i].args_var) 
 	strcat(tmp_zone, "ARGS");
-      if (mr[i].headers_var) 
+      else if (mr[i].headers_var) 
 	strcat(tmp_zone, "HEADERS");
-      if (mr[i].url)
+      else if (mr[i].url)
 	strcat(tmp_zone, "URL");
-      if (mr[i].file_ext)
+      else if (mr[i].file_ext)
 	strcat(tmp_zone, "FILE_EXT");
       if (mr[i].target_name)
 	strcat(tmp_zone, "|NAME");
@@ -1098,7 +1098,6 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
     if (!ctx->special_scores) //create the list
       ctx->special_scores = ngx_array_create(req->pool, 1, 
 					     sizeof(ngx_http_special_score_t));
-    found = 0;
     rsc = r->sscores->elts;
     for (z = 0; z < r->sscores->nelts; z++) {
       //search into the list for matching special score

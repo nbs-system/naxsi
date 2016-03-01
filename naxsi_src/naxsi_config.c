@@ -406,7 +406,7 @@ dummy_whitelist(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   if (!wl_ar)
     return (NGX_CONF_ERROR);
   NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, r, 0, "XX- allocated %d elems for WL", ct);
-  for (ct = 0, i = 0; i < str.len; i++) {
+  for (i = 0; i < str.len; i++) {
     if (i == 0 || str.data[i-1] == ',') {
       id = (ngx_int_t *) ngx_array_push(wl_ar);
       if (!id) 

@@ -1240,16 +1240,13 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       rc = ngx_http_output_forbidden_page(ctx, r);
       //nothing:      return (NGX_OK);
       //redirect : return (NGX_HTTP_OK);
-      return (rc);
+      return rc;
     }
-    else if (ctx->log)
-      rc = ngx_http_output_forbidden_page(ctx, r);
   }
   NX_DEBUG(_debug_mechanics, 
 	   NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 	   "NGX_FINISHED !");
-  
 
-  return (NGX_DECLINED);
+  return NGX_DECLINED;
 }
 

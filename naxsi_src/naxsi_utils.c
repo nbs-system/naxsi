@@ -559,9 +559,9 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
     hash_init.hash = dlc->wlr_body_hash;
     hash_init.name = "wlr_body_hash";
     if (ngx_hash_init(&hash_init, (ngx_hash_key_t*) body_ar->elts, 
-		      body_ar->nelts) != NGX_OK) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$BODY hashtable init failed");
-      return (NGX_ERROR);
+		      body_ar->nelts) != NGX_OK) { 
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$BODY hashtable init failed"); /* LCOV_EXCL_LINE */
+      return (NGX_ERROR); /* LCOV_EXCL_LINE */
     }
     else
       NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0, "$BODY hashtable init successed !");
@@ -572,8 +572,8 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
     hash_init.name = "wlr_url_hash";
     if (ngx_hash_init(&hash_init, (ngx_hash_key_t*) uri_ar->elts, 
 		      uri_ar->nelts) != NGX_OK) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$URL hashtable init failed");
-      return (NGX_ERROR);
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$URL hashtable init failed"); /* LCOV_EXCL_LINE */
+      return (NGX_ERROR); /* LCOV_EXCL_LINE */
     }
     else
       NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0, "$URL hashtable init successed !");
@@ -584,8 +584,8 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
     hash_init.hash = dlc->wlr_args_hash;
     hash_init.name = "wlr_args_hash";
     if (ngx_hash_init(&hash_init, (ngx_hash_key_t*) get_ar->elts, 
-		      get_ar->nelts) != NGX_OK) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$ARGS hashtable init failed");
+		      get_ar->nelts) != NGX_OK) { /* LCOV_EXCL_LINE */
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$ARGS hashtable init failed"); /* LCOV_EXCL_LINE */
       return (NGX_ERROR);
     }
     else
@@ -599,8 +599,8 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
     hash_init.name = "wlr_headers_hash";
     if (ngx_hash_init(&hash_init, (ngx_hash_key_t*) headers_ar->elts, 
 		      headers_ar->nelts) != NGX_OK) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$HEADERS hashtable init failed");
-      return (NGX_ERROR);
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$HEADERS hashtable init failed"); /* LCOV_EXCL_LINE */
+      return (NGX_ERROR); /* LCOV_EXCL_LINE */
     }
     else
       NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0, "$HEADERS hashtable init successed %d !",
@@ -671,7 +671,7 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
       continue;
     }
     ret = ngx_http_wlr_identify(cf, dlc, curr_r, &zone, &uri_idx, &name_idx);
-    if (ret != NGX_OK)
+    if (ret != NGX_OK) /* LCOV_EXCL_START */
       {
 	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
 			   "Following whitelist doesn't target any zone or is incorrect :");
@@ -686,7 +686,7 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
 	else
 	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelists has no target uri.");
 	return (NGX_ERROR);
-      }
+      } /* LCOV_EXCL_STOP */
     curr_r->br->zone = zone;
     /*
     ** Handle regular-expression-matchzone rules :
@@ -697,7 +697,7 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
       if (!dlc->rxmz_wlr) {
 	dlc->rxmz_wlr = ngx_array_create(cf->pool, 1,
 					 sizeof(ngx_http_rule_t *));
-	if (!dlc->rxmz_wlr) return (NGX_ERROR);
+	if (!dlc->rxmz_wlr) return (NGX_ERROR); /* LCOV_EXCL_LINE */
       }
       if (name_idx != -1) {
 	custloc_array(curr_r->br->custom_locations->elts)[name_idx].target_rx = 

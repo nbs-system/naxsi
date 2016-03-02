@@ -134,7 +134,7 @@ cfg.cfg["naxsi"]["strict"] = str(options.slack).lower()
 def get_filter(arg_filter):
     x = {}
     to_parse = []
-    kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'country', 'date',
+    kwlist = ['server', 'uri', 'zone', 'var_name', 'ip', 'id', 'content', 'country', 'date', 'learning',
               '?server', '?uri', '?var_name', '?content']
     try:
         for argstr in arg_filter:

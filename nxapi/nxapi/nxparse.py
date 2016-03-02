@@ -283,6 +283,11 @@ class NxParser():
                 zn = ''
                 vn = ''
                 rn = ''
+		#NAXSI_FMT also has the learning_mode flag
+		if event['learning'] is '1':
+                    entry['learning'] = "true"
+		else:
+                    entry['learning'] = "false"
                 if 'var_name' + str(i) in event.keys():
                     entry['var_name'] = event['var_name' + str(i)]
                 if 'zone' + str(i) in event.keys():
@@ -422,7 +427,8 @@ class ESInject(NxInjector):
                                          "zone" : {"type": "string", "index" : "not_analyzed"},
                                          "server" : {"type": "string", "index" : "not_analyzed"},
                                          "whitelisted" : {"type" : "string", "index" : "not_analyzed"},
-                                         "ip" : { "type" : "string", "index" : "not_analyzed"}
+                                         "ip" : { "type" : "string", "index" : "not_analyzed"},
+                                         "learning" : { "type" : "bool", "index" : "not_analyzed"}
                                          }
                         }
                     })

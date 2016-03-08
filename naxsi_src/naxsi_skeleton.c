@@ -79,6 +79,11 @@ static char		*ngx_http_dummy_merge_loc_conf(ngx_conf_t *cf,
 void			*ngx_http_dummy_create_main_conf(ngx_conf_t *cf);
 void			ngx_http_dummy_payload_handler(ngx_http_request_t *r);
 
+static ngx_int_t ngx_http_naxsi_add_variables(ngx_conf_t *cf);
+static ngx_int_t ngx_http_naxsi_attack_family_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
+static void ngx_http_dummy_cleanup_handler(void *data);
+
 
 /* command handled by the module */
 static ngx_command_t  ngx_http_dummy_commands[] =  {
@@ -247,18 +252,32 @@ static ngx_command_t  ngx_http_dummy_commands[] =  {
 };
 
 /*
+ * Variables
+ */
+static ngx_http_variable_t ngx_http_naxsi_variables[] = {
+    { ngx_string("naxsi_attack_family"),        /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_attack_family_variable,    /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+    { ngx_null_string, NULL, NULL, 0, 0, 0 }    /* Sentinel */
+};
+
+
+/*
 ** handlers for configuration phases of the module
 */
 
 static ngx_http_module_t ngx_http_dummy_module_ctx = {
-  NULL, /* preconfiguration */
-  ngx_http_dummy_init, /* postconfiguration */
-  ngx_http_dummy_create_main_conf, /* create main configuration */
-  NULL, /* init main configuration */
-  NULL, /* create server configuration */
-  NULL, /* merge server configuration */
-  ngx_http_dummy_create_loc_conf, /* create location configuration */
-  ngx_http_dummy_merge_loc_conf /* merge location configuration */
+  ngx_http_naxsi_add_variables,     /* preconfiguration */
+  ngx_http_dummy_init,              /* postconfiguration */
+  ngx_http_dummy_create_main_conf,  /* create main configuration */
+  NULL,                             /* init main configuration */
+  NULL,                             /* create server configuration */
+  NULL,                             /* merge server configuration */
+  ngx_http_dummy_create_loc_conf,   /* create location configuration */
+  ngx_http_dummy_merge_loc_conf     /* merge location configuration */
 };
 
 
@@ -1054,9 +1073,21 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 	   r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
 	   r->internal);
   if (!ctx) {
+    ngx_pool_cleanup_t *cln;
+
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_request_ctx_t));
-    if (ctx == NULL)
+    if (ctx == NULL) {
       return NGX_ERROR;
+    }
+
+    cln = ngx_pool_cleanup_add(r->pool, 0);
+    if (cln == NULL) {
+      return NGX_ERROR;
+    }
+
+    cln->handler = ngx_http_dummy_cleanup_handler;
+    cln->data = ctx;
+
     ngx_http_set_ctx(r, ctx, ngx_http_naxsi_module);
     NX_DEBUG(_debug_modifier, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 	     "XX-dummy : orig learning : %d", cf->learning ? 1 : 0);
@@ -1250,3 +1281,110 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   return NGX_DECLINED;
 }
 
+
+static ngx_int_t
+ngx_http_naxsi_add_variables(ngx_conf_t *cf)
+{
+    ngx_http_variable_t *var, *v;
+
+    for (v = ngx_http_naxsi_variables; v->name.len; v++) {
+        var = ngx_http_add_variable(cf, &v->name, v->flags);
+        if (var == NULL) {
+            return NGX_ERROR;
+        }
+        var->get_handler = v->get_handler;
+        var->data = v->data;
+    }
+    return NGX_OK;
+}
+
+
+static ngx_int_t
+ngx_http_naxsi_attack_family_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_http_request_ctx_t *ctx;
+    ngx_pool_cleanup_t *cln;
+    ngx_http_special_score_t *sc;
+    ngx_http_matched_rule_t *mr;
+    ngx_uint_t i;
+    size_t sz = 0;
+    u_char *str;
+    u_char *p;
+
+    ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
+
+    if (ctx == NULL && (r->internal || r->filter_finalize)) {
+        for (cln = r->pool->cleanup; cln; cln = cln->next) {
+            if (cln->handler == ngx_http_dummy_cleanup_handler) {
+                ctx = cln->data;
+                break;
+            }
+        }
+    }
+
+    if (!ctx) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    ngx_uint_t others = 0;
+    if (ctx->matched) {
+        mr = ctx->matched->elts;
+        for (i = 0; i < ctx->matched->nelts; i++) {
+            if (mr[i].rule->rule_id < 1000) {
+                others = 1;
+                sz = 8; /* strlen($OTHERS,) */
+                break;
+            }
+        }
+    }
+
+    if (ctx->special_scores) {
+        sc = ctx->special_scores->elts;
+        for (i = 0; i < ctx->special_scores->nelts; i++) {
+            if (sc[i].sc_score != 0) {
+                sz += sc[i].sc_tag->len + 1;
+            }
+        }
+    }
+
+    if (sz == 0) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    str = (u_char *)ngx_pcalloc(r->pool, sz);
+    p = str;
+
+    if (others) {
+        memcpy(p, "$OTHERS,", 8);
+        p += 8;
+    }
+
+    if (ctx->special_scores) {
+        sc = ctx->special_scores->elts;
+        for (i = 0; i < ctx->special_scores->nelts; i++) {
+            if (sc[i].sc_score != 0) {
+                memcpy(p, sc[i].sc_tag->data, sc[i].sc_tag->len);
+                p += sc[i].sc_tag->len;
+                *p = ',';
+                p++;
+            }
+        }
+    }
+
+    v->len = sz - 1;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    v->data = str;
+
+    return NGX_OK;
+}
+
+
+static void
+ngx_http_dummy_cleanup_handler(void *data)
+{
+    return;
+}

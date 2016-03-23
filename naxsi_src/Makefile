@@ -49,7 +49,7 @@ nginx_download:
 	wget --no-clobber "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz.asc" || exit 1
 	gpg --keyserver pgp.mit.edu --recv-keys 0x251a28de2685aed4 0x520A9993A1C052F8
 	gpg --verify "nginx-"$(NGINX_VERS)".tar.gz.asc" "nginx-"$(NGINX_VERS)".tar.gz" || exit 1
-	mkdir $(TMP_DIR)/
+	mkdir -p $(TMP_DIR)/
 	tar -C $(TMP_DIR)/ -xvzf nginx-$(NGINX_VERS).tar.gz  --strip-components=1
 
 configure:
@@ -63,7 +63,7 @@ build:
 	cd $(TMP_DIR)/ && make
 
 install:
-	make install
+	cd $(TMP_DIR)/ && make install
 
 deploy: 
 	@cp ./nginx.conf.example /tmp/naxsi_ut/nginx.conf

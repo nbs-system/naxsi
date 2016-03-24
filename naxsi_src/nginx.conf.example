@@ -17,11 +17,11 @@ http {
    LearningMode;
    SecRulesEnabled;
    DeniedUrl "/50x.html";
-   CheckRule "$$SQL >= 8" BLOCK;
-   CheckRule "$$RFI >= 8" BLOCK;
-   CheckRule "$$TRAVERSAL >= 4" BLOCK;
-   CheckRule "$$EVADE >= 4" BLOCK;
-   CheckRule "$$XSS >= 8" BLOCK;
+   CheckRule "$SQL >= 8" BLOCK;
+   CheckRule "$RFI >= 8" BLOCK;
+   CheckRule "$TRAVERSAL >= 4" BLOCK;
+   CheckRule "$EVADE >= 4" BLOCK;
+   CheckRule "$XSS >= 8" BLOCK;
    error_log /tmp/ngx_error.log debug;
    access_log /tmp/ngx_access.log;
    root   html;

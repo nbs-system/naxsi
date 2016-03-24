@@ -692,7 +692,6 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   if (b && ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, URI_ONLY, target_name))
     return (1);
   
-  
   /* Maybe it was $URL+$VAR (uri#name) or (#uri#name) */
   tmp_hashname.len = req->uri.len + 1 + name->len;
   /* one extra byte for target_name '#' */
@@ -1380,7 +1379,12 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	    !strncasecmp((const char *)name->data, 
 			 (const char *) location[z].target.data, 
 			 location[z].target.len)) {
-	    
+	  /* and if the zone is the right one indeed cf. #120 */
+	  if ( !(zone == BODY && location[z].body_var != 0) &&
+	       !(zone == HEADERS && location[z].headers_var != 0) &&
+	       !(zone == ARGS && location[z].args_var != 0))
+	    continue;
+	  
 	  NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		   "XX-[SPECIFIC] check one rule [%d] iteration %d * %d", r[i].rule_id, i, z);
 	  
@@ -1425,7 +1429,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 
 
       NX_DEBUG(_debug_basestr_ruleset,     NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		    "XX-test rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+		    "XX-test rulematch [zone-wide]!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 
     
       /* check the rule against the value*/
@@ -1440,7 +1444,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
     
       if (!r[i].br->negative) {
 	NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		      "XX-test rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+		      "XX-test rulematch [against-name]!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 
 	/* check the rule against the name*/
 	ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);

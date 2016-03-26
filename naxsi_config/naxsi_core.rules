@@ -74,8 +74,8 @@ MainRule "rx:%[2|3]."  "msg:double encoding !" "mz:ARGS|URL|BODY|$HEADERS_VAR:Co
 ####################################
 ## Evading tricks IDs: 1400-1500 ##
 ####################################
-MainRule "str:&#" "msg: utf7/8 encoding" "mz:ARGS|BODY|URL|$HEADERS_VAR:Cookie" "s:$EVADE:4" id:1400;
-MainRule "str:%U" "msg: M$ encoding" "mz:ARGS|BODY|URL|$HEADERS_VAR:Cookie" "s:$EVADE:4" id:1401;
+MainRule "str:&#" "msg:utf7/8 encoding" "mz:ARGS|BODY|URL|$HEADERS_VAR:Cookie" "s:$EVADE:4" id:1400;
+MainRule "str:%U" "msg:M$ encoding" "mz:ARGS|BODY|URL|$HEADERS_VAR:Cookie" "s:$EVADE:4" id:1401;
 
 #############################
 ## File uploads: 1500-1600 ##

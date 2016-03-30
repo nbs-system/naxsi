@@ -169,7 +169,7 @@ if options.full_auto is True:
     results = translate.full_auto()
     if results:
         for result in results:
-            print "{}".format(result)
+            print "{0}".format(result)
     else:
         print "No hits for this filter."
         sys.exit(1)

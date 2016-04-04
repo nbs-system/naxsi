@@ -1664,8 +1664,9 @@ ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
     ** Content-Disposition: form-data; name="lastname"\r\n\r\n
     ** <DATA>
     */
+    /* 31 = echo -n "content-disposition: form-data;" | wc -c */
     if (ngx_strncasecmp(src+idx, 
-			(u_char *) "content-disposition: form-data;", 30)) {
+			(u_char *) "content-disposition: form-data;", 31)) {
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		    "Unknown content-type: [%s]", src+idx);
       if (ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
@@ -1673,7 +1674,7 @@ ngx_http_dummy_multipart_parse(ngx_http_request_ctx_t *ctx,
       }
       return ;
     }
-    idx += 30;
+    idx += 31;
     line_end = (u_char *) ngx_strchr(src+idx, '\n');
     if (!line_end) {
       if (ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {

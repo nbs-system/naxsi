@@ -647,13 +647,17 @@ class NxTranslate():
         total_events = int(str(x["hits"]["total"]))
         print str(self.grn.format(total_events)) + " items to be tagged ..."
         size = int(x['hits']['total'])
-        if size > 100:
+        if size > 20000:
+            size = size / 100
+        elif size > 100:
             size = size / 10
         while count < total_events:
             esq["size"] = size
             esq["from"] = 0
             res = self.search(esq)
             # Iterate through matched evts to tag them.
+            if int(res['hits']['total']) == 0:
+                break
             for item in res['hits']['hits']:
                 eid = item['_id']
                 body = item['_source']

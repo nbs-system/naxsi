@@ -154,7 +154,12 @@ def get_filter(arg_filter):
 if options.filter is not None:
     cfg.cfg["global_filters"].update(get_filter(options.filter))
 
-es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"])
+try:
+    use_ssl = bool(cfg.cfg["elastic"]["use_ssl"])
+except KeyError:
+    use_ssl = False
+    
+es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"], use_ssl=use_ssl)
 translate = NxTranslate(es, cfg)
 
 

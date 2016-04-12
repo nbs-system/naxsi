@@ -52,6 +52,11 @@ WAF, Naxsi filters only GET and POST resquests,
 is a [Free software]( https://www.gnu.org/licenses/gpl.html ) (as in freedom)
 and free (as in free beer) to use.
 
+## On what does it run?
+Naxsi is compatible with any nginx version, altought is currently doesn't play well with the new HTTPv2 protocol added in recent nginx version. See [issue #227]( https://github.com/nbs-system/naxsi/issues/227 ) for more details.
+
+It depends on `libpcre` for its regexp support, and was repported to work great on NetBSD, FreeBSD, OpenBSD, Debian, Ubuntu and CentOS.
+
 ### Getting started
 
 - The [documentation](https://github.com/nbs-system/naxsi/wiki)

@@ -75,8 +75,11 @@ strfaststr(unsigned char *haystack, unsigned int hl,
       else {
 	  if (found+nl >= end)
 	    break;
-	  if (found+nl < end)
+	  if (found+nl < end) {
+	    /* the haystack is shrinking */
 	    cpt = found+1;
+	    hl = (unsigned int) (end - cpt);
+	  }
 	}
     }
   return (NULL);

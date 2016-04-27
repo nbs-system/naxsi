@@ -234,9 +234,8 @@ naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
 	    /* as it happened in the 2nd part of quoted character, 
 	       we need to restore the decoded char as well. */
 	    *d++ = '%';
-	    *d++ = (0 >= decoded && decoded < 10) ? decoded + '0' : 
-	      decoded - 10 + 'a';
-	    *d++ = ch;
+	    *d++ = *(s - 2);
+	    *d++ = *(s - 1);
 	    bad++;
             break;
         }

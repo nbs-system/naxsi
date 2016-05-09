@@ -335,11 +335,25 @@ nx_find_wl_in_hash(ngx_str_t *mstr,
   
   ngx_int_t			k;
   ngx_http_whitelist_rule_t	*b = NULL;
-  size_t			i;
   
 
-  for (i = 0; i < mstr->len; i++)
-    mstr->data[i] = tolower(mstr->data[i]);
+  /*#227 http2 : seems that header names are now stored in r/o zone ?*/
+  /*
+  ** (gdb) p mstr
+  ** $1 = (ngx_str_t *) 0x1348768
+  ** (gdb) p mstr->data
+  ** $2 = (u_char *) 0x4a4404 "cookie"
+  ** (gdb) p i
+  ** $3 = 0
+  ** (gdb) x/10s 0x4a4404
+  ** 0x4a4404:	 "cookie"
+  ** 0x4a440b:	 "strict-transport-security"
+  ** 0x4a4425:	 "transfer-encoding"
+  ** ...
+  */
+  /*   size_t			i; */
+  /* for (i = 0; i < mstr->len; i++) */
+  /*   mstr->data[i] = tolower(mstr->data[i]); */
   
   k = ngx_hash_key_lc(mstr->data, mstr->len);
   

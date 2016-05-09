@@ -351,10 +351,12 @@ nx_find_wl_in_hash(ngx_str_t *mstr,
   ** 0x4a4425:	 "transfer-encoding"
   ** ...
   */
-  /*   size_t			i; */
-  /* for (i = 0; i < mstr->len; i++) */
-  /*   mstr->data[i] = tolower(mstr->data[i]); */
-  
+  if (zone != HEADERS) {
+    size_t			i;
+    for (i = 0; i < mstr->len; i++)
+      mstr->data[i] = tolower(mstr->data[i]);
+  }
+
   k = ngx_hash_key_lc(mstr->data, mstr->len);
   
   if ((zone == BODY || zone == FILE_EXT) && cf->wlr_body_hash && cf->wlr_body_hash->size > 0)

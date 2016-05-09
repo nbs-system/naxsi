@@ -11,8 +11,11 @@ http {
  sendfile        on;
  keepalive_timeout  65;
  server {
-  listen 4242;
+  listen 4242 ssl http2;
+  ssl_certificate /tmp/nginx.crt;	
+  ssl_certificate_key /tmp/nginx.key;
   server_name  localhost;
+  set $naxsi_extensive_log 1;
   location / {
    LearningMode;
    SecRulesEnabled;

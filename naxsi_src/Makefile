@@ -10,8 +10,8 @@ CAK		:=
 COV 		:= 0
 
 #Allows to force for specific UT only
-#TEST 		:= "00*.t"
-NGINX_VERS := "1.9.11"
+TEST 		:= "26*.t"
+NGINX_VERS := "1.10.0"
 
 NGINX_OPTIONS="--error-log-path=/tmp/naxsi_ut/error.log"
 NGINX_OPTIONS+="--conf-path=/tmp/naxsi_ut/nginx.conf"
@@ -26,6 +26,7 @@ NGINX_OPTIONS+="--with-http_ssl_module"
 NGINX_OPTIONS+="--without-mail_pop3_module"
 NGINX_OPTIONS+="--without-mail_smtp_module"
 NGINX_OPTIONS+="--without-mail_imap_module"
+NGINX_OPTIONS+="--with-http_v2_module"
 NGINX_OPTIONS+="--without-http_uwsgi_module"
 NGINX_OPTIONS+="--without-http_scgi_module"
 NGINX_OPTIONS+="--add-dynamic-module=$(MOD_PATH)"
@@ -56,7 +57,7 @@ configure:
 ifeq ($(COV),1)
 	cd $(TMP_DIR)/ && ./configure --with-cc-opt="--coverage -g3" --with-ld-opt="-lgcov" $(NGINX_OPTIONS)
 else
-	cd $(TMP_DIR)/ && ./configure $(NGINX_OPTIONS)
+	cd $(TMP_DIR)/ && ./configure --with-cc-opt="-g3 -gstabs" $(NGINX_OPTIONS)
 endif
 
 build:

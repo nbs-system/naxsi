@@ -10,7 +10,7 @@ CAK		:=
 COV 		:= 0
 
 #Allows to force for specific UT only
-TEST 		:= "26*.t"
+#TEST 		:= ""
 NGINX_VERS := "1.10.0"
 
 NGINX_OPTIONS="--error-log-path=/tmp/naxsi_ut/error.log"
@@ -69,6 +69,7 @@ install:
 deploy: 
 	@cp ./nginx.conf.example /tmp/naxsi_ut/nginx.conf
 	@cp ../naxsi_config/naxsi_core.rules /tmp/naxsi_ut/naxsi_core.rules
+	@openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/nginx.key -out /tmp/nginx.crt
 
 
 # RUN UNIT TESTS

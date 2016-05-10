@@ -69,7 +69,7 @@ install:
 deploy: 
 	@cp ./nginx.conf.example /tmp/naxsi_ut/nginx.conf
 	@cp ../naxsi_config/naxsi_core.rules /tmp/naxsi_ut/naxsi_core.rules
-	@openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/nginx.key -out /tmp/nginx.crt
+	@openssl req -batch -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/nginx.key -out /tmp/nginx.crt
 
 
 # RUN UNIT TESTS

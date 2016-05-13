@@ -701,7 +701,7 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
 					 sizeof(ngx_http_rule_t *));
 	if (!dlc->rxmz_wlr) return (NGX_ERROR); /* LCOV_EXCL_LINE */
       }
-      if (name_idx != -1) {
+      if (name_idx != -1 && !custloc_array(curr_r->br->custom_locations->elts)[name_idx].target_rx) {
 	custloc_array(curr_r->br->custom_locations->elts)[name_idx].target_rx = 
 	  ngx_pcalloc(cf->pool, sizeof(ngx_regex_compile_t));
 	rgc = custloc_array(curr_r->br->custom_locations->elts)[name_idx].target_rx;
@@ -714,7 +714,7 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
 	if (ngx_regex_compile(rgc) != NGX_OK)
 	  return (NGX_ERROR);
       }
-      if (uri_idx != -1) {
+      if (uri_idx != -1 && !custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target_rx) {
 	custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target_rx = 
 	  ngx_pcalloc(cf->pool, sizeof(ngx_regex_compile_t));
 	rgc = custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target_rx;

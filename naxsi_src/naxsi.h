@@ -67,7 +67,6 @@ extern ngx_module_t ngx_http_naxsi_module;
 #define _debug_loc_conf 0
 #define _debug_main_conf 0
 #define _debug_mechanics 0
-#define _debug_mechanics 0
 #define _debug_json 0
 #define _debug_modifier 0
 #define _debug_payload_handler 0

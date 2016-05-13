@@ -10,7 +10,7 @@ CAK		:=
 COV 		:= 0
 
 #Allows to force for specific UT only
-#TEST 		:= "26*.t"
+#TEST 		:= "27*.t"
 NGINX_VERS := "1.9.11"
 
 NGINX_OPTIONS="--error-log-path=/tmp/naxsi_ut/error.log"
@@ -56,12 +56,12 @@ configure:
 ifeq ($(COV),1)
 	cd $(TMP_DIR)/ && ./configure --with-cc-opt="--coverage -g3 -gstabs" --with-ld-opt="-lgcov" $(NGINX_OPTIONS)
 else
-	cd $(TMP_DIR)/ && ./configure --with-cc-opt="-gstabs --coverage -g3" $(NGINX_OPTIONS)
+	cd $(TMP_DIR)/ && ./configure --with-cc-opt="-gstabs -g3" $(NGINX_OPTIONS)
 endif
 
 build:
 	cd $(TMP_DIR)/ && make
-	if [ -d $(TMP_DIR)"/naxsi_ut" ] ; then  cp $(TMP_DIR)/objs/ngx_http_naxsi_module.so /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so ; fi
+	if [ -d "/tmp/naxsi_ut" ] ; then  cp $(TMP_DIR)/objs/ngx_http_naxsi_module.so /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so ; fi
 
 install:
 	cd $(TMP_DIR)/ && make install

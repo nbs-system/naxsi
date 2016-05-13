@@ -1341,9 +1341,10 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 			   enum DUMMY_MATCH_ZONE	zone)
 {
   ngx_http_rule_t		   *r;
-  unsigned int			   i, ret, z;
+  unsigned int			   i, ret, z, uri_constraint_ok=1;
   ngx_int_t			   nb_match=0;
   ngx_http_custom_rule_location_t *location;
+  
   
   NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 	   "XX-check check [%V]=[%V] in zone %s", name, value,
@@ -1372,6 +1373,39 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
     /* does the rule have a custom location ? custom location means checking only on a specific argument */
     if (name && name->len > 0 && r[i].br->custom_location) {
       location = r[i].br->custom_locations->elts;
+
+      /*
+      ** make a first pass, just in order to check that any 
+      ** $URL / $URL_X constraints are validated before checking any other 
+      ** parameters.
+      ** Unlike other criterias (wich are treated as 'OR')
+      ** this one must be valid to go forward
+      */
+      for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
+	
+	if (location[z].specific_url) {
+	  
+	  /* if matchzone is a regex, ensure it matches (ie. BODY_VAR_X / ARGS_VAR_X / ..) */
+	  if (r[i].br->rx_mz && ngx_http_dummy_pcre_wrapper(location[z].target_rx, req->uri.data, req->uri.len) == -1)
+	    uri_constraint_ok = 0;
+	  
+	  /* if it was a static string, ensure it matches (ie. BODY_VAR / ARGS_VAR / ..) */
+	  if ( (!r[i].br->rx_mz) && strncasecmp((const char *) req->uri.data, 
+						(const char *) location[z].target.data, 
+						req->uri.len) )
+	    uri_constraint_ok = 0;
+	  
+	  break;
+	}
+      }
+      
+      /*
+      ** if one of the custom location rule specifies an $URL/$URL_X
+      ** and it was mismatched, skip the rule.
+      */
+      if (uri_constraint_ok == 0)
+	continue;
+      
       /* for each custom location */
       for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
 	
@@ -1380,7 +1414,6 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	     !(zone == HEADERS && location[z].headers_var != 0) &&
 	     !(zone == ARGS && location[z].args_var != 0))
 	  continue;
-	
 	
 	if (r[i].br->rx_mz) { /* yep, regex matchzone */
 	  

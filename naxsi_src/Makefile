@@ -10,7 +10,7 @@ CAK		:=
 COV 		:= 0
 
 #Allows to force for specific UT only
-#TEST 		:= "00*.t"
+#TEST 		:= "26*.t"
 NGINX_VERS := "1.9.11"
 
 NGINX_OPTIONS="--error-log-path=/tmp/naxsi_ut/error.log"
@@ -61,6 +61,7 @@ endif
 
 build:
 	cd $(TMP_DIR)/ && make
+	cp $(TMP_DIR)/objs/ngx_http_naxsi_module.so /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so
 
 install:
 	cd $(TMP_DIR)/ && make install

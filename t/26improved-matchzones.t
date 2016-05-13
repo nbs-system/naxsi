@@ -354,4 +354,220 @@ location /RequestDenied {
 GET /?foo1=ratataXXX
 --- error_code: 412
 
+=== TEST 7.0: static blacklist on $URL:/ | $ARGS_VAR  (both good)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL:/foo|$ARGS_VAR:aaa" "s:$XSS:8";
+--- config
+location / {
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /foo?aaa=ratataXXX
+--- error_code: 412
+
+
+=== TEST 7.1: static blacklist on $URL:/ | $ARGS_VAR  (bad url)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL:/foo|$ARGS_VAR:aaa" "s:$XSS:8";
+--- config
+location / {
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /foox?aaa=ratataXXX
+--- error_code: 404
+
+
+
+=== TEST 7.2: static blacklist on $URL:/ | $ARGS_VAR  (bad ARGS_VAR)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL:/foo|$ARGS_VAR:aaa" "s:$XSS:8";
+--- config
+location / {
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /foo?axaa=ratataXXX
+--- error_code: 404
+
+=== TEST 7.3: static blacklist on $URL:/ | $ARGS_VAR  (one bad ARGS_VAR and one good)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL:/foo|$ARGS_VAR:aaa|$ARGS_VAR:tutu" "s:$XSS:8";
+--- config
+location / {
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /foo?tutu=ratataXXX
+--- error_code: 412
+
+
+=== TEST 7.0: rx blacklist on $URL_X:/ | $ARGS_VAR_X  (both good)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL_X:^/foo$|$ARGS_VAR_X:^aaa[0-9]+$" "s:$XSS:8";
+--- config
+location / {
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /foo?aaa4242=ratataXXX
+--- error_code: 412
+
+
+=== TEST 7.1: rx blacklist on $URL_X:/ | $ARGS_VAR_X  (bad url)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL_X:^/foo$|$ARGS_VAR_X:^aaa$" "s:$XSS:8";
+--- config
+location / {
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /foox?aaa=ratataXXX
+--- error_code: 404
+
+
+
+=== TEST 7.2: rx blacklist on $URL_X:/ | $ARGS_VAR_X  (bad ARGS_VAR)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL_X:^/foo$|$ARGS_VAR_X:^aaa$" "s:$XSS:8";
+--- config
+location / {
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /foo?axaa=ratataXXX
+--- error_code: 404
+
+=== TEST 7.3: static blacklist on $URL:/ | $ARGS_VAR  (one bad ARGS_VAR and one good)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL_X:^/foo$|$ARGS_VAR_X:^aaa$|$ARGS_VAR_X:^tutu$" "s:$XSS:8";
+--- config
+location / {
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /foo?tutu=ratataXXX
+--- error_code: 412
+
+
 

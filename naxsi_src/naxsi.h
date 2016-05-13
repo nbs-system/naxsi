@@ -49,13 +49,6 @@
 
 extern ngx_module_t ngx_http_naxsi_module;
 
-#ifdef _debug_whitelist
-    #define naxsi__debug_whitelist(...)
-#else
-    #define naxsi__debug_whitelist(...) ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, __VA_ARGS__)
-#endif
-
-
 /*
 ** as the #ifdef #endif for debug are getting really messy ...
 ** Bellow are all the possibles debug defines. To enable associated feature
@@ -84,6 +77,7 @@ extern ngx_module_t ngx_http_naxsi_module;
 #define _debug_rx 0
 #define _debug_score 0
 #define _debug_spliturl_ruleset 0
+#define _debug_whitelist_compat 0
 #define _debug_whitelist 0
 #define _debug_whitelist_heavy 0
 #define _debug_whitelist_light 0

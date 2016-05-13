@@ -290,6 +290,11 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 #define MZ_HEADER_VAR_X "$HEADERS_VAR_X:"
 #define MZ_POST_VAR_X "$BODY_VAR_X:"
 #define MZ_SPECIFIC_URL_X "$URL_X:"
+		      /*
+		      ** if the rule is a negative rule (has an ID, not a WL field)
+		      ** we need to pre-compile the regex for runtime.
+		      ** Don't do it for whitelists, as its done in a separate manner.
+		      */
 		      if (!strncmp(tmp_ptr, MZ_GET_VAR_X, strlen(MZ_GET_VAR_X))) {
 			custom_rule->args_var = 1;
 			rule->br->args_var = 1;
@@ -332,9 +337,29 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 		      return (NGX_CONF_ERROR);
 		    custom_rule->target.len = tmp_len;
 		    memcpy(custom_rule->target.data, tmp_ptr, tmp_len);
+		    /*
+		    ** pre-compile regex !
+		    */
+		    if (rule->br->rx_mz == 1) {
+
+		      custom_rule->target_rx = ngx_pcalloc(r->pool, sizeof(ngx_regex_compile_t));
+		      if (!custom_rule->target_rx)
+			return (NGX_CONF_ERROR);
+		      custom_rule->target_rx->options = PCRE_CASELESS|PCRE_MULTILINE;
+		      custom_rule->target_rx->pattern = custom_rule->target;
+		      custom_rule->target_rx->pool = r->pool;
+		      custom_rule->target_rx->err.len = 0;
+		      custom_rule->target_rx->err.data = NULL;
+  
+		      if (ngx_regex_compile(custom_rule->target_rx) != NGX_OK) {
+			NX_LOG_DEBUG(_debug_rx, NGX_LOG_EMERG, r, 0, "XX-FAILED RX:%V",
+				     custom_rule->target);
+			return (NGX_CONF_ERROR);
+		      }
+		    }
 		    custom_rule->hash = ngx_hash_key_lc(custom_rule->target.data, 
 							custom_rule->target.len);
-
+		    
 		    NX_LOG_DEBUG(_debug_zone, NGX_LOG_EMERG, r, 0, "XX- ZONE:[%V]", 
 				 &(custom_rule->target));  
 		    tmp_ptr += tmp_len;

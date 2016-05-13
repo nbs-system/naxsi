@@ -1341,13 +1341,13 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 			   enum DUMMY_MATCH_ZONE	zone)
 {
   ngx_http_rule_t		   *r;
-  unsigned int			   i, ret, z, uri_constraint_ok=1;
+  unsigned int			   i, ret, z, uri_constraint_ok=1, rule_matched=0;
   ngx_int_t			   nb_match=0;
   ngx_http_custom_rule_location_t *location;
   
   
   NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-	   "XX-check check [%V]=[%V] in zone %s", name, value,
+	   "XX- check check [%V]=[%V] in zone %s", name, value,
 	   zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : zone == URL ? "URL" :
 	   zone == ARGS ? "ARGS" : zone == FILE_EXT ? "FILE_EXT" : 
 	   zone == RAW_BODY ? "RAW_BODY" : "UNKNOWN"); 
@@ -1369,7 +1369,10 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 
 
   for (i = 0; i < rules->nelts && ( (!ctx->block || ctx->learning) && !ctx->drop ) ; i++) {
-      
+
+    NX_DEBUG(_debug_basestr_ruleset , NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+	     "XX-RULE %d : START", r[i].rule_id);
+    
     /* does the rule have a custom location ? custom location means checking only on a specific argument */
     if (name && name->len > 0 && r[i].br->custom_location) {
       location = r[i].br->custom_locations->elts;
@@ -1409,31 +1412,25 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
       /* for each custom location */
       for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
 	
+	rule_matched = 0;
 	/* check if zone is correct before checking names cf. issue #120 */
 	if ( !(zone == BODY && location[z].body_var != 0) &&
 	     !(zone == HEADERS && location[z].headers_var != 0) &&
 	     !(zone == ARGS && location[z].args_var != 0))
 	  continue;
 	
-	if (r[i].br->rx_mz) { /* yep, regex matchzone */
-	  
-	  NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		   "XX-[SPECIFIC] YEP, regex ! %p (%V)", location[z].target_rx, &(location[z].target));
-	}
-	
 	/* if matchzone is a regex, ensure it matches (ie. BODY_VAR_X / ARGS_VAR_X / ..) */
 	if (r[i].br->rx_mz && ngx_http_dummy_pcre_wrapper(location[z].target_rx, name->data, name->len) == -1)
 	  continue;
 	
-
 	/* if it was a static string, ensure it matches (ie. BODY_VAR / ARGS_VAR / ..) */
 	if ( (!r[i].br->rx_mz) && (name->len != location[z].target.len ||
 				   strncasecmp((const char *)name->data, 
 					       (const char *) location[z].target.data, 
 					       location[z].target.len)) )
 	  continue;
-	    
-	    
+	
+	
 	NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		 "XX-[SPECIFIC] check one rule [%d] iteration %d * %d", r[i].rule_id, i, z);
 	
@@ -1442,7 +1439,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	if (ret == 1) {
 	  NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		   "XX-apply rulematch [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
-	    
+	  rule_matched = 1;
 	  ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);	    
 	}
 	  
@@ -1451,57 +1448,63 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	  ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);
 	  /* if our rule matched, apply effects (score etc.) */
 	  if (ret == 1) {
-	    NX_DEBUG(_debug_basestr_ruleset, 	      NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+	    NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		     "XX-apply rulematch[in name] [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
-
+	    rule_matched = 1;
 	    ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, name, zone, nb_match, 1);
 	  }
 	}
-      }      
+	if (rule_matched == 1) {
+	  NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		   "XX-[SPECIFIC] Rule %d matched in custom_location, go to next rule", r[i].rule_id); 
+	  
+	  break;
+	}
+      }
     }
     
-  /*
-  ** check against the rule if the current zone is matching 
-  ** the zone the rule is meant to be check against
-  */
-  if ( (zone == HEADERS && r[i].br->headers) ||
-       (zone == URL && r[i].br->url) ||
-       (zone == ARGS && r[i].br->args) ||
-       (zone == BODY && r[i].br->raw_body) ||
-       (zone == BODY && r[i].br->body && !r[i].br->file_ext) ||
-       (zone == FILE_EXT && r[i].br->file_ext) ) {
+    /*
+    ** check against the rule if the current zone is matching 
+    ** the zone the rule is meant to be check against
+    */
+    if ( (zone == HEADERS && r[i].br->headers) ||
+	 (zone == URL && r[i].br->url) ||
+	 (zone == ARGS && r[i].br->args) ||
+	 (zone == BODY && r[i].br->raw_body) ||
+	 (zone == BODY && r[i].br->body && !r[i].br->file_ext) ||
+	 (zone == FILE_EXT && r[i].br->file_ext) ) {
 
 
-    NX_DEBUG(_debug_basestr_ruleset,     NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-	     "XX-test rulematch [zone-wide]!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+      NX_DEBUG(_debug_basestr_ruleset,     NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+	       "XX-test rulematch [zone-wide]!1 [%V]=[%V] [rule =%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 
     
-    /* check the rule against the value*/
-    ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
-    /*if our rule matched, apply effects (score etc.)*/
-    if (ret == 1) {
-      NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-	       "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
-
-      ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);
-    }
-    
-    if (!r[i].br->negative) {
-      NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-	       "XX-test rulematch [against-name]!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
-
-      /* check the rule against the name*/
-      ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);
+      /* check the rule against the value*/
+      ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
       /*if our rule matched, apply effects (score etc.)*/
       if (ret == 1) {
-	NX_DEBUG(_debug_basestr_ruleset, 	  NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+	NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		 "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 
-	ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 1);
+	ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);
+      }
+    
+      if (!r[i].br->negative) {
+	NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		 "XX-test rulematch [against-name]!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+
+	/* check the rule against the name*/
+	ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);
+	/*if our rule matched, apply effects (score etc.)*/
+	if (ret == 1) {
+	  NX_DEBUG(_debug_basestr_ruleset, 	  NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		   "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+
+	  ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 1);
+	}
       }
     }
   }
-}
   return (0);
 }
   

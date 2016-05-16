@@ -82,6 +82,8 @@ void			ngx_http_dummy_payload_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_naxsi_add_variables(ngx_conf_t *cf);
 static ngx_int_t ngx_http_naxsi_attack_family_variable(ngx_http_request_t *r,
         ngx_http_variable_value_t *v, uintptr_t data);
+static ngx_int_t ngx_http_naxsi_attack_action_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
 static void ngx_http_dummy_cleanup_handler(void *data);
 
 
@@ -261,6 +263,14 @@ static ngx_http_variable_t ngx_http_naxsi_variables[] = {
       0,                                        /* Data */
       NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
       0 },                                      /* Index */
+
+    { ngx_string("naxsi_attack_action"),        /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_attack_action_variable,    /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+
     { ngx_null_string, NULL, NULL, 0, 0, 0 }    /* Sentinel */
 };
 
@@ -1263,6 +1273,9 @@ ngx_http_naxsi_attack_family_variable(ngx_http_request_t *r, ngx_http_variable_v
     }
 
     str = (u_char *)ngx_pcalloc(r->pool, sz);
+    if (str == NULL) {
+        return NGX_ERROR;
+    }
     p = str;
 
     if (others) {
@@ -1283,6 +1296,89 @@ ngx_http_naxsi_attack_family_variable(ngx_http_request_t *r, ngx_http_variable_v
     }
 
     v->len = sz - 1;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    v->data = str;
+
+    return NGX_OK;
+}
+
+
+static ngx_int_t
+ngx_http_naxsi_attack_action_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_http_request_ctx_t *ctx;
+    ngx_pool_cleanup_t *cln;
+    size_t sz = 0;
+    u_char *str;
+    u_char *p;
+    //least significant bit represents if action is pass or block
+    //second least significant bit represents if naxsi is in learning mode
+    u_int learning_block_bits = 0;
+
+    ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
+
+    if (ctx == NULL && (r->internal || r->filter_finalize)) {
+        for (cln = r->pool->cleanup; cln; cln = cln->next) {
+            if (cln->handler == ngx_http_dummy_cleanup_handler) {
+                ctx = cln->data;
+                break;
+            }
+        }
+    }
+
+    if (!ctx) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    learning_block_bits = ((ctx->learning ? 1 : 0) << 1) | (ctx->block ? 1 : 0);
+
+    switch (learning_block_bits) {
+        case 0: //pass
+            sz = 5; //  strlen("$PASS")
+            break;
+        case 1: //block
+            sz = 6; //  strlen("$BLOCK")
+            break;
+        case 2: //learning pass
+            sz = 14; //  strlen("$LEARNING-PASS")
+            break;
+        case 3: //learning block
+            sz = 15; //  strlen("$LEARNING-BLOCK")
+            break;
+        default:
+            break;
+    }
+
+    if (sz == 0) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    str = (u_char *)ngx_pcalloc(r->pool, sz);
+    if (str == NULL) {
+        return NGX_ERROR;
+    }
+    p = str;
+    //p will not be updated, we only write to it once
+    switch (learning_block_bits) {
+        case 0: //pass
+            memcpy(p, "$PASS", sz);
+            break;
+        case 1: //block
+            memcpy(p, "$BLOCK", sz);
+            break;
+        case 2: //learning pass
+            memcpy(p, "$LEARNING-PASS", sz);
+            break;
+        case 3: //learning block
+            memcpy(p, "$LEARNING-BLOCK", sz);
+            break;
+    }
+
+    v->len = sz;
     v->valid = 1;
     v->no_cacheable = 0;
     v->not_found = 0;

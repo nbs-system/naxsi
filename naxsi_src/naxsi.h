@@ -114,6 +114,21 @@ extern ngx_module_t ngx_http_naxsi_module;
 **
 */
 
+/*
+** basic rule can have 4 (so far) kind of matching mechanisms
+** RX
+** STR
+** LIBINJ_XSS
+** LIBINJ_SQL
+*/
+enum DETECT_MECHANISM  {
+  NONE = -1,
+  RX,
+  STR,
+  LIBINJ_XSS,
+  LIBINJ_SQL
+};
+
 enum MATCH_TYPE {
   URI_ONLY=0,
   NAME_ONLY,
@@ -223,9 +238,15 @@ typedef struct
 {
   ngx_str_t		*str; // string
   ngx_regex_compile_t   *rx;  // or regex
-  ngx_int_t		rx_mz;
+  /*
+  ** basic rule can have 4 (so far) kind of matching mechanisms :
+  ** RX, STR, LIBINJ_XSS, LIBINJ_SQL
+  */
+  enum DETECT_MECHANISM match_type;
+  /* is the match zone a regex or a string (hashtable) */
+  ngx_int_t		rx_mz; 
   /* ~~~~~ match zones ~~~~~~ */
-  ngx_int_t			zone;
+  ngx_int_t		zone;
   /* match in full body (POST DATA) */
   ngx_flag_t		body:1;
   ngx_flag_t		raw_body:1;
@@ -491,6 +512,8 @@ typedef struct ngx_http_nx_json_s {
 #define STR_T "str:"
 #define MATCH_ZONE_T "mz:"
 #define WHITELIST_T "wl:"
+#define LIBINJ_XSS_T "d:libinj_xss"
+#define LIBINJ_SQL_T "d:libinj_sql"
 #define NEGATIVE_T  "negative"
 
 /* 

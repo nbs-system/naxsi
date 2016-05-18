@@ -171,7 +171,7 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
   
   
   *nb_match = 0;
-  if (rl->br->rx) {
+  if (rl->br->match_type == RX && rl->br->rx) {
     tmp_idx = 0;
     len = str->len;
     while 
@@ -215,7 +215,7 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
     }
     return (-1);
   }
-  else if (rl->br->str) {
+  else if (rl->br->match_type == STR  && rl->br->str) {
     match = 0;
     tmp_idx = 0;
     while (1)	{
@@ -250,6 +250,18 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
 	return (0);
     }
   }
+  else if (rl->br->match_type == LIBINJ_XSS) {
+    if (libinjection_xss((const char *) str->data, str->len) == 1)
+      return (1);
+  }
+  else if (rl->br->match_type == LIBINJ_SQL) {
+    sfilter state;
+
+    libinjection_sqli_init(&state, (const char *)str->data, str->len, FLAG_NONE);
+    if (libinjection_is_sqli(&state) == 1)
+      return (1);
+  }
+  
   return (0);
 }
 

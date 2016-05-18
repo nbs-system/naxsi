@@ -42,8 +42,10 @@ void *dummy_msg(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
 void *dummy_rx(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
 void *dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
 void *dummy_str(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
-void	*dummy_negative(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
-void	*dummy_whitelist(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
+void *dummy_negative(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
+void *dummy_libinj_xss(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
+void *dummy_libinj_sql(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
+void *dummy_whitelist(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
 /*
 ** Structures related to the configuration parser
 */
@@ -60,6 +62,8 @@ static ngx_http_dummy_parser_t rule_parser[] = {
   {MSG_T, dummy_msg},
   {RX_T, dummy_rx},
   {STR_T, dummy_str},
+  {LIBINJ_XSS_T, dummy_libinj_xss},
+  {LIBINJ_SQL_T, dummy_libinj_sql},
   {MATCH_ZONE_T, dummy_zone},
   {NEGATIVE_T, dummy_negative},
   {WHITELIST_T, dummy_whitelist},
@@ -74,6 +78,22 @@ dummy_negative(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   rule->br->negative = 1;
   return (NGX_CONF_OK);
 }
+
+void	*
+dummy_libinj_xss(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
+{
+  rule->br->match_type = LIBINJ_XSS;
+  return (NGX_CONF_OK);
+}
+
+void	*
+dummy_libinj_sql(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
+{
+  rule->br->match_type = LIBINJ_SQL;
+  return (NGX_CONF_OK);
+}
+
+
 
 void	*
 dummy_score(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
@@ -386,6 +406,7 @@ dummy_str(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   
   if (!rule->br)
     return (NGX_CONF_ERROR);
+  rule->br->match_type = STR;
   str = ngx_pcalloc(r->pool, sizeof(ngx_str_t));
   if (!str)
     return (NGX_CONF_ERROR);
@@ -452,6 +473,7 @@ dummy_rx(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 
   if (!rule->br)
     return (NGX_CONF_ERROR);
+  rule->br->match_type = RX;
   //just prepare a string to hold the directive without 'rx:'
   ha.data = tmp->data+strlen(RX_T);
   ha.len = tmp->len-strlen(RX_T);
@@ -503,18 +525,17 @@ ngx_http_dummy_cfg_parse_one_rule(ngx_conf_t *cf,
       !ngx_strcmp(value[0].data, TOP_BASIC_RULE_N) ||
       !ngx_strcmp(value[0].data, TOP_MAIN_BASIC_RULE_T) ||
       !ngx_strcmp(value[0].data, TOP_MAIN_BASIC_RULE_N)) {
-    NX_LOG_DEBUG(_debug_cfg_parse_one_rule, NGX_LOG_EMERG, cf, 0, "XX-basic rule %V", &(value[1]));  
+    NX_LOG_DEBUG(_debug_cfg_parse_one_rule, NGX_LOG_EMERG, cf, 0, "naxsi-basic rule %V", &(value[1]));  
     current_rule->type = BR;
     current_rule->br = ngx_pcalloc(cf->pool, sizeof(ngx_http_basic_rule_t));
     if (!current_rule->br)
       return (NGX_CONF_ERROR);
   }
-  else 
-    {
-      NX_LOG_DEBUG(_debug_cfg_parse_one_rule, NGX_LOG_EMERG, cf, 0, 
-		   "XX-crit in rule %V", &(value[1]));  
-      return (NGX_CONF_ERROR);
-    }
+  else {
+    NX_LOG_DEBUG(_debug_cfg_parse_one_rule, NGX_LOG_EMERG, cf, 0, 
+		 "Unknown start keyword in rule %V", &(value[1]));  
+    return (NGX_CONF_ERROR);
+  }
   
   // check each word of config line against each rule
   for(i = 1; i < nb_elem && value[i].len > 0; i++) {

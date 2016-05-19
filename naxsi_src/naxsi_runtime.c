@@ -171,7 +171,7 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
   
   
   *nb_match = 0;
-  if (rl->br->rx) {
+  if (rl->br->match_type == RX && rl->br->rx) {
     tmp_idx = 0;
     len = str->len;
     while 
@@ -215,7 +215,7 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
     }
     return (-1);
   }
-  else if (rl->br->str) {
+  else if (rl->br->match_type == STR  && rl->br->str) {
     match = 0;
     tmp_idx = 0;
     while (1)	{
@@ -250,6 +250,18 @@ ngx_http_process_basic_rule_buffer(ngx_str_t *str,
 	return (0);
     }
   }
+  else if (rl->br->match_type == LIBINJ_XSS) {
+    if (libinjection_xss((const char *) str->data, str->len) == 1)
+      return (1);
+  }
+  else if (rl->br->match_type == LIBINJ_SQL) {
+    sfilter state;
+
+    libinjection_sqli_init(&state, (const char *)str->data, str->len, FLAG_NONE);
+    if (libinjection_is_sqli(&state) == 1)
+      return (1);
+  }
+  
   return (0);
 }
 
@@ -281,28 +293,28 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
   /* FILE_EXT zone is just a hack, as it indeed targets BODY */
   if (zone == FILE_EXT)
     zone = BODY;
-  naxsi__debug_whitelist("Possible whitelist ... check...");
+  NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "Possible whitelist ... check...");
 
   /* if whitelist targets arg name, but the rules hit content*/
   if (b->target_name && !target_name)
     {
-      naxsi__debug_whitelist("whitelist targets name, but rule matched content.");
+      NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "whitelist targets name, but rule matched content.");
       return (0);
     }
   /* if if the whitelist target contents, but the rule hit arg name*/
   if (!b->target_name && target_name)
     {
-      naxsi__debug_whitelist("whitelist targets content, but rule matched name.");
+      NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "whitelist targets content, but rule matched name.");
       return (0);
     }
 
   
   if (type == NAME_ONLY) {
-    naxsi__debug_whitelist("Name match in zone %s", zone == ARGS ? "ARGS" : zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : "UNKNOWN!!!!!");
+    NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "Name match in zone %s", zone == ARGS ? "ARGS" : zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : "UNKNOWN!!!!!");
     //False Positive, there was a whitelist that matches the argument name,
     // But is was actually matching an existing URI name.
     if (zone != b->zone || b->uri_only) {
-      naxsi__debug_whitelist("bad whitelist, name match, but WL was only on URL.");
+      NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "bad whitelist, name match, but WL was only on URL.");
       return (0);
     }
     return (nx_check_ids(r->rule_id, b->ids));
@@ -311,18 +323,18 @@ ngx_http_dummy_is_whitelist_adapted(ngx_http_whitelist_rule_t *b,
       type == MIXED) {
     /* zone must match */
     if (b->uri_only && type != URI_ONLY) {
-      naxsi__debug_whitelist("bad whitelist, type is URI_ONLY, but not whitelist");
+      NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "bad whitelist, type is URI_ONLY, but not whitelist");
       return (0);
     }
     
     if (zone != b->zone) {
-      naxsi__debug_whitelist("bad whitelist, URL match, but not zone");
+      NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "bad whitelist, URL match, but not zone");
       return (0);
     }
     
     return (nx_check_ids(r->rule_id, b->ids));    
   }
-  naxsi__debug_whitelist("finished wl check, failed.");
+  NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "finished wl check, failed.");
   
   return (0);
 }
@@ -540,13 +552,13 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   if (!name)
     name = &nullname;
 
-  naxsi__debug_whitelist("is rule [%d] whitelisted in zone %s for item %V", r->rule_id,
-		zone == ARGS ? "ARGS" : zone == HEADERS ? "HEADERS" : zone == BODY ? 
-			"BODY" : zone == URL ? "URL" : zone == FILE_EXT ? 
-			"FILE_EXT" : zone == RAW_BODY ? "RAW_BODY" : "UNKNOWN",
-		name);
+  NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "is rule [%d] whitelisted in zone %s for item %V", r->rule_id,
+	   zone == ARGS ? "ARGS" : zone == HEADERS ? "HEADERS" : zone == BODY ? 
+	   "BODY" : zone == URL ? "URL" : zone == FILE_EXT ? 
+	   "FILE_EXT" : zone == RAW_BODY ? "RAW_BODY" : "UNKNOWN",
+	   name);
   if (target_name)
-    naxsi__debug_whitelist("extra: exception happened in |NAME");
+    NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "extra: exception happened in |NAME");
   tmp_hashname.data = NULL;
   
   /* Check if the rule is part of disabled rules for this location */
@@ -557,17 +569,17 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
       /* Is rule disabled ? */
       if (nx_check_ids(r->rule_id, dr[i]->wlid_array)) {
 
-	naxsi__debug_whitelist("rule %d is disabled somewhere", r->rule_id);
+	NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled somewhere", r->rule_id);
 	/* if it doesn't specify zone, skip zone-check */
 	if (!dr[i]->br) {
-	  naxsi__debug_whitelist("no zone, skip zone-check");
+	  NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "no zone, skip zone-check");
 	  continue;
 	}
 	
 	/* If rule target nothing, it's whitelisted everywhere */
 	if (!(dr[i]->br->args ||  dr[i]->br->headers || 
 	      dr[i]->br->body ||  dr[i]->br->url)) {
-	  naxsi__debug_whitelist("rule %d is fully disabled", r->rule_id);
+	  NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is fully disabled", r->rule_id);
 	  return (1); 
 	}
 	
@@ -578,37 +590,37 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
 	switch (zone) {
 	case ARGS:
 	  if (dr[i]->br->args) {
-	    naxsi__debug_whitelist("rule %d is disabled in ARGS", r->rule_id);
+	    NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in ARGS", r->rule_id);
 	    return (1);
 	  }
 	  break;
 	case HEADERS:
 	  if (dr[i]->br->headers) {
-	    naxsi__debug_whitelist("rule %d is disabled in HEADERS", r->rule_id);
+	    NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in HEADERS", r->rule_id);
 	    return (1);
 	  }
 	  break;
 	case BODY:
 	  if (dr[i]->br->body) {
-	    naxsi__debug_whitelist("rule %d is disabled in BODY", r->rule_id);
+	    NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in BODY", r->rule_id);
 	    return (1);
 	  }
 	  break;
 	case RAW_BODY:
 	  if (dr[i]->br->body) {
-	    naxsi__debug_whitelist("rule %d is disabled in BODY", r->rule_id);
+	    NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in BODY", r->rule_id);
 	    return (1);
 	  }
 	  break;
 	case FILE_EXT:
 	  if (dr[i]->br->file_ext) {
-	    naxsi__debug_whitelist("rule %d is disabled in FILE_EXT", r->rule_id);
+	    NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in FILE_EXT", r->rule_id);
 	    return (1);
 	  }
 	  break;
 	case URL:
 	  if (dr[i]->br->url) {
-	    naxsi__debug_whitelist("rule %d is disabled in URL zone:%d", r->rule_id, zone);
+	    NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "rule %d is disabled in URL zone:%d", r->rule_id, zone);
 	    return (1);
 	  }
 	  break;
@@ -618,13 +630,13 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
       }
     }
   }
-  naxsi__debug_whitelist("hashing varname [%V]", name);
+  NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "hashing varname [%V]", name);
   /*
   ** check for ARGS_VAR:x(|NAME) whitelists.
   ** (name) or (#name)
   */
   if (name->len > 0) {
-    naxsi__debug_whitelist("hashing varname [%V] (rule:%d) - 'wl:X_VAR:%V'", name, r->rule_id, name);
+    NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "hashing varname [%V] (rule:%d) - 'wl:X_VAR:%V'", name, r->rule_id, name);
     /* try to find in hashtables */
     b = nx_find_wl_in_hash(name, cf, zone);
     if (b && ngx_http_dummy_is_whitelist_adapted(b, name, zone, r, req, NAME_ONLY, target_name))
@@ -635,7 +647,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
     tmp_hashname.data = ngx_pcalloc(req->pool, tmp_hashname.len+1);
     tmp_hashname.data[0] = '#';
     memcpy(tmp_hashname.data+1, name->data, name->len);
-    naxsi__debug_whitelist("hashing varname [%V] (rule:%d) - 'wl:X_VAR:%V|NAME'", name, r->rule_id, name);
+    NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "hashing varname [%V] (rule:%d) - 'wl:X_VAR:%V|NAME'", name, r->rule_id, name);
     b = nx_find_wl_in_hash(&tmp_hashname, cf, zone);
     ngx_pfree(req->pool, tmp_hashname.data);
     tmp_hashname.data = NULL;
@@ -654,7 +666,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
     if (!tmp_hashname.data) return (0);
     tmp_hashname.len = req->uri.len;
     k = ngx_hash_strlow(tmp_hashname.data, req->uri.data, req->uri.len);
-    naxsi__debug_whitelist("hashing uri [%V] (rule:%d) 'wl:$URI:%V|*'", &(tmp_hashname), r->rule_id, &(tmp_hashname));
+    NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "hashing uri [%V] (rule:%d) 'wl:$URI:%V|*'", &(tmp_hashname), r->rule_id, &(tmp_hashname));
 
     b = (ngx_http_whitelist_rule_t*) ngx_hash_find(cf->wlr_url_hash, k,
 						   (u_char*) tmp_hashname.data,
@@ -671,7 +683,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   if (!tmp_hashname.data) return (0);
   tmp_hashname.len = req->uri.len;
   ngx_memcpy(tmp_hashname.data, req->uri.data, req->uri.len);
-  naxsi__debug_whitelist("hashing uri#1 [%V] (rule:%d) ($URL:X|URI)", &(tmp_hashname), r->rule_id);
+  NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "hashing uri#1 [%V] (rule:%d) ($URL:X|URI)", &(tmp_hashname), r->rule_id);
   b = nx_find_wl_in_hash(&(tmp_hashname), cf, zone);
   ngx_pfree(req->pool, tmp_hashname.data);
   tmp_hashname.data = NULL;
@@ -685,7 +697,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   tmp_hashname.len = req->uri.len + 1;
   tmp_hashname.data[0] = '#';
   ngx_memcpy(tmp_hashname.data+1, req->uri.data, req->uri.len);
-  naxsi__debug_whitelist("hashing uri#3 [%V] (rule:%d) ($URL:X|ZONE|NAME)", &(tmp_hashname), r->rule_id);
+  NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "hashing uri#3 [%V] (rule:%d) ($URL:X|ZONE|NAME)", &(tmp_hashname), r->rule_id);
   b = nx_find_wl_in_hash(&(tmp_hashname), cf, zone);
   ngx_pfree(req->pool, tmp_hashname.data);
   tmp_hashname.data = NULL;
@@ -704,7 +716,7 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   strncat((char*)tmp_hashname.data, "#", 1);
   strncat((char*)tmp_hashname.data, (char*)name->data, name->len);
     
-  naxsi__debug_whitelist("hashing MIX [%V] ($URL:x|$X_VAR:y) or ($URL:x|$X_VAR:y|NAME)", &tmp_hashname);
+  NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "hashing MIX [%V] ($URL:x|$X_VAR:y) or ($URL:x|$X_VAR:y|NAME)", &tmp_hashname);
   b = nx_find_wl_in_hash(&(tmp_hashname), cf, zone);
   ngx_pfree(req->pool, tmp_hashname.data);
   
@@ -1341,15 +1353,16 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 			   enum DUMMY_MATCH_ZONE	zone)
 {
   ngx_http_rule_t		   *r;
-  unsigned int			   i, ret, z;
+  unsigned int			   i, ret, z, uri_constraint_ok=1, rule_matched=0;
   ngx_int_t			   nb_match=0;
   ngx_http_custom_rule_location_t *location;
   
+  
   NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		"XX-check check [%V]=[%V] in zone %s", name, value,
-		zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : zone == URL ? "URL" :
-		zone == ARGS ? "ARGS" : zone == FILE_EXT ? "FILE_EXT" : 
-		zone == RAW_BODY ? "RAW_BODY" : "UNKNOWN"); 
+	   "XX- check check [%V]=[%V] in zone %s", name, value,
+	   zone == BODY ? "BODY" : zone == HEADERS ? "HEADERS" : zone == URL ? "URL" :
+	   zone == ARGS ? "ARGS" : zone == FILE_EXT ? "FILE_EXT" : 
+	   zone == RAW_BODY ? "RAW_BODY" : "UNKNOWN"); 
 
   
   if (!rules) {
@@ -1359,7 +1372,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
   }
   r = rules->elts;
   NX_DEBUG(_debug_basestr_ruleset , NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		"XX-checking %d rules ...", rules->nelts); 
+	   "XX-checking %d rules ...", rules->nelts); 
 
   
   
@@ -1368,53 +1381,99 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 
 
   for (i = 0; i < rules->nelts && ( (!ctx->block || ctx->learning) && !ctx->drop ) ; i++) {
-      
+
+    NX_DEBUG(_debug_basestr_ruleset , NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+	     "XX-RULE %d : START", r[i].rule_id);
+    
     /* does the rule have a custom location ? custom location means checking only on a specific argument */
     if (name && name->len > 0 && r[i].br->custom_location) {
       location = r[i].br->custom_locations->elts;
-      /* for each custom location */
-      for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
-	/* if the name are the same, check */
-	if (name->len == location[z].target.len &&
-	    !strncasecmp((const char *)name->data, 
-			 (const char *) location[z].target.data, 
-			 location[z].target.len)) {
-	  /* and if the zone is the right one indeed cf. #120 */
-	  if ( !(zone == BODY && location[z].body_var != 0) &&
-	       !(zone == HEADERS && location[z].headers_var != 0) &&
-	       !(zone == ARGS && location[z].args_var != 0))
-	    continue;
-	  
-	  NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		   "XX-[SPECIFIC] check one rule [%d] iteration %d * %d", r[i].rule_id, i, z);
-	  
-	  /* match rule against var content, */
-	  ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
-	  if (ret == 1) {
-	    NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		     "XX-apply rulematch [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
-	    
-	    ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);	    
-	  }
-	  
-	  if (!r[i].br->negative) {  
-	    /* match rule against var name, */
-	    ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);
-	    /* if our rule matched, apply effects (score etc.) */
-	    if (ret == 1) {
-	      NX_DEBUG(_debug_basestr_ruleset, 	      NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			    "XX-apply rulematch[in name] [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
 
-	      ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, name, zone, nb_match, 1);
-	    }
-	  }
+      /*
+      ** make a first pass, just in order to check that any 
+      ** $URL / $URL_X constraints are validated before checking any other 
+      ** parameters.
+      ** Unlike other criterias (wich are treated as 'OR')
+      ** this one must be valid to go forward
+      */
+      for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
+	
+	if (location[z].specific_url) {
 	  
+	  /* if matchzone is a regex, ensure it matches (ie. BODY_VAR_X / ARGS_VAR_X / ..) */
+	  if (r[i].br->rx_mz && ngx_http_dummy_pcre_wrapper(location[z].target_rx, req->uri.data, req->uri.len) == -1)
+	    uri_constraint_ok = 0;
+	  
+	  /* if it was a static string, ensure it matches (ie. BODY_VAR / ARGS_VAR / ..) */
+	  if ( (!r[i].br->rx_mz) && strncasecmp((const char *) req->uri.data, 
+						(const char *) location[z].target.data, 
+						req->uri.len) )
+	    uri_constraint_ok = 0;
+	  
+	  break;
 	}
       }
       
+      /*
+      ** if one of the custom location rule specifies an $URL/$URL_X
+      ** and it was mismatched, skip the rule.
+      */
+      if (uri_constraint_ok == 0)
+	continue;
+      
+      /* for each custom location */
+      for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
+	
+	rule_matched = 0;
+	/* check if zone is correct before checking names cf. issue #120 */
+	if ( !(zone == BODY && location[z].body_var != 0) &&
+	     !(zone == HEADERS && location[z].headers_var != 0) &&
+	     !(zone == ARGS && location[z].args_var != 0))
+	  continue;
+	
+	/* if matchzone is a regex, ensure it matches (ie. BODY_VAR_X / ARGS_VAR_X / ..) */
+	if (r[i].br->rx_mz && ngx_http_dummy_pcre_wrapper(location[z].target_rx, name->data, name->len) == -1)
+	  continue;
+	
+	/* if it was a static string, ensure it matches (ie. BODY_VAR / ARGS_VAR / ..) */
+	if ( (!r[i].br->rx_mz) && (name->len != location[z].target.len ||
+				   strncasecmp((const char *)name->data, 
+					       (const char *) location[z].target.data, 
+					       location[z].target.len)) )
+	  continue;
+	
+	
+	NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
+		 "XX-[SPECIFIC] check one rule [%d] iteration %d * %d", r[i].rule_id, i, z);
+	
+	/* match rule against var content, */
+	ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
+	if (ret == 1) {
+	  NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		   "XX-apply rulematch [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
+	  rule_matched = 1;
+	  ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);	    
+	}
+	  
+	if (!r[i].br->negative) {  
+	  /* match rule against var name, */
+	  ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);
+	  /* if our rule matched, apply effects (score etc.) */
+	  if (ret == 1) {
+	    NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		     "XX-apply rulematch[in name] [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
+	    rule_matched = 1;
+	    ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, name, zone, nb_match, 1);
+	  }
+	}
+	if (rule_matched == 1) {
+	  NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		   "XX-[SPECIFIC] Rule %d matched in custom_location, go to next rule", r[i].rule_id); 
+	  
+	  break;
+	}
+      }
     }
-    
-    
     
     /*
     ** check against the rule if the current zone is matching 
@@ -1429,7 +1488,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 
 
       NX_DEBUG(_debug_basestr_ruleset,     NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		    "XX-test rulematch [zone-wide]!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+	       "XX-test rulematch [zone-wide]!1 [%V]=[%V] [rule =%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 
     
       /* check the rule against the value*/
@@ -1437,21 +1496,21 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
       /*if our rule matched, apply effects (score etc.)*/
       if (ret == 1) {
 	NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		      "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+		 "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 
 	ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);
       }
     
       if (!r[i].br->negative) {
 	NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		      "XX-test rulematch [against-name]!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+		 "XX-test rulematch [against-name]!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 
 	/* check the rule against the name*/
 	ret = ngx_http_process_basic_rule_buffer(name, &(r[i]), &nb_match);
 	/*if our rule matched, apply effects (score etc.)*/
 	if (ret == 1) {
 	  NX_DEBUG(_debug_basestr_ruleset, 	  NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-			"XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+		   "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
 
 	  ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 1);
 	}

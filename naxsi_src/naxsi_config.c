@@ -42,8 +42,10 @@ void *dummy_msg(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
 void *dummy_rx(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
 void *dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
 void *dummy_str(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
-void	*dummy_negative(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
-void	*dummy_whitelist(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
+void *dummy_negative(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
+void *dummy_libinj_xss(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
+void *dummy_libinj_sql(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
+void *dummy_whitelist(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule);
 /*
 ** Structures related to the configuration parser
 */
@@ -60,6 +62,8 @@ static ngx_http_dummy_parser_t rule_parser[] = {
   {MSG_T, dummy_msg},
   {RX_T, dummy_rx},
   {STR_T, dummy_str},
+  {LIBINJ_XSS_T, dummy_libinj_xss},
+  {LIBINJ_SQL_T, dummy_libinj_sql},
   {MATCH_ZONE_T, dummy_zone},
   {NEGATIVE_T, dummy_negative},
   {WHITELIST_T, dummy_whitelist},
@@ -74,6 +78,22 @@ dummy_negative(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   rule->br->negative = 1;
   return (NGX_CONF_OK);
 }
+
+void	*
+dummy_libinj_xss(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
+{
+  rule->br->match_type = LIBINJ_XSS;
+  return (NGX_CONF_OK);
+}
+
+void	*
+dummy_libinj_sql(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
+{
+  rule->br->match_type = LIBINJ_SQL;
+  return (NGX_CONF_OK);
+}
+
+
 
 void	*
 dummy_score(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
@@ -178,7 +198,7 @@ dummy_score(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 void	*
 dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 {
-  int					tmp_len;
+  int					tmp_len, has_zone=0;
   ngx_http_custom_rule_location_t	*custom_rule;
   char *tmp_ptr, *tmp_end;
 
@@ -195,30 +215,35 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
     if (!strncmp(tmp_ptr, "RAW_BODY", strlen("RAW_BODY"))) {
       rule->br->raw_body = 1;
       tmp_ptr += strlen("RAW_BODY");
+      has_zone = 1;
       continue;
     }
     else
       if (!strncmp(tmp_ptr, "BODY", strlen("BODY"))) {
 	rule->br->body = 1;
 	tmp_ptr += strlen("BODY");
+	has_zone = 1;
 	continue;
       }
       else
 	if (!strncmp(tmp_ptr, "HEADERS", strlen("HEADERS"))) {
 	  rule->br->headers = 1;
 	  tmp_ptr += strlen("HEADERS");
+	  has_zone = 1;
 	  continue;
 	}
 	else
 	  if (!strncmp(tmp_ptr, "URL", strlen("URL"))) {
 	    rule->br->url = 1;
 	    tmp_ptr += strlen("URL");
+	    has_zone = 1;
 	    continue;
 	  }
 	  else
 	    if (!strncmp(tmp_ptr, "ARGS", strlen("ARGS"))) {
 	      rule->br->args = 1;
 	      tmp_ptr += strlen("ARGS");
+	      has_zone = 1;
 	      continue;
 	    }
 	    else
@@ -226,6 +251,7 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 	      if (!strncmp(tmp_ptr, "NAME", strlen("NAME"))) {
 		rule->br->target_name = 1;
 		tmp_ptr += strlen("NAME");
+		has_zone = 1;
 		continue;
 	      }
 	      else
@@ -237,6 +263,7 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 		  rule->br->file_ext = 1;
 		  rule->br->body = 1;
 		  tmp_ptr += strlen("FILE_EXT");
+		  has_zone = 1;
 		  continue;
 		}
 		else
@@ -260,18 +287,21 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 		      return (NGX_CONF_ERROR);
 		    memset(custom_rule, 0, sizeof(ngx_http_custom_rule_location_t));
 		    if (!strncmp(tmp_ptr, MZ_GET_VAR_T, strlen(MZ_GET_VAR_T))) {
+		      has_zone = 1;
 		      custom_rule->args_var = 1;
 		      rule->br->args_var = 1;
 		      tmp_ptr += strlen(MZ_GET_VAR_T);
 		    }
 		    else if (!strncmp(tmp_ptr, MZ_POST_VAR_T, 
 				      strlen(MZ_POST_VAR_T))) {
+		      has_zone = 1;
 		      custom_rule->body_var = 1;
 		      rule->br->body_var = 1;
 		      tmp_ptr += strlen(MZ_POST_VAR_T);
 		    }
 		    else if (!strncmp(tmp_ptr, MZ_HEADER_VAR_T, 
 				      strlen(MZ_HEADER_VAR_T))) {
+		      has_zone = 1;
 		      custom_rule->headers_var = 1;
 		      rule->br->headers_var = 1;
 		      tmp_ptr += strlen(MZ_HEADER_VAR_T);
@@ -290,7 +320,13 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 #define MZ_HEADER_VAR_X "$HEADERS_VAR_X:"
 #define MZ_POST_VAR_X "$BODY_VAR_X:"
 #define MZ_SPECIFIC_URL_X "$URL_X:"
+		      /*
+		      ** if the rule is a negative rule (has an ID, not a WL field)
+		      ** we need to pre-compile the regex for runtime.
+		      ** Don't do it for whitelists, as its done in a separate manner.
+		      */
 		      if (!strncmp(tmp_ptr, MZ_GET_VAR_X, strlen(MZ_GET_VAR_X))) {
+			has_zone = 1;
 			custom_rule->args_var = 1;
 			rule->br->args_var = 1;
 			rule->br->rx_mz = 1;
@@ -298,6 +334,7 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 		      }
 		      else if (!strncmp(tmp_ptr, MZ_POST_VAR_X, 
 					strlen(MZ_POST_VAR_X))) {
+			has_zone = 1;
 			rule->br->rx_mz = 1;
 			custom_rule->body_var = 1;
 			rule->br->body_var = 1;
@@ -305,6 +342,7 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 		      }
 		      else if (!strncmp(tmp_ptr, MZ_HEADER_VAR_X, 
 					strlen(MZ_HEADER_VAR_X))) {
+			has_zone = 1;
 			custom_rule->headers_var = 1;
 			rule->br->headers_var = 1;
 			rule->br->rx_mz = 1;
@@ -332,9 +370,29 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 		      return (NGX_CONF_ERROR);
 		    custom_rule->target.len = tmp_len;
 		    memcpy(custom_rule->target.data, tmp_ptr, tmp_len);
+		    /*
+		    ** pre-compile regex !
+		    */
+		    if (rule->br->rx_mz == 1) {
+
+		      custom_rule->target_rx = ngx_pcalloc(r->pool, sizeof(ngx_regex_compile_t));
+		      if (!custom_rule->target_rx)
+			return (NGX_CONF_ERROR);
+		      custom_rule->target_rx->options = PCRE_CASELESS|PCRE_MULTILINE;
+		      custom_rule->target_rx->pattern = custom_rule->target;
+		      custom_rule->target_rx->pool = r->pool;
+		      custom_rule->target_rx->err.len = 0;
+		      custom_rule->target_rx->err.data = NULL;
+  
+		      if (ngx_regex_compile(custom_rule->target_rx) != NGX_OK) {
+			NX_LOG_DEBUG(_debug_rx, NGX_LOG_EMERG, r, 0, "XX-FAILED RX:%V",
+				     custom_rule->target);
+			return (NGX_CONF_ERROR);
+		      }
+		    }
 		    custom_rule->hash = ngx_hash_key_lc(custom_rule->target.data, 
 							custom_rule->target.len);
-
+		    
 		    NX_LOG_DEBUG(_debug_zone, NGX_LOG_EMERG, r, 0, "XX- ZONE:[%V]", 
 				 &(custom_rule->target));  
 		    tmp_ptr += tmp_len;
@@ -343,6 +401,15 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 		  else
 		    return (NGX_CONF_ERROR);
   }
+  /*
+  ** ensure the match-zone actually returns a zone :)
+  */
+  if (has_zone == 0) {
+    ngx_conf_log_error(NGX_LOG_EMERG, r, 0, 
+		       "matchzone doesn't target an actual zone.");
+    return (NGX_CONF_ERROR);
+  }
+
   return (NGX_CONF_OK);
 }
 
@@ -361,6 +428,7 @@ dummy_str(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   
   if (!rule->br)
     return (NGX_CONF_ERROR);
+  rule->br->match_type = STR;
   str = ngx_pcalloc(r->pool, sizeof(ngx_str_t));
   if (!str)
     return (NGX_CONF_ERROR);
@@ -427,6 +495,7 @@ dummy_rx(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 
   if (!rule->br)
     return (NGX_CONF_ERROR);
+  rule->br->match_type = RX;
   //just prepare a string to hold the directive without 'rx:'
   ha.data = tmp->data+strlen(RX_T);
   ha.len = tmp->len-strlen(RX_T);
@@ -478,18 +547,17 @@ ngx_http_dummy_cfg_parse_one_rule(ngx_conf_t *cf,
       !ngx_strcmp(value[0].data, TOP_BASIC_RULE_N) ||
       !ngx_strcmp(value[0].data, TOP_MAIN_BASIC_RULE_T) ||
       !ngx_strcmp(value[0].data, TOP_MAIN_BASIC_RULE_N)) {
-    NX_LOG_DEBUG(_debug_cfg_parse_one_rule, NGX_LOG_EMERG, cf, 0, "XX-basic rule %V", &(value[1]));  
+    NX_LOG_DEBUG(_debug_cfg_parse_one_rule, NGX_LOG_EMERG, cf, 0, "naxsi-basic rule %V", &(value[1]));  
     current_rule->type = BR;
     current_rule->br = ngx_pcalloc(cf->pool, sizeof(ngx_http_basic_rule_t));
     if (!current_rule->br)
       return (NGX_CONF_ERROR);
   }
-  else 
-    {
-      NX_LOG_DEBUG(_debug_cfg_parse_one_rule, NGX_LOG_EMERG, cf, 0, 
-		   "XX-crit in rule %V", &(value[1]));  
-      return (NGX_CONF_ERROR);
-    }
+  else {
+    NX_LOG_DEBUG(_debug_cfg_parse_one_rule, NGX_LOG_EMERG, cf, 0, 
+		 "Unknown start keyword in rule %V", &(value[1]));  
+    return (NGX_CONF_ERROR);
+  }
   
   // check each word of config line against each rule
   for(i = 1; i < nb_elem && value[i].len > 0; i++) {

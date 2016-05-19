@@ -442,10 +442,6 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   ngx_http_dummy_main_conf_t	*main_cf;
   ngx_str_t			*value;
   ngx_http_rule_t		rule, *rule_r;
-  ngx_http_custom_rule_location_t	*location;
-  unsigned int	i;
-  
-
   
 #ifdef _debug_readconf
   if (cf) {
@@ -496,7 +492,7 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     }
     /* else push in appropriate ruleset : it's a normal rule */
     else {
-      if (rule.br->headers) {
+      if (rule.br->headers || rule.br->headers_var) {
 	if (alcf->header_rules == NULL)  {
 	  alcf->header_rules = ngx_array_create(cf->pool, 2,
 						sizeof(ngx_http_rule_t));
@@ -561,50 +557,6 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	rule_r = ngx_array_push(alcf->get_rules);
 	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
-      }
-      /* push in custom locations. It's a rule matching a VAR_NAME or an EXACT_URI :
-	 - GET_VAR, POST_VAR, URI */
-      if (rule.br->custom_location) {
-	NX_LOG_DEBUG(_debug_readconf, NGX_LOG_EMERG, cf, 0, 
-		     "pushing rule %d in custom_location rules", 
-		     rule.rule_id);  
-	location = rule.br->custom_locations->elts;
-	for (i = 0; i < rule.br->custom_locations->nelts; i++) {
-	  if (location[i].args_var) {
-	    if (alcf->get_rules == NULL) {
-	      alcf->get_rules = ngx_array_create(cf->pool, 2,
-						 sizeof(ngx_http_rule_t));
-	      if (alcf->get_rules == NULL) 
-		return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
-	    }
-	    rule_r = ngx_array_push(alcf->get_rules);
-	    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
-	    memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
-	  }
-	  if (location[i].body_var) {
-	    if (alcf->body_rules == NULL) {
-	      alcf->body_rules = ngx_array_create(cf->pool, 2,
-						  sizeof(ngx_http_rule_t));
-	      if (alcf->body_rules == NULL) 
-		return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
-	    }
-	    rule_r = ngx_array_push(alcf->body_rules);
-	    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
-	    memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
-		      
-	  }
-	  if (location[i].headers_var) {
-	    if (alcf->header_rules == NULL) {
-	      alcf->header_rules = ngx_array_create(cf->pool, 2,
-						    sizeof(ngx_http_rule_t));
-	      if (alcf->header_rules == NULL) 
-		return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
-	    }
-	    rule_r = ngx_array_push(alcf->header_rules);
-	    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
-	    memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
-	  }
-	}
       }
     }
     return (NGX_CONF_OK);
@@ -839,16 +791,15 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   ngx_http_dummy_main_conf_t	*alcf = conf;
   ngx_str_t			*value;
   ngx_http_rule_t		rule, *rule_r;
-  ngx_http_custom_rule_location_t	*location;
-  unsigned int	i;
   
   if (!alcf || !cf)
     return (NGX_CONF_ERROR);  /* alloc a new rule */
   
   value = cf->args->elts;
   /* parse the line, fill rule struct  */
+
   NX_LOG_DEBUG(_debug_main_conf,  NGX_LOG_EMERG, cf, 0, 
-	   "XX-TOP READ CONF %s", value[0].data);
+	       "XX-TOP READ CONF %s", value[0].data);
   if (ngx_strcmp(value[0].data, TOP_MAIN_BASIC_RULE_T) &&
       ngx_strcmp(value[0].data, TOP_MAIN_BASIC_RULE_N)) {
     ngx_http_dummy_line_conf_error(cf, value);
@@ -864,9 +815,9 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     /* LCOV_EXCL_STOP */
   }
   
-  if (rule.br->headers) {
+  if (rule.br->headers || rule.br->headers_var) {
     NX_LOG_DEBUG(_debug_main_conf, NGX_LOG_EMERG, cf, 0, 
-	     "pushing rule %d in header rules", rule.rule_id);  
+		 "pushing rule %d in header rules", rule.rule_id);  
     if (alcf->header_rules == NULL) {
       alcf->header_rules = ngx_array_create(cf->pool, 2,
 					    sizeof(ngx_http_rule_t));
@@ -880,7 +831,7 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   /* push in body match rules (POST/PUT) */
   if (rule.br->body || rule.br->body_var) {
     NX_LOG_DEBUG(_debug_main_conf, NGX_LOG_EMERG, cf, 0, 
-	     "pushing rule %d in body rules", rule.rule_id);  
+		 "pushing rule %d in body rules", rule.rule_id);  
     if (alcf->body_rules == NULL) {
       alcf->body_rules = ngx_array_create(cf->pool, 2,
 					  sizeof(ngx_http_rule_t));
@@ -894,10 +845,10 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   /* push in raw body match rules (POST/PUT) xx*/
   if (rule.br->raw_body) {
     NX_LOG_DEBUG(_debug_main_conf, NGX_LOG_EMERG, cf, 0, 
-	     "pushing rule %d in raw (main) body rules", rule.rule_id);  
+		 "pushing rule %d in raw (main) body rules", rule.rule_id);  
     if (alcf->raw_body_rules == NULL) {
       alcf->raw_body_rules = ngx_array_create(cf->pool, 2,
-					  sizeof(ngx_http_rule_t));
+					      sizeof(ngx_http_rule_t));
       if (alcf->raw_body_rules == NULL) 
 	return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
     }
@@ -908,7 +859,7 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   /* push in generic rules, as it's matching the URI */
   if (rule.br->url)	{
     NX_LOG_DEBUG(_debug_main_conf,    NGX_LOG_EMERG, cf, 0,
-	     "pushing rule %d in generic rules", rule.rule_id);  
+		 "pushing rule %d in generic rules", rule.rule_id);  
     if (alcf->generic_rules == NULL) {
       alcf->generic_rules = ngx_array_create(cf->pool, 2,
 					     sizeof(ngx_http_rule_t));
@@ -922,7 +873,7 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   /* push in GET arg rules, but we should push in POST rules too  */
   if (rule.br->args_var || rule.br->args) {
     NX_LOG_DEBUG(_debug_main_conf,    NGX_LOG_EMERG, cf, 0, 
-	     "pushing rule %d in GET rules", rule.rule_id);  
+		 "pushing rule %d in GET rules", rule.rule_id);  
     if (alcf->get_rules == NULL) {
       alcf->get_rules = ngx_array_create(cf->pool, 2,
 					 sizeof(ngx_http_rule_t));
@@ -932,50 +883,6 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     rule_r = ngx_array_push(alcf->get_rules);
     if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
-  }
-  /* push in custom locations. It's a rule matching a VAR_NAME or an EXACT_URI :
-     - GET_VAR, POST_VAR, URI */
-  if (rule.br->custom_location) {
-    NX_LOG_DEBUG(_debug_main_conf,    NGX_LOG_EMERG, cf, 0, 
-	     "pushing rule %d in custom_location rules", 
-	     rule.rule_id);  
-    location = rule.br->custom_locations->elts;
-    for (i = 0; i < rule.br->custom_locations->nelts; i++) {
-      if (location[i].args_var)	{
-	if (alcf->get_rules == NULL) {
-	  alcf->get_rules = ngx_array_create(cf->pool, 2,
-					     sizeof(ngx_http_rule_t));
-	  if (alcf->get_rules == NULL) 
-	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
-	}
-	rule_r = ngx_array_push(alcf->get_rules);
-	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
-	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
-      }
-      if (location[i].body_var)	{
-	if (alcf->body_rules == NULL) {
-	  alcf->body_rules = ngx_array_create(cf->pool, 2,
-					      sizeof(ngx_http_rule_t));
-	  if (alcf->body_rules == NULL) 
-	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
-	}
-	rule_r = ngx_array_push(alcf->body_rules);
-	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
-	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
-		      
-      }
-      if (location[i].headers_var) {
-	if (alcf->header_rules == NULL) {
-	  alcf->header_rules = ngx_array_create(cf->pool, 2,
-						sizeof(ngx_http_rule_t));
-	  if (alcf->header_rules == NULL) 
-	    return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
-	}
-	rule_r = ngx_array_push(alcf->header_rules);
-	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
-	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
-      }
-    }
   }
   return (NGX_CONF_OK);
 }

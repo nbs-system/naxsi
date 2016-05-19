@@ -1,5 +1,5 @@
 language: perl
-perl: 5.20-shrplib
+perl: 5.22-shrplib
 
 cache:
   - apt

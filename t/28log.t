@@ -43,8 +43,6 @@ location /RequestDenied {
 --- request
 GET /x,y?uuu=b,c
 --- error_code: 404
---- grep_error_log
-^NAXSI_FMT
 === TEST 1.1 : learning + block score, NAXSI_FMT
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;

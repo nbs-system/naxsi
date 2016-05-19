@@ -178,8 +178,6 @@ typedef struct
 **	- one or several rules id to whitelist
 */
 
-#define WEIRD_REQUEST_INTERNAL_RULE_ID 1
-#define BIG_BODY_INTERNAL_RULE_ID 2
 typedef struct
 {
   /* match in full body (POST DATA) */

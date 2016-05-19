@@ -18,6 +18,7 @@ repeat_each(3);
 plan tests => repeat_each(1) * blocks();
 no_root_location();
 no_long_string();
+$ENV{TEST_NGINX_SLEEP} = 1;
 $ENV{TEST_NGINX_SERVROOT} = server_root();
 run_tests();
 

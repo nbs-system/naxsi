@@ -80,7 +80,7 @@ endif
 	if [ ! $(TEST) ] ; then TEST="*.t" ; fi
 
 	export PATH="$(TMP_DIR)/objs/:"$(PATH) ; \
-	export PERL5LIB=/usr/local/share/perl/5.14.2/ ; \
+	export PERL5LIB="/usr/local/share/perl/5.14.2/:/home/travis/perl5/lib/perl5/" ; \
 	cd .. ; prove -r "t/$(TEST)"
 
 ifeq ($(COV),1)

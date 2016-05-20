@@ -11,10 +11,12 @@
       src="https://travis-ci.org/nbs-system/naxsi.svg"/>
 </a>
 
-<a href="http://codecov.io/github/nbs-system/naxsi?branch=master">
+<!-- <a href="http://codecov.io/github/nbs-system/naxsi?branch=master">
   <img alt="Coverage via codecov.io" 
       src="http://codecov.io/github/nbs-system/naxsi/coverage.svg?branch=master"/>
-</a>
+</a> -->
+
+<a href='https://coveralls.io/github/nbs-system/naxsi?branch=master'><img src='https://coveralls.io/repos/github/nbs-system/naxsi/badge.svg?branch=master' alt='Coverage Status' /></a>
 
 
 ### We need your help

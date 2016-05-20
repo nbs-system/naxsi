@@ -1,23 +1,9 @@
 <img alt="naxsi logo" src="https://www.nbs-system.com/wp-content/uploads/nbs-logo-naxsi1.png" align="center"/>   
 
-
-<a href="https://scan.coverity.com/projects/1883">
-  <img alt="Coverity Scan Build Status"
-      src="https://scan.coverity.com/projects/1883/badge.svg"/>
-</a>
-
-<a href="https://travis-ci.org/nbs-system/naxsi">
-  <img alt="Travis Build Status"
-      src="https://travis-ci.org/nbs-system/naxsi.svg"/>
-</a>
-
-<!-- <a href="http://codecov.io/github/nbs-system/naxsi?branch=master">
-  <img alt="Coverage via codecov.io" 
-      src="http://codecov.io/github/nbs-system/naxsi/coverage.svg?branch=master"/>
-</a> -->
-
-<a href='https://coveralls.io/github/nbs-system/naxsi?branch=master'><img src='https://coveralls.io/repos/github/nbs-system/naxsi/badge.svg?branch=master' alt='Coverage Status' /></a>
-
+[![coverity](https://scan.coverity.com/projects/1883/badge.svg)](https://scan.coverity.com/projects/1883)
+[![travis-ci](https://travis-ci.org/nbs-system/naxsi.svg?branch=master)](https://travis-ci.org/nbs-system/naxsi)
+[![coveralls](https://coveralls.io/repos/github/nbs-system/naxsi/badge.svg?branch=master)](https://coveralls.io/github/nbs-system/naxsi?branch=master)
+[![codecov](http://codecov.io/github/nbs-system/naxsi/coverage.svg?branch=master)](http://codecov.io/github/nbs-system/naxsi?branch=master)
 
 ### We need your help
 

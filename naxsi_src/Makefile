@@ -33,6 +33,7 @@ NGINX_OPTIONS+="--with-ipv6"
 NGINX_OPTIONS+="--prefix=/tmp"
 NGINX_OPTIONS+="--with-debug"
 
+CFLAGS:="-Wall -Wextra"
 
 all: nginx_download configure build install deploy
 

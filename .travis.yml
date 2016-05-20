@@ -8,6 +8,10 @@ cache:
 env:
   - VER_NGINX=1.9.11
 
+compiler:
+  - clang
+  - gcc
+
 addons:
   apt:
     packages:

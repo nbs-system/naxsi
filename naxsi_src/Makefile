@@ -50,13 +50,13 @@ nginx_download:
 	gpg --keyserver pgp.mit.edu --recv-keys 0x251a28de2685aed4 0x520A9993A1C052F8
 	gpg --verify "nginx-"$(NGINX_VERS)".tar.gz.asc" "nginx-"$(NGINX_VERS)".tar.gz" || exit 1
 	mkdir -p $(TMP_DIR)/
-	tar -C $(TMP_DIR)/ -xvzf nginx-$(NGINX_VERS).tar.gz  --strip-components=1
+	tar -C $(TMP_DIR)/ -xzf nginx-$(NGINX_VERS).tar.gz  --strip-components=1
 
 configure:
 ifeq ($(COV),1)
 	cd $(TMP_DIR)/ && ./configure --with-cc-opt="--coverage -g3 -gstabs" --with-ld-opt="-lgcov" $(NGINX_OPTIONS)
 else
-	cd $(TMP_DIR)/ && ./configure --with-cc-opt="-gstabs -g3" $(NGINX_OPTIONS)
+	cd $(TMP_DIR)/ && ./configure --with-cc-opt="-g3 -ggdb" $(NGINX_OPTIONS)
 endif
 
 build:

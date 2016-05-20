@@ -67,7 +67,7 @@ $ cat nxapi.json
 * Enable learning mode
 * Browse website to generate data in the logfile
 * Change into nxapi directory
-* Load the data from the log file into ElasticSearch with the folloing command:  
+* Load the data from the log file into ElasticSearch with the following command:  
 	`./nxtool.py -c nxapi.json --files=/PATH/TO/LOGFILE.LOG`
 * Check if data was added correctly:  
 	`curl -XPOST "http://localhost:9200/nxapi/events/_search?pretty" -d '{}' `
@@ -75,7 +75,7 @@ $ cat nxapi.json
   	`./nxtool.py -c nxapi.json -x`
 # Simple usage approach
 
-##1. Get infos about db
+##1. Get info about db
 
     $ ./nxtool.py -x --colors -c nxapi.json
 Will issue a summary of database content, including :
@@ -83,12 +83,12 @@ Will issue a summary of database content, including :
   * Ratio between tagged/untagged events.
 
 Tagging of events is an important notion that allows you to know how well you are doing on learning.
-Let's say you just started your learning. You will have a tag ratio of 0%, which means you didn't write any
+Let's say you just started learning. You will have a tag ratio of 0%, which means you didn't write any
 whitelists for recent events. Once you start generating whitelists, you can provide those (`-w /tmp/wl.cf --tag`)
 and nxapi will mark those events in the database as whitelisted, excluding them from future generation process.
 It allows you to speed up the generation process, but mainly to know how well you dealt with recent false positives.
 
-You can as well use tagging mechanism to exclude obvious attack patterns from learning. If X.Y.Z.W keeps hammering my website and polluting my log, I can provide nxapi with his ip (`-i /tmp/ips.txt --tag`) to tag them and exclude them from process.
+You can also use the tagging mechanism to exclude obvious attack patterns from learning. If X.Y.Z.W keeps hammering my website and polluting my log, I can provide nxapi with the ip (`-i /tmp/ips.txt --tag`) to tag and exclude them from process.
 
   * Top servers.
 A TOP10 list of dst hosts raising the most exceptions.
@@ -124,7 +124,7 @@ Let's say I had the following output :
     # Top Peer(s) :
     # ...
 
-I want to generate WLs for x1.fr, so I will get more precise statistics first :
+I want to generate whitelists for x1.fr, so I will get more precise statistics first :
 
     ./nxtool.py -c nxapi.json  -x --colors -s www.x1.fr
     ...
@@ -161,25 +161,25 @@ visitors, making legitimate exceptions appear as false positives.`
 
 nxtool attempts to provide extra information to allow user to decides wether it's a false positive :
   * content : actual HTTP content, only present if $naxsi_extensive_log is set to 1
-  * uri : exemple(s) of uri on which the event was triggered
-  * var_name : exemple(s) of variable names in which the content was triggered
-  * success and warnings : nxapi will inform provide you scoring informations (see 'scores').
+  * uri : example(s) of URI on which the event was triggered
+  * var_name : example(s) of variable names in which the content was triggered
+  * success and warnings : nxapi will provide you with scoring information (see 'scores').
 
 ##3. Interactive whitelist generation
 
-Another way of creating whitelist is to use the -g option. This option provide
-an interactive way to generate whitelist. This option use the EDITOR env
-variable and use it to iterate over all the server available inside your elastic
+Another way of creating whitelists is to use the -g option. This option provide
+an interactive way to generate whitelists. This option use the EDITOR env
+variable and uses it to iterate over all the servers available inside your elastic
 search instance (if the EDITOR env variable isn't set it will try to use `vi`.
 You can either delete or comment with a `#` at the beginning the line you don't
-want to keep. After the server selection it will iterate on each available uri
+want to keep. After the server selection, it will iterate on each available uri
 and zone for earch server. If you want to use regex, only available for uri,
 you can add a `?` at the beginning of each line where you want to use a regex:
 
     uri /fr/foo/ ...
     ?uri /[a-z]{2,}/foo ...
 
-The -g options once all the selection over will attempt to generate the wl
+The -g options once all the selection is done, will attempt to generate the wl
 with the same behaviour as -f option, and write the result inside the path the
 typical output when generating wl is:
 
@@ -190,20 +190,20 @@ As you can see you'll see each filter and each file for each selections.
 
 ##4. Tagging events
 
-Once I chose the whitelists that I think are appropriate, I will write them down to a whitelist file. 
+Once I chose the whitelists that I think are appropriate, I will write them in a whitelist file. 
 Then, I can tag corresponding events :
     nxtool.py -c nxapi.json -w /tmp/whitelist.conf --tag
 
 And then, if I look at the report again, I will see a bump in the tagged ratio of events.
-Once the ratio is high enough or the most active URLs & IPs are false positives, it's done !
+Once the ratio is high enough or the most active URLs & IPs are false positives, it's done!
 
 
-# Tips and tricks of WL generation
+# Tips and tricks for whitelist generation
 
   * `--filter`
 
 --filter is your friend, especially if you have a lot of exceptions.
-By narrowing the field of search for whitelist, it will increase speed, and reduce false positives.
+By narrowing the search field for whitelists, it will increase speed, and reduce false positives.
 
   * use `-t` instead of `-f`
 
@@ -213,8 +213,8 @@ if you provide something like `-t "ARGS/*"` only templates specific to ARGS whit
   * Create your own templates
 
 If you manage applications that do share code/framework/technology, you will quickly find yourself 
-generating the same wl again and again. Stop that ! Write your own templates, improving generation time, 
-accuracy and reducing false positives. Let me take a practical example: 
+generating the same wl again and again. Stop that! Write your own templates, improving generation time, 
+accuracy and reducing false positives. Take a practical example: 
 I'm dealing with magento, like a *lot*. One of the recurring patterns is the "onepage" checkout, so I created specific templates:
 
     {
@@ -232,7 +232,7 @@ I'm dealing with magento, like a *lot*. One of the recurring patterns is the "on
 
 `-s SERVER, --server=SERVER`
 
-Allows to restrict context of whitelist generation or stats display to specific FQDN.
+Restrict context of whitelist generation or stats display to specific FQDN.
 
 `--filter=FILTER`
 
@@ -270,14 +270,14 @@ Given a list of ips (separatated by \n), finds matching events in database.
 
 `--tag`
 
-Performs the actual tagging. If not specified, matching events are simply displayed.
+Performs tagging. If not specified, matching events are simply displayed.
 
 
 ## Statistics generation options
 
 `-x, --stats`
 
-Generate statistics about current's db content.
+Generate statistics about current database.
 
 ## Importing data
 
@@ -301,8 +301,8 @@ Creates a FIFO, increases F_SETPIPE_SZ, and reads on it. mostly useful for readi
 # Understanding templates
 
 Templates do have a central role within nxapi.
-By default, only generic ones are provided, but you should create yours.
-Let's first look at a generic one to understand how it work :
+By default only generic ones are provided, you should create your own.
+First, look at a generic one to understand how it works :
 
         {
                 "zone" : "HEADERS",
@@ -333,22 +333,22 @@ Templates support :
     	       unique values matching regexp for "field" will then be used for whitelist generation (one whitelist per unique value).
   * `"_statics" : { "field" : "value" }` : A static value to be used at whitelist generation time. Does not take part in search process,
     		only at 'output' time. ie. `"_statics" : { "id" : "0" }` is the only way to have a whitelist outputing a 'wl:0'.
-  * `"_msg" : "string" ` : a text message to help the user understanding the template purpose.
+  * `"_msg" : "string" ` : a text message to help the user understand the template purpose.
   * `"_success" : { ... }` : A dict supplied to overwrite/complete 'global' scoring rules.
   * `"_warnings" : { ... }` : A dict supplied to overwrite/complete 'global' scoring rules.
 
 
 # Understanding scoring
 
-Scoring mecanism :
-  * Scoring mecanism is a very trivial approach, relying on 3 kinds of "scoring" expressions : _success, _warning, _deny.
+Scoring mechanism :
+  * Scoring mechanism is a very trivial approach, relying on three kinds of "scoring" expressions : _success, _warning, _deny.
   * Whenever a _success rule is met while generating a whitelist, it will INCREASE the "score" of the whitelist by 1.
   * Whenever a _warning rule is met while generating a whitelist, it will DECREASE the "score" of the whitelist by 1.
   * Whenever a _deny rule is met while generating a whitelist, it will disable the whitelist output.
 
 _note:_
-In order to understand scoring mecanism, it is crucial to get the difference between a template and a rule.
-A template with the .json file, which can match many events. A rule is usually a subpart of a template results.
+In order to understand scoring mechanism, it is crucial to tell the difference between a template and a rule.
+A template is a .json file which can match many events. A rule is usually a subpart of a template results.
 For example, if we have this data : 
 
     [ {"id" : 1, "zone" : HEADERS, ip:A.A.A.A},

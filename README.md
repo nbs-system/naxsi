@@ -31,7 +31,7 @@ rules regarding a website's behaviour.
 In short, Naxsi behaves like a DROP-by-default firewall, the only task
 is to add required ACCEPT rules for the target website to work properly.
 
-## Why it is different?
+## Why is it different?
 
 Contrary to most Web Application Firewalls, Naxsi doesn't rely on a
 signature base like an antivirus, and thus cannot be circumvented by an

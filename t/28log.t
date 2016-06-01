@@ -26,6 +26,9 @@ location / {
 	 CheckRule "$SQL >= 8" BLOCK;
          root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
+	 error_log /tmp/ngx_error.log debug;
+	 access_log /tmp/ngx_access.log;
+
 }
 location /RequestDenied {
          return 412;
@@ -46,6 +49,8 @@ location / {
 	 CheckRule "$SQL >= 8" BLOCK;
          root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
+	 error_log /tmp/ngx_error.log debug;
+	 access_log /tmp/ngx_access.log;
 }
 location /RequestDenied {
          return 412;
@@ -69,6 +74,8 @@ location / {
 	 CheckRule "$SQL >= 8" BLOCK;
          root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
+	 error_log /tmp/ngx_error.log debug;
+	 access_log /tmp/ngx_access.log;
 }
 location /RequestDenied {
          return 412;
@@ -94,6 +101,8 @@ location / {
 	 CheckRule "$SQL >= 8" BLOCK;
          root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
+	 error_log /tmp/ngx_error.log debug;
+	 access_log /tmp/ngx_access.log;
 }
 location /RequestDenied {
          return 412;
@@ -119,6 +128,8 @@ location / {
 	 CheckRule "$SQL >= 8" BLOCK;
          root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
+	 error_log /tmp/ngx_error.log debug;
+	 access_log /tmp/ngx_access.log;
 }
 location /RequestDenied {
          return 412;
@@ -144,6 +155,8 @@ location / {
 	 CheckRule "$SQL >= 8" BLOCK;
          root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
+	 error_log /tmp/ngx_error.log debug;
+	 access_log /tmp/ngx_access.log;
 }
 location /RequestDenied {
          return 412;
@@ -168,6 +181,8 @@ location / {
 	 CheckRule "$SQL >= 8" BLOCK;
          root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
+	 error_log /tmp/ngx_error.log debug;
+	 access_log /tmp/ngx_access.log;
 }
 location /RequestDenied {
          return 412;
@@ -194,6 +209,8 @@ location / {
 	 CheckRule "$SQL >= 8" BLOCK;
          root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
+	 error_log /tmp/ngx_error.log debug;
+	 access_log /tmp/ngx_access.log;
 }
 location /RequestDenied {
          return 412;

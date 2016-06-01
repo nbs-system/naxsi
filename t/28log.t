@@ -1,23 +1,12 @@
 #vi:filetype=perl
 
-# Test naxsi logging mechanism
-# !! all without core_rules to avoid breaking tests in the future
-# TEST 1.0 : learning + non-block score, no NAXSI_FMT
-# TEST 1.1 : learning + block score, NAXSI_FMT
-# TEST 1.2 : no-learning + block score, NAXSI_FMT
-# TEST 1.3 : learning + block score + naxsi_extensive_log, NAXSI_EXLOG and NAXSI_FMT
-# TEST 1.4 : learning + no-block score + naxsi_extensive_log, NAXSI_EXLOG only
-#!TEST 1.5 : learning + drop rule : NAXSI_FMT
-#!TEST 1.6 : learning + block-score in multi-line generated
-
 use lib 'lib';
 use Test::Nginx::Socket;
 
-repeat_each(3);
-
+repeat_each(2);
 log_level('debug');
 plan tests => repeat_each(1) * blocks();
-#no_root_location();
+no_root_location();
 #no_long_string();
 $ENV{TEST_NGINX_SERVROOT} = server_root();
 run_tests();

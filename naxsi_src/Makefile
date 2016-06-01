@@ -10,7 +10,7 @@ CAK		:=
 COV 		:= 0
 
 #Allows to force for specific UT only
-#TEST 		:= "27*.t"
+TEST 		:= "28*.t"
 NGINX_VERS := "1.9.11"
 
 NGINX_OPTIONS="--error-log-path=/tmp/naxsi_ut/error.log"

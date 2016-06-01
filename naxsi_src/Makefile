@@ -82,7 +82,7 @@ endif
 
 	export PATH="$(TMP_DIR)/objs/:"$(PATH) ; \
 	export PERL5LIB="/usr/local/share/perl/5.14.2/:/home/travis/perl5/lib/perl5/" ; \
-	cd .. ; prove -r "t/$(TEST)"
+	cd .. ; prove -v -r "t/$(TEST)"
 
 ifeq ($(COV),1)
 	lcov --directory $(TMP_DIR)/objs/addon/naxsi_src/ --capture --output-file naxsi.info --base-directory $(TMP_DIR)

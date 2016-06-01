@@ -40,6 +40,8 @@ after_failure:
  - cat ../t/servroot/logs/error.log
  - cat /tmp/ngx_error.log
  - cat /tmp/ngx_access.log
+ - grep -V
+
 
 
 

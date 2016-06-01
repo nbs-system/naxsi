@@ -15,10 +15,10 @@ use Test::Nginx::Socket;
 
 repeat_each(3);
 
+log_level('debug');
 plan tests => repeat_each(1) * blocks();
-no_root_location();
-no_long_string();
-$ENV{TEST_NGINX_SLEEP} = 1;
+#no_root_location();
+#no_long_string();
 $ENV{TEST_NGINX_SERVROOT} = server_root();
 run_tests();
 

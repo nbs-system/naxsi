@@ -3,9 +3,9 @@
 use lib 'lib';
 use Test::Nginx::Socket;
 
-repeat_each(2);
-log_level('debug');
-plan tests => repeat_each(1) * blocks();
+log_level('error');
+#1.3 : +2 tests
+plan tests => repeat_each() * (blocks() * 2 + (2));
 no_root_location();
 #no_long_string();
 $ENV{TEST_NGINX_SERVROOT} = server_root();
@@ -13,27 +13,74 @@ run_tests();
 
 
 __DATA__
-=== TEST 1.1 : learning + block score, NAXSI_FMT
+=== TEST 1.0 : learning + block score, NAXSI_FMT
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
-MainRule "str:x" "msg:, in stuff" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1015;
+MainRule "str:," "msg:, in stuff" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1015;
 --- config
-location /x {
+location / {
          SecRulesEnabled;
 	 LearningMode;
          DeniedUrl "/RequestDenied";
 	 CheckRule "$SQL >= 8" BLOCK;
          root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
-
+}
+location /RequestDenied {
+         return 412;
+}
+--- request eval
+"GET /x,y?uuu=b,c"
+--- error_code: 404
+--- error_log eval
+qr@NAXSI_FMT: ip=127\.0\.0\.1&server=localhost&uri=/x,y&learning=1&vers=0.55rc2&total_processed=1&total_blocked=1&block=1&cscore0=\$SQL&score0=8&zone0=URL&id0=1015&var_name0=&zone1=ARGS&id1=1015&var_name1=uuu@
+=== TEST 1.2 : no-learning + block score, NAXSI_FMT
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+MainRule "str:," "msg:, in stuff" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1015;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
 }
 location /RequestDenied {
          return 412;
 }
 --- request
-GET /x/?uuu=bxcxd
---- no_error_log eval
-['NAXSI_FMT: ']
+GET /x,y?uuu=b,c
+--- error_code: 412
+--- error_log eval
+qr@NAXSI_FMT: ip=127\.0\.0\.1&server=localhost&uri=/x,y&learning=0&vers=[^&]+&total_processed=1&total_blocked=1&block=1&cscore0=\$SQL&score0=8&zone0=URL&id0=1015&var_name0=&zone1=ARGS&id1=1015&var_name1=uuu, client: 127\.0\.0\.1, server: localhost,@
+=== TEST 1.3 : learning + block score + naxsi_extensive_log, NAXSI_EXLOG and NAXSI_FMT
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+MainRule "str:," "msg:, in stuff" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1015;
+--- config
+set $naxsi_extensive_log 1;
+location / {
+         SecRulesEnabled;
+	 LearningMode;
+         DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /x,y?uuu=b,c
 --- error_code: 404
+--- error_log eval
+[qr@NAXSI_FMT: ip=127\.0\.0\.1&server=localhost&uri=/x,y&learning=1&vers=[^&]+&total_processed=1&total_blocked=1&block=1&cscore0=\$SQL&score0=8&zone0=URL&id0=1015&var_name0=&zone1=ARGS&id1=1015&var_name1=uuu@,
+qr@NAXSI_EXLOG: ip=127\.0\.0\.1&server=localhost&uri=/x,y&id=1015&zone=URL&var_name=&content=/x,y,@,
+qr@NAXSI_EXLOG: ip=127\.0\.0\.1&server=localhost&uri=/x,y&id=1015&zone=ARGS&var_name=uuu&content=b,c@
+]
+
 

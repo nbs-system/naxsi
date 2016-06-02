@@ -99,6 +99,117 @@ headertest: ratata
 --- request
 GET /?a=XXX
 --- error_code: 412
+=== TEST 1.2: extensive log while targeting name
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+location / {
+	 SecRulesEnabled;
+	 LearningMode;
+	 BasicRule id:4241 "str:ratata" "mz:ARGS" "s:BLOCK";
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+	# return 412;
+}
+--- request
+GET /?ratata=tututu
+--- error_code: 200
+=== TEST 1.2: extensive log while targeting name
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+location / {
+	 SecRulesEnabled;
+	 LearningMode;
+	 BasicRule id:4241 "str:ratata" "mz:ARGS" "s:LOG";
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+	# return 412;
+}
+--- request
+GET /?ratata=tututu
+--- error_code: 200
+=== TEST 1.3: rule on url
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+location / {
+	 SecRulesEnabled;
+	 BasicRule id:4241 "str:ratata" "mz:URL" "s:BLOCK";
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+	# return 412;
+}
+--- request
+GET /ratata?x=tututu
+--- error_code: 412
+=== TEST 1.4: add post action as dynamic flag
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+set $naxsi_flag_post_acton 1;
+location / {
+	 SecRulesEnabled;
+	 BasicRule id:4241 "str:ratata" "mz:URL" "s:BLOCK";
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+	# return 412;
+}
+--- request
+GET /ratata?x=tututu
+--- error_code: 412
 
 
 

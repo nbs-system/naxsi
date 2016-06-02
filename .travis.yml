@@ -41,7 +41,6 @@ after_failure:
 
 
 after_success:
- - lcov --directory  "../nginx-${VER_NGINX}/objs/addon/naxsi_src/" --capture --output-file naxsi.lcov --base-directory "../nginx-${VER_NGINX}/"
  - lcov --list naxsi.info
  - coveralls-lcov --repo-token ${COVERALLS_TOKEN} naxsi.info
 

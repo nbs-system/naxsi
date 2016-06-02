@@ -7,7 +7,7 @@ CAN		:=
 CAK		:=
 
 #Set to 1 if you want coverage report
-COV 		:= 0
+COV 		:= 1
 
 #Allows to force for specific UT only
 #TEST 		:= "29*.t"
@@ -81,7 +81,7 @@ endif
 	if [ ! $(TEST) ] ; then TEST="*.t" ; fi
 
 	export PATH="$(TMP_DIR)/objs/:"$(PATH) ; \
-	export PERL5LIB="/home/bui/perl5/lib/perl5/:/home/travis/perl5/lib/perl5/" ; \
+	export PERL5LIB="~/perl5/lib/perl5/:/home/travis/perl5/lib/perl5/" ; \
 	cd .. ; prove -r "t/$(TEST)"
 
 ifeq ($(COV),1)

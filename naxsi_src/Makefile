@@ -10,7 +10,7 @@ CAK		:=
 COV 		:= 0
 
 #Allows to force for specific UT only
-TEST 		:= "28*.t"
+#TEST 		:= "29*.t"
 NGINX_VERS := "1.9.11"
 
 NGINX_OPTIONS="--error-log-path=/tmp/naxsi_ut/error.log"
@@ -81,8 +81,8 @@ endif
 	if [ ! $(TEST) ] ; then TEST="*.t" ; fi
 
 	export PATH="$(TMP_DIR)/objs/:"$(PATH) ; \
-	export PERL5LIB="/usr/local/share/perl/5.14.2/:/home/travis/perl5/lib/perl5/" ; \
-	cd .. ; prove -v -r "t/$(TEST)"
+	export PERL5LIB="/home/bui/perl5/lib/perl5/:/home/travis/perl5/lib/perl5/" ; \
+	cd .. ; prove -r "t/$(TEST)"
 
 ifeq ($(COV),1)
 	lcov --directory $(TMP_DIR)/objs/addon/naxsi_src/ --capture --output-file naxsi.info --base-directory $(TMP_DIR)

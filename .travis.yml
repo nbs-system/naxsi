@@ -11,8 +11,6 @@ env:
   global:
     - VER_NGINX=1.9.11
     - COV=1
-    - TEST_NGINX_SLEEP=0.1
-    - TEST_NGINX_VERBOSE=1
 
 compiler:
   - clang

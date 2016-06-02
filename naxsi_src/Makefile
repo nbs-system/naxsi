@@ -7,7 +7,7 @@ CAN		:=
 CAK		:=
 
 #Set to 1 if you want coverage report
-COV 		:= 1
+COV 		?= 1
 
 #Allows to force for specific UT only
 #TEST 		:= "29*.t"

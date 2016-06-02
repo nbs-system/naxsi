@@ -137,12 +137,12 @@ naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
 
         switch (state) {
         case sw_usual:
-            if (ch == '?'
-                && (type & (NGX_UNESCAPE_URI|NGX_UNESCAPE_REDIRECT)))
-            {
-                *d++ = ch;
-                goto done;
-            }
+            /* if (ch == '?' */
+            /*     && (type & (NGX_UNESCAPE_URI|NGX_UNESCAPE_REDIRECT))) */
+            /* { */
+            /*     *d++ = ch; */
+            /*     goto done; */
+            /* } */
 
             if (ch == '%') {
                 state = sw_quoted;
@@ -181,16 +181,16 @@ naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
             if (ch >= '0' && ch <= '9') {
                 ch = (u_char) ((decoded << 4) + ch - '0');
 
-                if (type & NGX_UNESCAPE_REDIRECT) {
-                    if (ch > '%' && ch < 0x7f) {
-                        *d++ = ch;
-                        break;
-                    }
+                /* if (type & NGX_UNESCAPE_REDIRECT) { */
+                /*     if (ch > '%' && ch < 0x7f) { */
+                /*         *d++ = ch; */
+                /*         break; */
+                /*     } */
 
-                    *d++ = '%'; *d++ = *(s - 2); *d++ = *(s - 1);
+                /*     *d++ = '%'; *d++ = *(s - 2); *d++ = *(s - 1); */
 
-                    break;
-                }
+                /*     break; */
+                /* } */
 
                 *d++ = ch;
 
@@ -201,30 +201,30 @@ naxsi_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
             if (c >= 'a' && c <= 'f') {
                 ch = (u_char) ((decoded << 4) + c - 'a' + 10);
 
-                if (type & NGX_UNESCAPE_URI) {
-                    if (ch == '?') {
-                        *d++ = ch;
-                        goto done;
-                    }
+                /* if (type & NGX_UNESCAPE_URI) { */
+                /*     if (ch == '?') { */
+                /*         *d++ = ch; */
+                /*         goto done; */
+                /*     } */
 
-                    *d++ = ch;
-                    break;
-                }
+                /*     *d++ = ch; */
+                /*     break; */
+                /* } */
 
-                if (type & NGX_UNESCAPE_REDIRECT) {
-                    if (ch == '?') {
-                        *d++ = ch;
-                        goto done;
-                    }
+                /* if (type & NGX_UNESCAPE_REDIRECT) { */
+                /*     if (ch == '?') { */
+                /*         *d++ = ch; */
+                /*         goto done; */
+                /*     } */
 
-                    if (ch > '%' && ch < 0x7f) {
-                        *d++ = ch;
-                        break;
-                    }
+                /*     if (ch > '%' && ch < 0x7f) { */
+                /*         *d++ = ch; */
+                /*         break; */
+                /*     } */
 
-                    *d++ = '%'; *d++ = *(s - 2); *d++ = *(s - 1);
-                    break;
-                }
+                /*     *d++ = '%'; *d++ = *(s - 2); *d++ = *(s - 1); */
+                /*     break; */
+                /* } */
 
                 *d++ = ch;
 

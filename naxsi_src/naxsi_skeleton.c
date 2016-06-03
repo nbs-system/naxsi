@@ -692,7 +692,8 @@ ngx_http_naxsi_ud_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_naxsi_module);
   if (!alcf->pushed) { 
     bar = ngx_array_push(main_cf->locations);
-    if (!bar) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
+    if (!bar)
+      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     *bar = alcf;
     alcf->pushed = 1;
   }
@@ -1119,7 +1120,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 	  ** might happen but never saw it, let the debug print.
 	  */
 	  ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-			"XX-dummy : SPECIAL RESPONSE !!!!"); /*LCOV_EXCL_LINE*/
+			"XX-dummy : SPECIAL RESPONSE !!!!");
 	  return rc;
 	}
     }
@@ -1130,16 +1131,16 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     
     if ((start = times(&tmsstart)) == (clock_t)-1)
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		    "XX-dummy : Failed to get time"); /*LCOV_EXCL_LINE*/
+		    "XX-dummy : Failed to get time");
     ngx_http_dummy_data_parse(ctx, r);
     cf->request_processed++;
     if ((end = times(&tmsend)) == (clock_t)-1)
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		    "XX-dummy : Failed to get time"); /*LCOV_EXCL_LINE*/
+		    "XX-dummy : Failed to get time");
     if (end - start > 10)
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		    "[MORE THAN 10MS] times : start:%l end:%l diff:%l",
-		    start, end, (end-start)); /*LCOV_EXCL_LINE*/
+		    start, end, (end-start));
     ctx->over = 1;
     if (ctx->block || ctx->drop) {
       cf->request_blocked++;

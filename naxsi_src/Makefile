@@ -7,7 +7,7 @@ CAN		:=
 CAK		:=
 
 #Set to 1 if you want coverage report
-COV 		:= 0
+COV 		?= 1
 
 #Allows to force for specific UT only
 #TEST 		:= "29*.t"
@@ -48,7 +48,7 @@ clean:
 nginx_download:
 	wget --no-clobber "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz" || exit 1
 	wget --no-clobber "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz.asc" || exit 1
-	gpg --keyserver pgp.mit.edu --recv-keys 0x251a28de2685aed4 0x520A9993A1C052F8
+	gpg --keyserver pgp.key-server.io --recv-keys 0x251a28de2685aed4 0x520A9993A1C052F8
 	gpg --verify "nginx-"$(NGINX_VERS)".tar.gz.asc" "nginx-"$(NGINX_VERS)".tar.gz" || exit 1
 	mkdir -p $(TMP_DIR)/
 	tar -C $(TMP_DIR)/ -xzf nginx-$(NGINX_VERS).tar.gz  --strip-components=1
@@ -81,7 +81,7 @@ endif
 	if [ ! $(TEST) ] ; then TEST="*.t" ; fi
 
 	export PATH="$(TMP_DIR)/objs/:"$(PATH) ; \
-	export PERL5LIB="/home/bui/perl5/lib/perl5/:/home/travis/perl5/lib/perl5/" ; \
+	export PERL5LIB="~/perl5/lib/perl5/:/home/travis/perl5/lib/perl5/" ; \
 	cd .. ; prove -r "t/$(TEST)"
 
 ifeq ($(COV),1)

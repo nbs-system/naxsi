@@ -38,15 +38,8 @@ after_failure:
  - cat ../t/servroot/logs/error.log
  - cat /tmp/ngx_error.log
  - cat /tmp/ngx_access.log
- - grep -V
-
-
-
-
-
 
 after_success:
- - lcov --directory  "../nginx-${VER_NGINX}/objs/addon/naxsi_src/" --capture --output-file naxsi.lcov --base-directory "../nginx-${VER_NGINX}/"
- - lcov --list naxsi.lcov
- - coveralls-lcov --repo-token ${COVERALLS_TOKEN} naxsi.lcov
+ - lcov --list naxsi.info
+ - coveralls-lcov --repo-token ${COVERALLS_TOKEN} naxsi.info
 

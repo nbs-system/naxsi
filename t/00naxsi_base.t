@@ -1146,6 +1146,62 @@ location /RequestDenied {
 --- request
 GET /z?z=&yesone
 --- error_code: 412
+=== TEST 36: pushing uri rules
+--- user_files
+>>> foobar
+eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+	 BasicRule "str:yesone" "msg:foobar test pattern" "mz:ARGS|$URL:/z" "s:BLOCK" id:1999;
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TESTSCORE >= 42" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /z?&yesone=a
+--- error_code: 412
+=== TEST 37: pushing uri malformed rules
+--- user_files
+>>> foobar
+eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+	 BasicRule "str:yesone" "msg:foobar test pattern" "mz:ARGS|$URL:/z" "s:BLOCK" id:1999;
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TESTSCORE >= 42" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+GET /z?&yesonea
+--- error_code: 412
 
 
 

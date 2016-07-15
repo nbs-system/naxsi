@@ -453,7 +453,7 @@ class ESInject(NxInjector):
             print "Unexpected error:", sys.exc_info()[0]
             print "Unable to json.dumps : "
             pprint.pprint(items)
-        bulk(self.es, items, index="nxapi", doc_type="events", raise_on_error=True)
+        bulk(self.es, items, index=self.cfg["elastic"]["index"], doc_type="events", raise_on_error=True)
         self.total_commits += count
         logging.debug("Written "+str(self.total_commits)+" events")
         print "Written "+str(self.total_commits)+" events"

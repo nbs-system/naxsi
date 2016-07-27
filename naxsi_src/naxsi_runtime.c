@@ -337,25 +337,9 @@ nx_find_wl_in_hash(ngx_str_t *mstr,
   ngx_http_whitelist_rule_t	*b = NULL;
   
 
-  /*#227 http2 : seems that header names are now stored in r/o zone ?*/
-  /*
-  ** (gdb) p mstr
-  ** $1 = (ngx_str_t *) 0x1348768
-  ** (gdb) p mstr->data
-  ** $2 = (u_char *) 0x4a4404 "cookie"
-  ** (gdb) p i
-  ** $3 = 0
-  ** (gdb) x/10s 0x4a4404
-  ** 0x4a4404:	 "cookie"
-  ** 0x4a440b:	 "strict-transport-security"
-  ** 0x4a4425:	 "transfer-encoding"
-  ** ...
-  */
-  if (zone != HEADERS) {
-    size_t			i;
-    for (i = 0; i < mstr->len; i++)
-      mstr->data[i] = tolower(mstr->data[i]);
-  }
+  size_t			i;
+  for (i = 0; i < mstr->len; i++)
+    mstr->data[i] = tolower(mstr->data[i]);
 
   k = ngx_hash_key_lc(mstr->data, mstr->len);
   
@@ -2070,6 +2054,7 @@ ngx_http_dummy_headers_parse(ngx_http_dummy_main_conf_t *main_cf,
   ngx_list_part_t	    *part;
   ngx_table_elt_t	    *h;
   unsigned int		     i;
+  ngx_str_t		     lowcase_header;
 
   if (!cf->header_rules && !main_cf->header_rules)
     return ;
@@ -2087,11 +2072,13 @@ ngx_http_dummy_headers_parse(ngx_http_dummy_main_conf_t *main_cf,
       h = part->elts;
       i = 0;
     }
+    lowcase_header.data = h[i].lowcase_key;
+    lowcase_header.len = h[i].key.len;
     if (cf->header_rules)
-      ngx_http_basestr_ruleset_n(r->pool, &(h[i].key), &(h[i].value), 
+      ngx_http_basestr_ruleset_n(r->pool, &lowcase_header, &(h[i].value), 
 				 cf->header_rules, r, ctx, HEADERS);
     if (main_cf->header_rules)
-      ngx_http_basestr_ruleset_n(r->pool, &(h[i].key), &(h[i].value), 
+      ngx_http_basestr_ruleset_n(r->pool, &lowcase_header, &(h[i].value), 
 				 main_cf->header_rules, r, ctx, HEADERS);
   }
   return ;

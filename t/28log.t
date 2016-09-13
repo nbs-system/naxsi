@@ -34,7 +34,7 @@ location /RequestDenied {
 "GET /x,y?uuu=b,c"
 --- error_code: 404
 --- error_log eval
-qr@NAXSI_FMT: ip=127\.0\.0\.1&server=localhost&uri=/x,y&learning=1&vers=0.55rc2&total_processed=1&total_blocked=1&block=1&cscore0=\$SQL&score0=8&zone0=URL&id0=1015&var_name0=&zone1=ARGS&id1=1015&var_name1=uuu@
+qr@NAXSI_FMT: ip=127\.0\.0\.1&server=localhost&uri=/x,y&learning=1&vers=[^&]+&total_processed=1&total_blocked=1&block=1&cscore0=\$SQL&score0=8&zone0=URL&id0=1015&var_name0=&zone1=ARGS&id1=1015&var_name1=uuu@
 === TEST 1.2 : no-learning + block score, NAXSI_FMT
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;

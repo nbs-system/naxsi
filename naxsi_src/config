@@ -3,7 +3,7 @@ ngx_addon_name=ngx_http_naxsi_module
 if test -n "$ngx_module_link"; then
     ngx_module_type=HTTP
     ngx_module_name=ngx_http_naxsi_module
-    ngx_module_srcs="$NGX_ADDON_SRCS $ngx_addon_dir/naxsi_runtime.c $ngx_addon_dir/naxsi_config.c $ngx_addon_dir/naxsi_utils.c $ngx_addon_dir/naxsi_skeleton.c $ngx_addon_dir/naxsi_json.c $ngx_addon_dir/naxsi_raw.c $ngx_addon_dir/ext/libinjection/libinjection_sqli.c $ngx_addon_dir/ext/libinjection/libinjection_xss.c $ngx_addon_dir/ext/libinjection/libinjection_html5.c"
+    ngx_module_srcs="$ngx_addon_dir/naxsi_runtime.c $ngx_addon_dir/naxsi_config.c $ngx_addon_dir/naxsi_utils.c $ngx_addon_dir/naxsi_skeleton.c $ngx_addon_dir/naxsi_json.c $ngx_addon_dir/naxsi_raw.c $ngx_addon_dir/ext/libinjection/libinjection_sqli.c $ngx_addon_dir/ext/libinjection/libinjection_xss.c $ngx_addon_dir/ext/libinjection/libinjection_html5.c"
     . auto/module
 else
     HTTP_MODULES="$HTTP_MODULES ngx_http_naxsi_module"

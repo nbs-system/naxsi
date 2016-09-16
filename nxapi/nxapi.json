@@ -1,7 +1,7 @@
 {
 "elastic" : {
- "host" : "127.0.0.1:443",
- "use_ssl" : "True",
+ "host" : "127.0.0.1:9200",
+ "use_ssl" : false,
  "index" : "nxapi",
  "doctype" : "events",
  "default_ttl" : "7200",

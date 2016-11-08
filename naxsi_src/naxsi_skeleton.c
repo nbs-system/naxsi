@@ -950,6 +950,19 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   }
   /* don't process internal requests. */
   if (r->internal) {   
+    /* 
+       cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
+       cf->request_processed, cf->request_blocked
+       
+     */
+    if ( (cf->request_processed == 0 || cf->request_processed == 1) && 
+	 (cf->request_blocked == 0 || cf->request_blocked == 1) ) {
+      
+      ngx_log_error(NGX_LOG_ERR, r->connection->log,
+		    0, "naxsi is enabled in internal location, ignored.");
+      /* throw a log, naxsi is enabled in internal location */
+      
+    }
     NX_DEBUG(_debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 	     "XX-DON'T PROCESS (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
 	     r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",

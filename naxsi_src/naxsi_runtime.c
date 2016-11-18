@@ -818,7 +818,6 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   /* 
   ** don't handle uri > 4k, string will be split
   */
-  real_ip_t = r->headers_in.x_real_ip;  
   if(real_ip_t != NULL){ 
           real_ip = real_ip_t[0]; 
           sub = snprintf((char *)fragment->data, sz_left, fmt_base,real_ip.value.len,

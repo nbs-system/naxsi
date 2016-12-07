@@ -418,11 +418,11 @@ class ESInject(NxInjector):
                     "events" : {
                         "_ttl" : { "enabled" : "true", "default" : "4d" },
                         "properties" : { "var_name" : {"type": "string", "index" : "not_analyzed"},
-                                         "uri" : {"type": "string", "index" : "not_analyzed"},
-                                         "zone" : {"type": "string", "index" : "not_analyzed"},
-                                         "server" : {"type": "string", "index" : "not_analyzed"},
-                                         "whitelisted" : {"type" : "string", "index" : "not_analyzed"},
-                                         "ip" : { "type" : "string", "index" : "not_analyzed"}
+                                         "uri" : {"type": "string", "index" : "not_analyzed", "fielddata": true},
+                                         "zone" : {"type": "string", "index" : "not_analyzed", "fielddata": true},
+                                         "server" : {"type": "string", "index" : "not_analyzed", "fielddata": true},
+                                         "whitelisted" : {"type" : "string", "index" : "not_analyzed", "fielddata": true},
+                                         "ip" : { "type" : "string", "index" : "not_analyzed", "fielddata": true}
                                          }
                         }
                     })

@@ -373,7 +373,7 @@ class ESInject(NxInjector):
             es5_flag = str(os.environ['ES5_ENABLE'])
             if es5_flag in ['true', 'True', 'TRUE', '1', 'y', 'Y', 'YES', 'Yes', 'yes']:
                 self.es5 = True
-                print 'Elastic Search 5.X (ES5_ENABLE) Flag is Enabled'
+                print 'Elastic Search 5.X Flag (ES5_ENABLE) is Enabled'
             else:
                 self.es5 = False
         except KeyError:
@@ -410,7 +410,7 @@ class ESInject(NxInjector):
     #         return False
     #     return True
     def set_mappings(self):
-        if self.es5 == True:
+        if self.es5:
             try:
                 self.es.indices.create(
                     index=self.cfg["elastic"]["index"],
@@ -489,8 +489,6 @@ class ESInject(NxInjector):
                 for x in entry.keys():
                     if isinstance(entry[x], basestring):
                         entry[x] = unicode(entry[x], errors='replace')
-                if self.es5:
-                    entry['_ttl'] = '30s'
                 items.append(entry)
                 count += 1
         mapfunc = partial(json.dumps, ensure_ascii=False)

@@ -369,15 +369,7 @@ class ESInject(NxInjector):
         NxInjector.__init__(self, auto_commit_limit)
         self.es = es
         self.cfg = cfg
-        try:
-            es5_flag = str(os.environ['ES5_ENABLE'])
-            if es5_flag in ['true', 'True', 'TRUE', '1', 'y', 'Y', 'YES', 'Yes', 'yes']:
-                self.es5 = True
-                print 'Elastic Search 5.X Flag (ES5_ENABLE) is Enabled'
-            else:
-                self.es5 = False
-        except KeyError:
-            self.es5 = False
+        self.es_version =  cfg["elastic"].get("version", None)
         # self.host = host
         # self.index = index
         # self.collection = collection
@@ -410,7 +402,7 @@ class ESInject(NxInjector):
     #         return False
     #     return True
     def set_mappings(self):
-        if self.es5:
+        if self.es_version == '5':
             try:
                 self.es.indices.create(
                     index=self.cfg["elastic"]["index"],

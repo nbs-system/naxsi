@@ -1,8 +1,11 @@
 master_process off;
-worker_processes  1;
+#worker_processes  1;
+daemon off;
+
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 events {
  worker_connections  1024;
+ use select;
 }
 http {
  include /tmp/naxsi_ut/naxsi_core.rules;

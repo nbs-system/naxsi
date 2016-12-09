@@ -7,13 +7,16 @@ CAN		:=
 CAK		:=
 
 #Set to 1 if you want coverage report
-COV 		?= 1
+#COV 		:= 0
+FUZZ		:= 1
 
 #Allows to force for specific UT only
-#TEST 		:= "29*.t"
+TEST 		:= "29*.t"
 NGINX_VERS := "1.9.11"
 
+
 NGINX_OPTIONS="--error-log-path=/tmp/naxsi_ut/error.log"
+NGINX_OPTIONS+="--with-select_module"
 NGINX_OPTIONS+="--conf-path=/tmp/naxsi_ut/nginx.conf"
 NGINX_OPTIONS+="--http-client-body-temp-path=/tmp/naxsi_ut/body/"
 NGINX_OPTIONS+="--http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/"
@@ -32,12 +35,24 @@ NGINX_OPTIONS+="--add-dynamic-module=$(MOD_PATH)"
 NGINX_OPTIONS+="--with-ipv6"
 NGINX_OPTIONS+="--prefix=/tmp"
 NGINX_OPTIONS+="--with-debug"
+#NGINX_OPTIONS+="--with-cc=$(AFL_PATH)/afl-clang"
 
 CFLAGS:="-Wall -Wextra"
 
 all: nginx_download configure build install deploy
+##LD_PRELOAD="./preeny/src/desock.so"  ~/secdev/naxsi/github/nbs-system/naxsi/fuzz/afl-2.35b/afl-fuzz  -i  tests/ -o findings /tmp/nginx/objs/nginx
 
 re: clean all test
+
+
+AFL_PATH:="/home/bui/secdev/naxsi/github/nbs-system/naxsi/fuzz/afl-2.35b/"
+FUZZ_PATH:="../fuzz/"
+fuzz:
+	make nginx_download
+	cp ../fuzz/ngx_process_cycle.c /tmp/nginx/src/os/unix/
+	make configure build deploy
+	@LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so"  $(AFL_PATH)"afl-fuzz"  -i  $(FUZZ_PATH)/tests/ -o $(FUZZ_PATH)/findings /tmp/nginx/objs/nginx
+
 
 clean:
 	rm -f "nginx-"$(NGINX_VERS)".tar.gz"
@@ -56,6 +71,8 @@ nginx_download:
 configure:
 ifeq ($(COV),1)
 	cd $(TMP_DIR)/ && ./configure --with-cc-opt="--coverage -g3 -gstabs" --with-ld-opt="-lgcov" $(NGINX_OPTIONS)
+else ifeq ($(FUZZ),1)
+	cd $(TMP_DIR)/ && ./configure --with-cc=$(AFL_PATH)"afl-clang" $(NGINX_OPTIONS)
 else
 	cd $(TMP_DIR)/ && ./configure --with-cc-opt="-g3 -ggdb" $(NGINX_OPTIONS)
 endif

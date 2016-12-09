@@ -369,7 +369,7 @@ class ESInject(NxInjector):
         NxInjector.__init__(self, auto_commit_limit)
         self.es = es
         self.cfg = cfg
-        self.es_version =  cfg["elastic"].get("version", None)
+        self.es_version =  cfg["elastic"]["version"]
         # self.host = host
         # self.index = index
         # self.collection = collection

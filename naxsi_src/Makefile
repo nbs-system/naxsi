@@ -25,7 +25,7 @@ NGINX_OPTIONS+="--http-proxy-temp-path=/tmp/naxsi_ut/proxy/"
 NGINX_OPTIONS+="--lock-path=/tmpnginx.lock"
 NGINX_OPTIONS+="--pid-path=/tmp/naxsi_ut/nginx.pid"
 NGINX_OPTIONS+="--modules-path=/tmp/naxsi_ut/modules/"
-NGINX_OPTIONS+="--with-http_ssl_module"
+#NGINX_OPTIONS+="--with-http_ssl_module"
 NGINX_OPTIONS+="--without-mail_pop3_module"
 NGINX_OPTIONS+="--without-mail_smtp_module"
 NGINX_OPTIONS+="--without-mail_imap_module"
@@ -52,13 +52,13 @@ fuzz_build:
 	cd $(FUZZ_PATH) && (make -C $(AFL_PATH) && make -C $(AFL_PATH)"/llvm_mode" afl-clang-fast)
 	cd $(FUZZ_PATH) && (test -d preeny || git clone git@github.com:zardus/preeny.git)
 	cd $(FUZZ_PATH) && make -C preeny/src/
-	STOCK=0	FUZZ=1 make nginx_download	
+	STOCK=0	FUZZ=1 make nginx_download
 	cd $(TMP_DIR) && patch -p1 "./src/os/unix/ngx_process_cycle.c"  < $(MOD_PATH)"/../t/confs/ngx_process_cycle.patch"
+	cd $(TMP_DIR) && patch -p1 "./src/core/nginx.c"  < $(MOD_PATH)"/../t/confs/nginx.patch"
 	STOCK=0 FUZZ=1 make configure build install deploy
 
 fuzz:
 	LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so"  $(AFL_PATH)"afl-fuzz"  -i  "../t/fuzz" -o $(FUZZ_PATH)/findings $(TMP_DIR)/objs/nginx
-
 
 clean:
 	rm -f "nginx-"$(NGINX_VERS)".tar.gz"

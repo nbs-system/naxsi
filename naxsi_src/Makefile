@@ -45,13 +45,10 @@ all: nginx_download configure build install deploy
 re: clean all test
 
 
-#for afl-fuzz/libfuzz
-#AFL_VERS  := "afl-2.35b"
 FUZZ_PATH := "../fuzz"
 AFL_PATH  := $(PWD)"/"$(FUZZ_PATH)"/afl/"
 
 fuzz_build:
-	FUZZ=1
 	mkdir -p $(FUZZ_PATH)"/afl/"
 	@cd $(FUZZ_PATH) ; wget --no-clobber  "http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz" || exit 1 ; \
 	tar -C $(AFL_PATH)/ -xzf afl-latest.tgz  --strip-components=1
@@ -61,7 +58,6 @@ fuzz_build:
 	@cd $(TMP_DIR) && patch -p1 "./src/os/unix/ngx_process_cycle.c"  < $(MOD_PATH)"/../t/ngx_process_cycle.diff"
 
 fuzz:
-	FUZZ=1
 	@LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so"  $(AFL_PATH)"afl-fuzz"  -i  "../t/fuzz" -o $(FUZZ_PATH)/findings $(TMP_DIR)/objs/nginx
 
 
@@ -112,13 +108,14 @@ endif
 
 
 # RUN UNIT TESTS
+ #:/home/travis/perl5/lib/perl5/" ; 
 test:
 ifeq ($(COV),1)
 	lcov --directory $(TMP_DIR) --zerocounters
 endif
 	if [ ! $(TEST) ] ; then TEST="*.t" ; fi
 	export PATH="$(TMP_DIR)/objs/:"$(PATH) ; \
-	export PERL5LIB="~/perl5/lib/perl5/:/home/travis/perl5/lib/perl5/" ; \
+	export PERL5LIB="~/perl5/lib/perl5/" ;\
 	cd .. ; prove -r "t/$(TEST)"
 ifeq ($(COV),1)
 	lcov --directory $(TMP_DIR)/objs/addon/naxsi_src/ --capture --output-file naxsi.info --base-directory $(TMP_DIR)

@@ -6,10 +6,10 @@ TMP_DIR		:=	/tmp/nginx/
 CAN		:=
 CAK		:=
 
-#Coverage
+#Mode: coverage, fuzz, or base
 COV 		?= 0
-#Fuzz
-FUZZ		?= 1
+FUZZ		?= 0
+STOCK		?= 1
 
 #Allows to force for specific UT only
 #TEST 		:= "29*.t"
@@ -17,12 +17,10 @@ NGINX_VERS := "1.9.11"
 
 
 
-NGINX_OPTIONS="--error-log-path=/tmp/naxsi_ut/error.log"
-NGINX_OPTIONS+="--with-select_module"
+NGINX_OPTIONS="--with-select_module"
 NGINX_OPTIONS+="--conf-path=/tmp/naxsi_ut/nginx.conf"
 NGINX_OPTIONS+="--http-client-body-temp-path=/tmp/naxsi_ut/body/"
 NGINX_OPTIONS+="--http-fastcgi-temp-path=/tmp/naxsi_ut/fastcgi/"
-NGINX_OPTIONS+="--http-log-path=/tmp/naxsi_ut/access.log"
 NGINX_OPTIONS+="--http-proxy-temp-path=/tmp/naxsi_ut/proxy/"
 NGINX_OPTIONS+="--lock-path=/tmpnginx.lock"
 NGINX_OPTIONS+="--pid-path=/tmp/naxsi_ut/nginx.pid"
@@ -36,7 +34,6 @@ NGINX_OPTIONS+="--without-http_scgi_module"
 NGINX_OPTIONS+="--add-dynamic-module=$(MOD_PATH)"
 NGINX_OPTIONS+="--with-ipv6"
 NGINX_OPTIONS+="--prefix=/tmp"
-NGINX_OPTIONS+="--with-debug"
 
 CFLAGS:="-Wall -Wextra"
 
@@ -49,16 +46,18 @@ FUZZ_PATH := "../fuzz"
 AFL_PATH  := $(PWD)"/"$(FUZZ_PATH)"/afl/"
 
 fuzz_build:
-	mkdir -p $(FUZZ_PATH)"/afl/"
-	@cd $(FUZZ_PATH) ; wget --no-clobber  "http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz" || exit 1 ; \
-	tar -C $(AFL_PATH)/ -xzf afl-latest.tgz  --strip-components=1
-	@cd $(AFL_PATH) && make
-	@cd $(FUZZ_PATH) && git clone git@github.com:zardus/preeny.git && cd "preeny" && make
-	make nginx_download
-	@cd $(TMP_DIR) && patch -p1 "./src/os/unix/ngx_process_cycle.c"  < $(MOD_PATH)"/../t/ngx_process_cycle.diff"
+	mkdir -p $(FUZZ_PATH)
+	cd $(FUZZ_PATH) && (wget -nc --no-clobber  "http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz" || exit 1)
+	cd $(FUZZ_PATH) && (test -d $(AFL_PATH) || (mkdir $(FUZZ_PATH)"/afl" && tar -C $(AFL_PATH)/ -xzf afl-latest.tgz  --strip-components=1))
+	cd $(FUZZ_PATH) && (make -C $(AFL_PATH) && make -C $(AFL_PATH)"/llvm_mode" afl-clang-fast)
+	cd $(FUZZ_PATH) && (test -d preeny || git clone git@github.com:zardus/preeny.git)
+	cd $(FUZZ_PATH) && make -C preeny/src/
+	STOCK=0	FUZZ=1 make nginx_download	
+	cd $(TMP_DIR) && patch -p1 "./src/os/unix/ngx_process_cycle.c"  < $(MOD_PATH)"/../t/confs/ngx_process_cycle.patch"
+	STOCK=0 FUZZ=1 make configure build install deploy
 
 fuzz:
-	@LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so"  $(AFL_PATH)"afl-fuzz"  -i  "../t/fuzz" -o $(FUZZ_PATH)/findings $(TMP_DIR)/objs/nginx
+	LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so"  $(AFL_PATH)"afl-fuzz"  -i  "../t/fuzz" -o $(FUZZ_PATH)/findings $(TMP_DIR)/objs/nginx
 
 
 clean:
@@ -66,30 +65,28 @@ clean:
 	rm -f "nginx-"$(NGINX_VERS)".tar.gz.asc"
 	rm -rf /tmp/naxsi_ut/
 	rm -rf $(TMP_DIR)/
-	rm -rf ../fuzz/
-
 
 nginx_download:
 	wget --no-clobber "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz" || exit 1
 	wget --no-clobber "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz.asc" || exit 1
-	gpg --keyserver pgp.key-server.io --recv-keys 0x251a28de2685aed4 0x520A9993A1C052F8
-	gpg --verify "nginx-"$(NGINX_VERS)".tar.gz.asc" "nginx-"$(NGINX_VERS)".tar.gz" || exit 1
+	#gpg --keyserver pgp.key-server.io --recv-keys 0x251a28de2685aed4 0x520A9993A1C052F8
+	#gpg --verify "nginx-"$(NGINX_VERS)".tar.gz.asc" "nginx-"$(NGINX_VERS)".tar.gz" || exit 1
 	mkdir -p $(TMP_DIR)/
 	tar -C $(TMP_DIR)/ -xzf nginx-$(NGINX_VERS).tar.gz  --strip-components=1
 
 configure:
-ifeq ($(COV),1)
-	CC_OPT="--coverage -g3 -gstabs"
-	LD_OPT="-lgcov"
-else
-	CC_OPT="-g3 --ggdb"
-	LD_OPT=""
-endif
 ifeq ($(FUZZ),1)
-	cd $(TMP_DIR)/ && ./configure --with-cc=$(AFL_PATH)"/afl-clang" --with-cc-opt=$(CC_OPT) --with-ld-opt=$(LD_OPT) $(NGINX_OPTIONS)
-else
-	cd $(TMP_DIR)/ && ./configure --with-cc-opt=$(CC_OPT) --with-ld-opt=$(LD_OPT) $(NGINX_OPTIONS)
+	cd $(TMP_DIR)/ && ./configure --with-cc=afl-clang-fast --with-cc-opt="-O3" $(NGINX_OPTIONS) --error-log-path=/dev/null --http-log-path=/dev/null
 endif
+
+ifeq ($(COV),1)
+	cd $(TMP_DIR)/ && ./configure --with-cc-opt="--coverage -g3 -gstabs" --with-ld-opt="-lgcov" $(NGINX_OPTIONS) --error-log-path=/tmp/naxsi_ut/error.log --conf-path=/tmp/naxsi_ut/nginx.conf
+endif
+
+ifeq ($(STOCK),1)
+	cd $(TMP_DIR)/ && ./configure --with-cc-opt="-g3 -ggdb" $(NGINX_OPTIONS) --error-log-path=/tmp/naxsi_ut/error.log --conf-path=/tmp/naxsi_ut/nginx.conf
+endif
+
 
 build:
 	cd $(TMP_DIR)/ && make
@@ -100,15 +97,14 @@ install:
 
 deploy:
 ifeq ($(FUZZ),1)
-	@cp ../t/nginx_fuzz.conf.example /tmp/naxsi_ut/nginx.conf
+	@cp ../t/confs/nginx_fuzz.conf.example /tmp/naxsi_ut/nginx.conf
 else
-	@cp ./nginx.conf.example /tmp/naxsi_ut/nginx.conf
+	@cp ../t/confs/nginx.conf.example /tmp/naxsi_ut/nginx.conf
 endif
 	@cp ../naxsi_config/naxsi_core.rules /tmp/naxsi_ut/naxsi_core.rules
 
 
 # RUN UNIT TESTS
- #:/home/travis/perl5/lib/perl5/" ; 
 test:
 ifeq ($(COV),1)
 	lcov --directory $(TMP_DIR) --zerocounters

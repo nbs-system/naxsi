@@ -1,0 +1,4 @@
+GET /?a='A+NOT+BETWEEN+0+AND+B' HTTP/1.0
+
+
+

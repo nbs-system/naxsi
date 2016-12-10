@@ -1,0 +1,6 @@
+GET /?SELECT%0Did%0DFROM%0Ausers HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

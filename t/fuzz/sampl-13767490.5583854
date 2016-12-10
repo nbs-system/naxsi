@@ -1,0 +1,6 @@
+GET /wp-content/plugins/ultimate-tinymce/tableDropdown/editor_plugin.js HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

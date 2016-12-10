@@ -1,0 +1,6 @@
+GET /?a=a?<x HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

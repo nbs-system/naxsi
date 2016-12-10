@@ -1,0 +1,6 @@
+GET /?1+AND+9227=9227--+sp_password HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

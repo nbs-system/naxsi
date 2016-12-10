@@ -1,0 +1,6 @@
+GET /foo_1999_?x=x HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

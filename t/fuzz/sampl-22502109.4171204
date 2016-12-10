@@ -1,0 +1,6 @@
+GET /?a="><ScRiPt>alert(1)</scRiPt> HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

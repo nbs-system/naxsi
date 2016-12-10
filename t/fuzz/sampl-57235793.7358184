@@ -1,0 +1,4 @@
+GET /?x=a' onmouseover='alert(1) HTTP/1.0
+
+
+

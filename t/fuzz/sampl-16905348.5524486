@@ -1,0 +1,6 @@
+GET /?1%bf%27+AND+1=1--+ HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

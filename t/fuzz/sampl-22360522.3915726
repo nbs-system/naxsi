@@ -1,0 +1,6 @@
+GET /?SELECT%09id+FROM+users+where+id+LIKE+1 HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

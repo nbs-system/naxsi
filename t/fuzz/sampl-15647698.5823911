@@ -1,0 +1,6 @@
+GET /?foo_1999_=ABCD HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

@@ -1,0 +1,6 @@
+GET /?a=a%00<%00script HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

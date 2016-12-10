@@ -1,0 +1,6 @@
+GET /?a=\x2f\x3cSc\x3E HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

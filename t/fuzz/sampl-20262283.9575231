@@ -1,0 +1,4 @@
+GET /?a=AND+1=1+and+'0having'='0having' HTTP/1.0
+
+
+

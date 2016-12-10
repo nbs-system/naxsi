@@ -1,0 +1,12 @@
+306,308d305
+< 
+<     int ran_once=0;
+<     
+310d306
+< 
+344,348d339
+< 
+< 	ran_once += 1;
+< 	//printf("ran : %d\n", ran_once);
+< 	if (ran_once == 2) exit(0);
+< 

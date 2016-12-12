@@ -43,13 +43,18 @@ re: clean all test
 FUZZ_PATH := "../fuzz"
 AFL_PATH  := $(PWD)"/"$(FUZZ_PATH)"/afl/"
 
-fuzz_build:
+install_afl:
 	mkdir -p $(FUZZ_PATH)
 	cd $(FUZZ_PATH) && (wget -nc --no-clobber  "http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz" || exit 1)
 	cd $(FUZZ_PATH) && (test -d $(AFL_PATH) || (mkdir $(FUZZ_PATH)"/afl" && tar -C $(AFL_PATH)/ -xzf afl-latest.tgz  --strip-components=1))
 	cd $(FUZZ_PATH) && (make -C $(AFL_PATH) && make -C $(AFL_PATH)"/llvm_mode" afl-clang-fast)
+
+install_preeny:
 	cd $(FUZZ_PATH) && (test -d preeny || git clone https://github.com/zardus/preeny.git)
 	cd $(FUZZ_PATH) && make -C preeny/src/
+
+fuzz_build: install_afl install_preeny
+	mkdir -p $(FUZZ_PATH)
 	STOCK=0	FUZZ=1 make nginx_download
 	cd $(TMP_DIR) && patch -p1 "./src/os/unix/ngx_process_cycle.c"  < $(MOD_PATH)"/../t/confs/ngx_process_cycle.patch"
 	cd $(TMP_DIR) && patch -p1 "./src/core/nginx.c"  < $(MOD_PATH)"/../t/confs/nginx.patch"

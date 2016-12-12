@@ -68,6 +68,7 @@ clean:
 	rm -f "nginx-"$(NGINX_VERS)".tar.gz.asc"
 	rm -rf /tmp/naxsi_ut/
 	rm -rf $(TMP_DIR)/
+	rm -rf $(FUZZ_PATH)/
 
 nginx_download:
 	wget --no-clobber "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz" || exit 1

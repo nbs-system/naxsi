@@ -58,7 +58,7 @@ fuzz_build: install_afl install_preeny
 	STOCK=0	FUZZ=1 make nginx_download
 	cd $(TMP_DIR) && patch -p1 "./src/os/unix/ngx_process_cycle.c"  < $(MOD_PATH)"/../t/confs/ngx_process_cycle.patch"
 	cd $(TMP_DIR) && patch -p1 "./src/core/nginx.c"  < $(MOD_PATH)"/../t/confs/nginx.patch"
-	AFL_PATH=$(AFL_PATH) STOCK=0 FUZZ=1 make configure build install deploy
+	STOCK=0 FUZZ=1 make configure build install deploy
 
 fuzz:
 	LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so" $(AFL_PATH)"afl-fuzz"  -i  "../t/fuzz/" -o $(FUZZ_PATH)/findings $(TMP_DIR)/objs/nginx
@@ -93,7 +93,7 @@ endif
 
 
 build:
-	make -C $(TMP_DIR)
+	AFL_PATH=$(AFL_PATH) make -C $(TMP_DIR)
 	if [ -d "/tmp/naxsi_ut" ] ; then  cp $(TMP_DIR)/objs/ngx_http_naxsi_module.so /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so ; fi
 
 install:

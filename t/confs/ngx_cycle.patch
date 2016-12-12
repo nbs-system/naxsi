@@ -1,0 +1,11 @@
+--- a/src/core/ngx_cycle.c.orig	2016-02-09 15:11:57.000000000 +0100
++++ b/src/core/ngx_cycle.c	2016-12-12 18:05:53.832725017 +0100
+@@ -798,7 +798,7 @@
+         ngx_add_timer(&ngx_cleaner_event, 30000);
+         ngx_cleaner_event.timer_set = 1;
+     }
+-
++    __AFL_INIT();
+     return cycle;
+ 
+ 

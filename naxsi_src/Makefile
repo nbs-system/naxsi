@@ -25,14 +25,12 @@ NGINX_OPTIONS+="--http-proxy-temp-path=/tmp/naxsi_ut/proxy/"
 NGINX_OPTIONS+="--lock-path=/tmpnginx.lock"
 NGINX_OPTIONS+="--pid-path=/tmp/naxsi_ut/nginx.pid"
 NGINX_OPTIONS+="--modules-path=/tmp/naxsi_ut/modules/"
-#NGINX_OPTIONS+="--with-http_ssl_module"
 NGINX_OPTIONS+="--without-mail_pop3_module"
 NGINX_OPTIONS+="--without-mail_smtp_module"
 NGINX_OPTIONS+="--without-mail_imap_module"
 NGINX_OPTIONS+="--without-http_uwsgi_module"
 NGINX_OPTIONS+="--without-http_scgi_module"
-NGINX_OPTIONS+="--add-dynamic-module=$(MOD_PATH)"
-NGINX_OPTIONS+="--with-ipv6"
+NGINX_OPTIONS+="--add-module=$(MOD_PATH)"
 NGINX_OPTIONS+="--prefix=/tmp"
 
 CFLAGS:="-Wall -Wextra"
@@ -58,7 +56,7 @@ fuzz_build:
 	STOCK=0 FUZZ=1 make configure build install deploy
 
 fuzz:
-	LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so"  $(AFL_PATH)"afl-fuzz"  -i  "../t/fuzz" -o $(FUZZ_PATH)/findings $(TMP_DIR)/objs/nginx
+	LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so" $(AFL_PATH)"afl-fuzz"  -i  "../t/fuzz/" -o $(FUZZ_PATH)/findings $(TMP_DIR)/objs/nginx
 
 clean:
 	rm -f "nginx-"$(NGINX_VERS)".tar.gz"
@@ -76,7 +74,7 @@ nginx_download:
 
 configure:
 ifeq ($(FUZZ),1)
-	cd $(TMP_DIR)/ && ./configure --with-cc=afl-clang-fast --with-cc-opt="-O3" $(NGINX_OPTIONS) --error-log-path=/dev/null --http-log-path=/dev/null
+	cd $(TMP_DIR)/ && ./configure --with-cc=$(AFL_PATH)"/afl-clang-fast" --with-cc-opt="-O3" $(NGINX_OPTIONS) --error-log-path=/dev/null --http-log-path=/dev/null
 endif
 
 ifeq ($(COV),1)
@@ -89,11 +87,11 @@ endif
 
 
 build:
-	cd $(TMP_DIR)/ && make
+	make -C $(TMP_DIR)
 	if [ -d "/tmp/naxsi_ut" ] ; then  cp $(TMP_DIR)/objs/ngx_http_naxsi_module.so /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so ; fi
 
 install:
-	cd $(TMP_DIR)/ && make install
+	make -C $(TMP_DIR) install
 
 deploy:
 ifeq ($(FUZZ),1)

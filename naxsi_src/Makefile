@@ -74,7 +74,7 @@ nginx_download:
 
 configure:
 ifeq ($(FUZZ),1)
-	cd $(TMP_DIR)/ && ./configure --with-cc=$(AFL_PATH)"/afl-clang-fast" --with-cc-opt="-O3" $(NGINX_OPTIONS) --error-log-path=/dev/null --http-log-path=/dev/null
+	cd $(TMP_DIR)/ && ./configure --with-cc=$(AFL_PATH)"/llvm_mode/afl-clang-fast" --with-cc-opt="-O3" $(NGINX_OPTIONS) --error-log-path=/dev/null --http-log-path=/dev/null
 endif
 
 ifeq ($(COV),1)

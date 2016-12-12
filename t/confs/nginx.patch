@@ -1,6 +1,4 @@
-275c275,277
-<
+275c275
+< 
 ---
-> #ifdef __AFL_HAVE_MANUAL_CONTROL
 >     __AFL_INIT();
-> #endif

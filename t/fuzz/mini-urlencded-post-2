@@ -1,0 +1,8 @@
+POST / HTTP/1.1
+Host: localhost
+Connection: close
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 32
+
+foo1='><script>alert(1)</script>
+

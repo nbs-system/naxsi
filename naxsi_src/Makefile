@@ -16,7 +16,6 @@ STOCK		?= 1
 NGINX_VERS := "1.9.11"
 
 
-
 NGINX_OPTIONS="--with-select_module"
 NGINX_OPTIONS+="--conf-path=/tmp/naxsi_ut/nginx.conf"
 NGINX_OPTIONS+="--http-client-body-temp-path=/tmp/naxsi_ut/body/"
@@ -94,7 +93,7 @@ endif
 
 build:
 	AFL_PATH=$(AFL_PATH) make -C $(TMP_DIR)
-	if [ -d "/tmp/naxsi_ut" ] ; then  cp $(TMP_DIR)/objs/ngx_http_naxsi_module.so /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so ; fi
+	if [ -d "/tmp/naxsi_ut" ] && [ -f $(TMP_DIR)/objs/ngx_http_naxsi_module.so ] ; then  cp $(TMP_DIR)/objs/ngx_http_naxsi_module.so /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so ; fi
 
 install:
 	make -C $(TMP_DIR) install

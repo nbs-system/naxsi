@@ -47,7 +47,7 @@ fuzz_build:
 	mkdir -p $(FUZZ_PATH)
 	cd $(FUZZ_PATH) && (wget -nc --no-clobber  "http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz" || exit 1)
 	cd $(FUZZ_PATH) && (test -d $(AFL_PATH) || (mkdir $(FUZZ_PATH)"/afl" && tar -C $(AFL_PATH)/ -xzf afl-latest.tgz  --strip-components=1))
-	cd $(FUZZ_PATH) && (make -C $(AFL_PATH) && make -C $(AFL_PATH)"/llvm_mode" afl-clang-fast)
+	cd $(FUZZ_PATH) && (make -C $(AFL_PATH) && make -C $(AFL_PATH)"/llvm_mode"clean all)
 	cd $(FUZZ_PATH) && (test -d preeny || git clone https://github.com/zardus/preeny.git)
 	cd $(FUZZ_PATH) && make -C preeny/src/
 	STOCK=0	FUZZ=1 make nginx_download

@@ -1,6 +1,0 @@
-GET /?-1+UNION+SELECT HTTP/1.1
-Host: localhost
-Connection: close
-
-
-

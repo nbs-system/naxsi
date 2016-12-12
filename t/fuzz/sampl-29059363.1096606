@@ -1,6 +1,0 @@
-GET /foo?foo=1999 HTTP/1.1
-Host: localhost
-Connection: close
-
-
-

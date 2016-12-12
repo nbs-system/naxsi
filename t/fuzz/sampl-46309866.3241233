@@ -1,8 +1,0 @@
-POST / HTTP/1.1
-Host: localhost
-Connection: close
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 48
-
-foo1=ba%%2f%3c%3D%3%D%33%DD%FF%2F%3cr1&foo2=bar2
-

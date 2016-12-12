@@ -1,6 +1,0 @@
-GET /FoObar?a=bRa HTTP/1.1
-Host: localhost
-Connection: close
-
-
-

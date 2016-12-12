@@ -1,6 +1,0 @@
-GET /?1+AND+A+NOT+BETWEEN+0+AND+B-- HTTP/1.1
-Host: localhost
-Connection: close
-
-
-

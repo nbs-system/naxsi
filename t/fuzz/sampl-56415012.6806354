@@ -1,6 +1,0 @@
-GET /buixor?bla=1999&blu=1998 HTTP/1.1
-Host: localhost
-Connection: close
-
-
-

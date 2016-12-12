@@ -1,6 +1,0 @@
-GET /?1+AND+GREATEST(A,B+1)=A HTTP/1.1
-Host: localhost
-Connection: close
-
-
-

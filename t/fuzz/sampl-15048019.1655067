@@ -1,4 +1,0 @@
-GET /?<script>alert(1)</script>=1 HTTP/1.0
-
-
-

@@ -1,9 +1,0 @@
-POST /foobar HTTP/1.1
-Host: localhost
-Connection: close
-Content-Type: application/x-www-form-urlencoded
-cOnTeNT-TYpZ: application/x-www-form-evilencoded
-Content-Length: 19
-
-foo1=bar1&foo2=bar2
-

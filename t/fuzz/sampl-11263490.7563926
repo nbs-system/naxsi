@@ -1,6 +1,0 @@
-GET /foobar?barone=foobar HTTP/1.1
-Host: localhost
-Connection: close
-
-
-

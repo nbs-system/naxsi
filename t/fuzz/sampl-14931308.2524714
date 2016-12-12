@@ -1,4 +1,0 @@
-GET /?a=IF(ISNULL(1),+2,+1) HTTP/1.0
-
-
-

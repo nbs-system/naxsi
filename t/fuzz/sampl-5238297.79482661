@@ -1,6 +1,0 @@
-GET /foo?aaa4242=ratataXXX HTTP/1.1
-Host: localhost
-Connection: close
-
-
-

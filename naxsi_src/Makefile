@@ -60,7 +60,7 @@ fuzz_build: install_afl install_preeny
 	STOCK=0 FUZZ=1 make configure build install deploy
 
 fuzz:
-	LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so" $(AFL_PATH)"afl-fuzz"  -i  "../t/fuzz/" -o $(FUZZ_PATH)/findings $(TMP_DIR)/objs/nginx
+	LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so" $(AFL_PATH)"afl-fuzz" -t 10  -i  "../t/fuzz/" -o $(FUZZ_PATH)/findings $(TMP_DIR)/objs/nginx
 
 clean:
 	rm -f "nginx-"$(NGINX_VERS)".tar.gz"

@@ -1,7 +1,7 @@
 master_process off;
 daemon off;
 
-load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+#load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 events {
  worker_connections  1024;
  use select;

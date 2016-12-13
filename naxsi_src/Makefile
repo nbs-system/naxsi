@@ -56,11 +56,11 @@ fuzz_build: install_afl install_preeny
 	mkdir -p $(FUZZ_PATH)
 	STOCK=0	FUZZ=1 make nginx_download
 	cd $(TMP_DIR) && patch -p1 "./src/core/ngx_cycle.c"  < $(MOD_PATH)"/../t/confs/ngx_cycle.patch"
-	cd $(TMP_DIR) && patch -p1 "./src/core/nginx.c"  < $(MOD_PATH)"/../t/confs/nginx.patch"
+	cd $(TMP_DIR) && patch -p1 "./src/os/unix/ngx_process_cycle.c"  < $(MOD_PATH)"/../t/confs/ngx_process_cycle.patch"
 	STOCK=0 FUZZ=1 make configure build install deploy
 
 fuzz:
-	LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so" $(AFL_PATH)"afl-fuzz" -t 500  -i  "../t/fuzz/" -o $(FUZZ_PATH)/findings $(TMP_DIR)/objs/nginx
+	LD_PRELOAD=$(FUZZ_PATH)"/preeny/src/desock.so" $(AFL_PATH)"afl-fuzz" -t 10  -i  "../t/fuzz/" -o $(FUZZ_PATH)/findings $(TMP_DIR)/objs/nginx
 
 clean:
 	rm -f "nginx-"$(NGINX_VERS)".tar.gz"

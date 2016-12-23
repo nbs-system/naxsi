@@ -457,6 +457,7 @@ class ESInject(NxInjector):
                                         "zone" : {"type": "string", "index":"not_analyzed"},
                                         "server" : {"type": "string", "index":"not_analyzed"},
                                         "whitelisted" : {"type" : "string", "index":"not_analyzed"},
+                                        "content" : {"type" : "string", "index":"not_analyzed"},
                                         "ip" : { "type" : "string", "index":"not_analyzed"}
                             }
                         }

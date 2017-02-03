@@ -1381,7 +1381,9 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 
 
   for (i = 0; i < rules->nelts && ( (!ctx->block || ctx->learning) && !ctx->drop ) ; i++) {
-
+    /*properly reset counter*/
+    uri_constraint_ok=1;
+    rule_matched=0;
     NX_DEBUG(_debug_basestr_ruleset , NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 	     "XX-RULE %d : START", r[i].rule_id);
     

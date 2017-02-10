@@ -820,7 +820,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 		 r->connection->addr_text.data,
 		 r->headers_in.server.len, r->headers_in.server.data,
 		 tmp_uri->len, tmp_uri->data, ctx->learning ? 1 : 0, strlen(NAXSI_VERSION),
-		 NAXSI_VERSION, cf->request_processed, cf->request_blocked, ctx->block ? 1 : 0);
+		 NAXSI_VERSION, cf->request_processed, cf->request_blocked, ctx->block ? 1 : (ctx->drop ? 1 : 0));
   
   if (sub >= sz_left)
     sub = sz_left - 1;

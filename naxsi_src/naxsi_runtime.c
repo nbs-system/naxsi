@@ -789,7 +789,9 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_http_matched_rule_t	*mr;
   char		 tmp_zone[30];
-  
+  ngx_table_elt_t real_ip; // This will be the X-Real-IP
+  ngx_table_elt_t *real_ip_t = r->headers_in.x_real_ip;  
+	
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   
   tmp_uri = ngx_pcalloc(r->pool, sizeof(ngx_str_t));
@@ -816,11 +818,20 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   /* 
   ** don't handle uri > 4k, string will be split
   */
-  sub = snprintf((char *)fragment->data, sz_left, fmt_base, r->connection->addr_text.len,
-		 r->connection->addr_text.data,
-		 r->headers_in.server.len, r->headers_in.server.data,
-		 tmp_uri->len, tmp_uri->data, ctx->learning ? 1 : 0, strlen(NAXSI_VERSION),
-		 NAXSI_VERSION, cf->request_processed, cf->request_blocked, ctx->block ? 1 : 0);
+  if(real_ip_t != NULL){ 
+          real_ip = real_ip_t[0]; 
+          sub = snprintf((char *)fragment->data, sz_left, fmt_base,real_ip.value.len,
+                         real_ip.value.data,
+                         r->headers_in.server.len, r->headers_in.server.data,
+                         tmp_uri->len, tmp_uri->data, ctx->learning ? 1 : 0, strlen(NAXSI_VERSION),
+                         NAXSI_VERSION, cf->request_processed, cf->request_blocked, ctx->block ? 1 : 0); 
+  }else{
+          sub = snprintf((char *)fragment->data, sz_left, fmt_base, r->connection->addr_text.len,
+                 r->connection->addr_text.data,
+                 r->headers_in.server.len, r->headers_in.server.data,
+                 tmp_uri->len, tmp_uri->data, ctx->learning ? 1 : 0, strlen(NAXSI_VERSION),
+                 NAXSI_VERSION, cf->request_processed, cf->request_blocked, ctx->block ? 1 : 0);
+  }
   
   if (sub >= sz_left)
     sub = sz_left - 1;

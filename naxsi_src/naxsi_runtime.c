@@ -114,6 +114,7 @@ ngx_http_rule_t *nx_int__libinject_xss; /*ID:18*/
 
 #define dummy_error_fatal(ctx, r, ...) do {				\
     if (ctx) ctx->block = 1;						\
+    if (ctx) ctx->drop = 1;						\
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,  \
 		  "XX-******** NGINX NAXSI INTERNAL ERROR ********");	\
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, __VA_ARGS__); \

@@ -942,7 +942,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ** If we shouldn't block the request, 
   ** but a log score was reached, stop.
   */
-  if (ctx->log && !ctx->block)
+  if (ctx->log && (!ctx->block && !ctx->drop))
     return (NGX_DECLINED);
   /*
   ** If we are in learning without post_action and without drop

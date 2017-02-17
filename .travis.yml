@@ -25,8 +25,9 @@ addons:
 install:
   - gem install coveralls-lcov
   - cd ./naxsi_src
+  - COV=1
   - if [ "$CC" == "clang" ]; then COV=0; fi
-  - COV=1 make
+  - make
   - sudo cpanm -v --notest Test::Nginx
 
 before_script:

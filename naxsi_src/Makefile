@@ -29,7 +29,7 @@ NGINX_OPTIONS+="--without-mail_smtp_module"
 NGINX_OPTIONS+="--without-mail_imap_module"
 NGINX_OPTIONS+="--without-http_uwsgi_module"
 NGINX_OPTIONS+="--without-http_scgi_module"
-NGINX_OPTIONS+="--add-module=$(MOD_PATH)"
+#dynamic or not NGINX_OPTIONS+="--add-dynamic-module=$(MOD_PATH)"
 NGINX_OPTIONS+="--prefix=/tmp"
 
 CFLAGS:="-Wall -Wextra"
@@ -78,16 +78,17 @@ nginx_download:
 	tar -C $(TMP_DIR)/ -xzf nginx-$(NGINX_VERS).tar.gz  --strip-components=1
 
 configure:
+#build non dynamic module (faster) for fuzz/afl
 ifeq ($(FUZZ),1)
-	cd $(TMP_DIR)/ && AFL_PATH=$(AFL_PATH) ./configure --with-cc=$(AFL_PATH)"/llvm_mode/afl-clang-fast" --with-cc-opt="-O3" $(NGINX_OPTIONS) --error-log-path=/dev/null --http-log-path=/dev/null
+	cd $(TMP_DIR)/ && AFL_PATH=$(AFL_PATH) ./configure --with-cc=$(AFL_PATH)"/llvm_mode/afl-clang-fast" --with-cc-opt="-O3" $(NGINX_OPTIONS) --add-module=$(MOD_PATH)  --error-log-path=/dev/null --http-log-path=/dev/null
 endif
 
 ifeq ($(COV),1)
-	cd $(TMP_DIR)/ && ./configure --with-cc-opt="--coverage -g3 -gstabs" --with-ld-opt="-lgcov" $(NGINX_OPTIONS) --error-log-path=/tmp/naxsi_ut/error.log --conf-path=/tmp/naxsi_ut/nginx.conf
+	cd $(TMP_DIR)/ && ./configure --with-cc-opt="--coverage -g3 -gstabs" --with-ld-opt="-lgcov" $(NGINX_OPTIONS) --add-dynamic-module=$(MOD_PATH) --error-log-path=/tmp/naxsi_ut/error.log --conf-path=/tmp/naxsi_ut/nginx.conf
 endif
 
 ifeq ($(STOCK),1)
-	cd $(TMP_DIR)/ && ./configure --with-cc-opt="-g3 -ggdb" $(NGINX_OPTIONS) --error-log-path=/tmp/naxsi_ut/error.log --conf-path=/tmp/naxsi_ut/nginx.conf
+	cd $(TMP_DIR)/ && ./configure --with-cc-opt="-g3 -ggdb" $(NGINX_OPTIONS) --add-dynamic-module=$(MOD_PATH) --error-log-path=/tmp/naxsi_ut/error.log --conf-path=/tmp/naxsi_ut/nginx.conf
 endif
 
 

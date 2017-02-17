@@ -27,7 +27,7 @@ install:
   - cd ./naxsi_src
   - if [ "$CC" == "clang" ]; then COV=0; fi
   - make
-  - cpanm -v --notest Test::Nginx
+  - sudo cpanm -v --notest Test::Nginx
 
 before_script:
   - lcov --directory "../nginx-${VER_NGINX}" --zerocounters

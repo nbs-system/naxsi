@@ -32,7 +32,7 @@ install:
 before_script:
   - lcov --directory "../nginx-${VER_NGINX}" --zerocounters
 
-script: make test
+script: COV=1 make test
 
 after_failure: 
  - cat ../t/servroot/logs/error.log

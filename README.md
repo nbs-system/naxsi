@@ -50,3 +50,7 @@ It depends on `libpcre` for its regexp support, and is reported to work great on
 - The [documentation](https://github.com/nbs-system/naxsi/wiki)
 - Some [rules]( https://github.com/nbs-system/naxsi-rules ) for mainstream software
 - The [nxapi/nxtool]( https://github.com/nbs-system/naxsi/tree/master/nxapi ) to generate rules
+
+
+<img alt="nxapi-dashboard logo" src="https://raw.githubusercontent.com/wiki/nbs-system/naxsi/Images/kibana.png" align="center"/>   
+

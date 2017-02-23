@@ -1,0 +1,6 @@
+GET /bla?/bla=1999&bu=1998 HTTP/1.1
+Host: localhost
+Connection: close
+
+
+

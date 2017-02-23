@@ -1,4 +1,4 @@
-GET /?a=1 UnioN SeLEct 1 HTTP/1.0
+GET /?a=1%20UnioN%20SeLEct%201 HTTP/1.0
 
 
 

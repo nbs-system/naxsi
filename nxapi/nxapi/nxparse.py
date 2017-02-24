@@ -369,12 +369,15 @@ class ESInject(NxInjector):
         NxInjector.__init__(self, auto_commit_limit)
         self.es = es
         self.cfg = cfg
+        self.es_version =  cfg["elastic"]["version"]
         # self.host = host
         # self.index = index
         # self.collection = collection
         # self.login = login
         # self.password = password
         self.set_mappings()
+
+
     # def esreq(self, pidx_uri, data, method="PUT"):
     #     try:
     #         body = json.dumps(data)
@@ -399,36 +402,71 @@ class ESInject(NxInjector):
     #         return False
     #     return True
     def set_mappings(self):
-        try:
-            self.es.create(
-                index=self.cfg["elastic"]["index"],
-                doc_type=self.cfg["elastic"]["doctype"],
-                #            id=repo_name,
-                body={},
-                ignore=409 # 409 - conflict - would be returned if the document is already there
+        if self.es_version == '5':
+            try:
+                self.es.indices.create(
+                    index=self.cfg["elastic"]["index"],
+                    ignore=400 # Ignore 400 cause by IndexAlreadyExistsException when creating an index
                 )
-        except:
-            print "Unable to create the index/collection : "+self.cfg["elastic"]["index"]+" "+self.cfg["elastic"]["doctype"]
-            return
-        try:
-            self.es.indices.put_mapping(
-                index=self.cfg["elastic"]["index"],
-                doc_type=self.cfg["elastic"]["doctype"],
-                body={
-                    "events" : {
-                        "_ttl" : { "enabled" : "true", "default" : "4d" },
-                        "properties" : { "var_name" : {"type": "string", "index" : "not_analyzed"},
-                                         "uri" : {"type": "string", "index" : "not_analyzed"},
-                                         "zone" : {"type": "string", "index" : "not_analyzed"},
-                                         "server" : {"type": "string", "index" : "not_analyzed"},
-                                         "whitelisted" : {"type" : "string", "index" : "not_analyzed"},
-                                         "ip" : { "type" : "string", "index" : "not_analyzed"}
-                                         }
+            except Exception as idxadd_error:
+                print "Unable to create the index/collection for ES 5.X: "+self.cfg["elastic"]["index"]+" "+self.cfg["elastic"]["doctype"]+ ", Error: " + str(idxadd_error)
+            try:
+                self.es.indices.put_mapping(
+                    index=self.cfg["elastic"]["index"],
+                    doc_type=self.cfg["elastic"]["doctype"],
+                    body={
+                        "events" : {
+                            # * (Note: The _timestamp and _ttl fields were deprecated and are now removed in ES 5.X.
+                            # deleting documents from an index is very expensive compared to deleting whole indexes.
+                            # That is why time based indexes are recommended over this sort of thing and why
+                            # _ttl was deprecated in the first place)
+                            #"_ttl" : { "enabled" : "true", "default" : "4d" },
+                            "properties" : { "var_name" : {"type": "keyword"},
+                                "uri" : {"type": "keyword"},
+                                "zone" : {"type": "keyword"},
+                                "server" : {"type": "keyword"},
+                                "whitelisted" : {"type" : "keyword"},
+                                "ip" : {"type" : "keyword"}
+                            }
                         }
-                    })
-        except:
-            print "Unable to set mapping on index/collection : "+self.cfg["elastic"]["index"]+" "+self.cfg["elastic"]["doctype"]
-            return
+                })
+            except Exception as mapset_error:
+                print "Unable to set mapping on index/collection for ES 5.X: "+self.cfg["elastic"]["index"]+" "+self.cfg["elastic"]["doctype"]+", Error: "+str(mapset_error)
+                return
+        else:
+            try:
+                self.es.create(
+                    index=self.cfg["elastic"]["index"],
+                    doc_type=self.cfg["elastic"]["doctype"],
+                    #            id=repo_name,
+                    body={},
+                    ignore=409 # 409 - conflict - would be returned if the document is already there
+                )
+            except Exception as idxadd_error:
+                print "Unable to create the index/collection : "+self.cfg["elastic"]["index"]+" "+self.cfg["elastic"]["doctype"]+", Error: "+str(idxadd_error)
+                return
+            try:
+                self.es.indices.put_mapping(
+                    index=self.cfg["elastic"]["index"],
+                    doc_type=self.cfg["elastic"]["doctype"],
+                    body={
+                        "events" : {
+                            "_ttl" : { "enabled" : "true", "default" : "4d" },
+                            "properties" : { "var_name" : {"type": "string", "index":"not_analyzed"},
+                                        "uri" : {"type": "string", "index":"not_analyzed"},
+                                        "zone" : {"type": "string", "index":"not_analyzed"},
+                                        "server" : {"type": "string", "index":"not_analyzed"},
+                                        "whitelisted" : {"type" : "string", "index":"not_analyzed"},
+                                        "content" : {"type" : "string", "index":"not_analyzed"},
+                                        "ip" : { "type" : "string", "index":"not_analyzed"}
+                            }
+                        }
+                })
+            except Exception as mapset_error:
+                print "Unable to set mapping on index/collection : "+self.cfg["elastic"]["index"]+" "+self.cfg["elastic"]["doctype"]+", Error: "+str(mapset_error)
+                return
+
+
     def commit(self):
         """Process list of dict (yes) and push them to DB """
         self.total_objs += len(self.nlist)

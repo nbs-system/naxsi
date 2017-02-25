@@ -1301,8 +1301,8 @@ void ngx_http_libinjection(ngx_pool_t *pool,
 			    enum DUMMY_MATCH_ZONE	zone) {
   /* 
   ** Libinjection integration : 
-  ** 1 - check if libinjection_sql is explicitely enabled
-  ** 2 - check if libinjection_xss is explicitely enabled
+  ** 1 - check if libinjection_sql is explicitly enabled
+  ** 2 - check if libinjection_xss is explicitly enabled
   ** if 1 is true : perform check on both name and content,
   **		    in case of match, apply internal rule
   **		    increasing the LIBINJECTION_SQL score

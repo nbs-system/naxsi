@@ -4,6 +4,7 @@
 [![travis-ci](https://travis-ci.org/nbs-system/naxsi.svg?branch=master)](https://travis-ci.org/nbs-system/naxsi)
 [![coveralls](https://coveralls.io/repos/github/nbs-system/naxsi/badge.svg?branch=master)](https://coveralls.io/github/nbs-system/naxsi?branch=master)
 [![codecov](http://codecov.io/github/nbs-system/naxsi/coverage.svg?branch=master)](http://codecov.io/github/nbs-system/naxsi?branch=master)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/740/badge)](https://bestpractices.coreinfrastructure.org/projects/740)
 
 ### We need your help
 

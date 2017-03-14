@@ -15,7 +15,7 @@ compiler:
   - gcc
 
 before_script:
-  - sudo apt-get -y install build-essential bzip2 libpcre3-dev libssl-dev daemon libgeoip-dev unzip cpanm
+  - sudo apt-get -y install build-essential bzip2 libpcre3-dev libssl-dev daemon libgeoip-dev 
 
 install:
   - wget "http://nginx.org/download/nginx-${VER_NGINX}.tar.gz" && tar -xf "nginx-${VER_NGINX}.tar.gz"

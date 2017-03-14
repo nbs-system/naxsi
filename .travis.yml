@@ -15,13 +15,8 @@ compiler:
   - clang
   - gcc
 
-addons:
-  apt:
-    packages:
-      - libpcre3-dev
-      - libssl-dev
-      - daemon
-      - libgeoip-dev
+before_script:
+  - apt-get install build-essential bzip2 libpcre3-dev libssl-dev daemon libgeoip-dev unzip
    
 install:
   - mkdir ../vendor && cd ../vendor

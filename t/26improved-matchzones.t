@@ -16,38 +16,15 @@ no_long_string();
 $ENV{TEST_NGINX_SERVROOT} = server_root();
 run_tests();
 
-
-# blacklist on static var name (good)
-# blacklist on static var name (fail)
-
-
-# blacklist on rx var name (good)
-# blacklist on rx var name (fail)
-
-# blacklist on rx var name (bad zone)
-# blacklist on static var name (bad zone)
-
-
-# blacklist on multi static var name (one good, multi-bad)
-# blacklist on multi static var name (multi-bad)
-
-
-# blacklist on multi rx var name (one good, multi-bad)
-# blacklist on multi rx var name (multi-bad)
-
-
-
-
-
-
-
 __DATA__
 === TEST 1.0: blacklist on static var name (good)
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratz" "mz:$ARGS_VAR:foo1|$URL:/ff" "s:$XSS:8";
 MainRule id:4241 "str:ratata" "mz:$ARGS_VAR:foo" "s:$XSS:8";
+MainRule id:4241 "str:ratz" "mz:$ARGS_VAR:foo1" "s:$XSS:8";
 --- config
 location / {
 	 SecRulesEnabled;
@@ -72,7 +49,9 @@ GET /?foo=ratataXXX
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$ARGS_VAR:foo1/$URL:/zz" "s:$XSS:8";
 MainRule id:4241 "str:ratata" "mz:$ARGS_VAR:foo" "s:$XSS:8";
+MainRule id:4241 "str:ratata" "mz:$ARGS_VAR:foo/$URL:/zz" "s:$XSS:8";
 --- config
 location / {
 	 SecRulesEnabled;
@@ -97,7 +76,10 @@ GET /?foox=ratataXXX
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$ARGS_VAR_X:^foa[0-9]+$|$URL_X:/f1" "s:$XSS:8";
 MainRule id:4241 "str:ratata" "mz:$ARGS_VAR_X:^foo[0-9]+$" "s:$XSS:8";
+MainRule id:4241 "str:ratata" "mz:$ARGS_VAR_X:^foa[0-9]+$|$URL_X:/ff" "s:$XSS:8";
+MainRule id:4241 "str:ratata" "mz:$ARGS_VAR_X:^foa[0-9]+$" "s:$XSS:8";
 --- config
 location / {
 	 SecRulesEnabled;
@@ -122,7 +104,9 @@ GET /?foo888=ratataXXX
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$ARGS_VAR_X:^foo[0-9]+$/$URL_X:/z" "s:$XSS:8";
 MainRule id:4241 "str:ratata" "mz:$ARGS_VAR_X:^foo[0-9]+$" "s:$XSS:8";
+MainRule id:4241 "str:ratata" "mz:$ARGS_VAR_X:^fo1[0-9]+$" "s:$XSS:8";
 --- config
 location / {
 	 SecRulesEnabled;
@@ -147,7 +131,9 @@ GET /?foob=ratataXXX
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$BODY_VAR_X:^foo[0-9]+$|$URL_X:/fz" "s:$XSS:8";
 MainRule id:4241 "str:ratata" "mz:$BODY_VAR_X:^foo[0-9]+$" "s:$XSS:8";
+MainRule id:4241 "str:ratata" "mz:$BODY_VAR_X:^fo1[0-9]+$" "s:$XSS:8";
 --- config
 location / {
 	 SecRulesEnabled;
@@ -173,6 +159,7 @@ GET /?foo88=ratataXXX
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$BODY_VAR:foo|$URL:/f" "s:$XSS:8";
 MainRule id:4241 "str:ratata" "mz:$BODY_VAR:foo" "s:$XSS:8";
 --- config
 location / {
@@ -199,6 +186,7 @@ GET /?foo=ratataXXX
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL:/zz|$ARGS_VAR:aaa|$ARGS_VAR:foo|$ARGS_VAR:nope" "s:$XSS:8";
 MainRule id:4241 "str:ratata" "mz:$ARGS_VAR:aaa|$ARGS_VAR:foo|$ARGS_VAR:nope" "s:$XSS:8";
 --- config
 location / {
@@ -225,6 +213,7 @@ GET /?foo=ratataXXX
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL_X:^/z$|$ARGS_VAR_X:^aaa$|$ARGS_VAR_X:^foo$|$ARGS_VAR_X:^nope$" "s:$XSS:8";
 MainRule id:4241 "str:ratata" "mz:$ARGS_VAR_X:^aaa$|$ARGS_VAR_X:^foo$|$ARGS_VAR_X:^nope$" "s:$XSS:8";
 --- config
 location / {
@@ -359,7 +348,9 @@ GET /?foo1=ratataXXX
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL:/fooa|$ARGS_VAR:aaa" "s:$XSS:8";
 MainRule id:4241 "str:ratata" "mz:$URL:/foo|$ARGS_VAR:aaa" "s:$XSS:8";
+MainRule id:4241 "str:ratata" "mz:$URL:/fooz|$ARGS_VAR:aaa" "s:$XSS:8";
 --- config
 location / {
 	 SecRulesEnabled;
@@ -386,7 +377,9 @@ GET /foo?aaa=ratataXXX
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
 include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4241 "str:ratata" "mz:$URL:/foo1|$ARGS_VAR:aaa" "s:$XSS:8";
 MainRule id:4241 "str:ratata" "mz:$URL:/foo|$ARGS_VAR:aaa" "s:$XSS:8";
+MainRule id:4241 "str:ratata" "mz:$URL:/foo2|$ARGS_VAR:aaa" "s:$XSS:8";
 --- config
 location / {
 	 SecRulesEnabled;

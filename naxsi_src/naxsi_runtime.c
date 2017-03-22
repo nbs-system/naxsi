@@ -114,6 +114,7 @@ ngx_http_rule_t *nx_int__libinject_xss; /*ID:18*/
 
 #define dummy_error_fatal(ctx, r, ...) do {				\
     if (ctx) ctx->block = 1;						\
+    if (ctx) ctx->drop = 1;						\
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,  \
 		  "XX-******** NGINX NAXSI INTERNAL ERROR ********");	\
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, __VA_ARGS__); \
@@ -818,6 +819,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   /* 
   ** don't handle uri > 4k, string will be split
   */
+
   if(real_ip_t != NULL){ 
           real_ip = real_ip_t[0]; 
           sub = snprintf((char *)fragment->data, sz_left, fmt_base,real_ip.value.len,
@@ -832,6 +834,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
                  tmp_uri->len, tmp_uri->data, ctx->learning ? 1 : 0, strlen(NAXSI_VERSION),
                  NAXSI_VERSION, cf->request_processed, cf->request_blocked, ctx->block ? 1 : 0);
   }
+
   
   if (sub >= sz_left)
     sub = sz_left - 1;
@@ -953,7 +956,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ** If we shouldn't block the request, 
   ** but a log score was reached, stop.
   */
-  if (ctx->log && !ctx->block)
+  if (ctx->log && (!ctx->block && !ctx->drop))
     return (NGX_DECLINED);
   /*
   ** If we are in learning without post_action and without drop
@@ -1311,8 +1314,8 @@ void ngx_http_libinjection(ngx_pool_t *pool,
 			    enum DUMMY_MATCH_ZONE	zone) {
   /* 
   ** Libinjection integration : 
-  ** 1 - check if libinjection_sql is explicitely enabled
-  ** 2 - check if libinjection_xss is explicitely enabled
+  ** 1 - check if libinjection_sql is explicitly enabled
+  ** 2 - check if libinjection_xss is explicitly enabled
   ** if 1 is true : perform check on both name and content,
   **		    in case of match, apply internal rule
   **		    increasing the LIBINJECTION_SQL score
@@ -1392,7 +1395,9 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 
 
   for (i = 0; i < rules->nelts && ( (!ctx->block || ctx->learning) && !ctx->drop ) ; i++) {
-
+    /*properly reset counter*/
+    uri_constraint_ok=1;
+    rule_matched=0;
     NX_DEBUG(_debug_basestr_ruleset , NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 	     "XX-RULE %d : START", r[i].rule_id);
     

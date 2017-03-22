@@ -1,0 +1,48 @@
+master_process off;
+daemon off;
+
+#load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+events {
+ worker_connections  1024;
+ use select;
+}
+http {
+MainRule "rx:select|union|update|delete|insert|table|from|ascii|hex|unhex|drop" "msg:sql keywords" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1000;
+MainRule "str:\"" "msg:double quote" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:8,$XSS:8" id:1001;
+MainRule "str:0x" "msg:0x, possible hex encoding" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:2" id:1002;
+## Hardcore rules
+MainRule "str:/*" "msg:mysql comment (/*)" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:8" id:1003;
+MainRule "str:*/" "msg:mysql comment (*/)" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:8" id:1004;
+MainRule "str:|" "msg:mysql keyword (|)"  "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:8" id:1005;
+MainRule "str:`"  "msg:grave accent (`)" "mz:ARGS|URL|BODY|$HEADERS_VAR:Cookie" "s:$XSS:8" id:1314;
+MainRule "rx:%[2|3]."  "msg:double encoding" "mz:ARGS|URL|BODY|$HEADERS_VAR:Cookie" "s:$XSS:8" id:1315;
+MainRule "str:&#" "msg:utf7/8 encoding" "mz:ARGS|BODY|URL|$HEADERS_VAR:Cookie" "s:$EVADE:4" id:1400;
+MainRule "str:%U" "msg:M$ encoding" "mz:ARGS|BODY|URL|$HEADERS_VAR:Cookie" "s:$EVADE:4" id:1401;
+MainRule "rx:\.ph|\.asp|\.ht" "msg:asp/php file upload" "mz:FILE_EXT" "s:$UPLOAD:8" id:1500;
+
+# include /tmp/naxsi_ut/naxsi_core.rules;
+# include       mime.types;
+ default_type  application/octet-stream;
+ sendfile        on;
+ keepalive_timeout  65;
+ server {
+  listen 4242;
+  server_name  localhost;
+  location / {
+   LearningMode;
+   SecRulesEnabled;
+   DeniedUrl "/50x.html";
+   CheckRule "$SQL >= 8" BLOCK;
+   CheckRule "$RFI >= 8" BLOCK;
+   CheckRule "$TRAVERSAL >= 4" BLOCK;
+   CheckRule "$EVADE >= 4" BLOCK;
+   CheckRule "$XSS >= 8" BLOCK;
+   return 200;
+  }
+  error_page   500 502 503 504  /50x.html;
+  location = /50x.html {
+   return 500;
+  }
+ }
+}
+

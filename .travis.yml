@@ -9,7 +9,7 @@ cache:
 env:
   global:
     - VER_NGINX=1.9.11
-    
+
 compiler:
   - gcc
 

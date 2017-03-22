@@ -110,10 +110,6 @@ try:
 except ValueError:
     sys.exit(-1)
 
-if cfg.cfg["elastic"].get("version", None) is None:
-    print "Specify version '1' or '2' in [elasticsearch] section."
-    sys.exit(-1)
-
 if options.server is not None:
     cfg.cfg["global_filters"]["server"] = options.server
 
@@ -160,6 +156,14 @@ except KeyError:
     use_ssl = False
     
 es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"], use_ssl=use_ssl)
+# Get ES version from the client and avail it at cfg
+es_version =  es.info()['version'].get('number', None)
+if es_version is not None:
+    cfg.cfg["elastic"]["version"] = es_version.split(".")[0]
+if cfg.cfg["elastic"].get("version", None) is None:
+    print "Failed to get version from ES, Specify version ['1'/'2'/'5'] in [elasticsearch] section"
+    sys.exit(-1)
+
 translate = NxTranslate(es, cfg)
 
 

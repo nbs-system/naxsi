@@ -1,0 +1,13 @@
+--- a/src/core/ngx_cycle.c.orig	2016-02-09 15:11:57.000000000 +0100
++++ b/src/core/ngx_cycle.c	2016-12-12 18:05:53.832725017 +0100
+--- nginx/src/core/ngx_cycle.c	2016-02-09 15:11:57.000000000 +0100
++++ ngx_cycle.c	2016-12-13 09:49:47.762221499 +0100
+@@ -602,6 +602,8 @@
+         }
+     }
+ 
++    __AFL_INIT();
++
+     if (ngx_open_listening_sockets(cycle) != NGX_OK) {
+         goto failed;
+     }

@@ -67,6 +67,7 @@ class NxReader():
           print "Unable to get syslog host and port"
           sys.exit(1)
         s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
           s.bind((host,port))
           s.listen(10)

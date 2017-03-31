@@ -34,6 +34,21 @@
 
 #define NAXSI_VERSION "0.55.3"
 
+#ifdef _MSC_VER
+#define __func__ __FUNCTION__
+#define snprintf _snprintf
+#define vsnprintf _vsnprintf
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#define random rand
+#define srandom srand
+#define HAVE_RAND 1
+#define uint unsigned int
+#define _CRT_SECURE_NO_WARNINGS
+#include <process.h>
+#include <time.h>
+#endif
+
 #include <nginx.h>
 #include <ngx_config.h>
 #include <ngx_core.h>

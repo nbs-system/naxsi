@@ -112,6 +112,20 @@ ngx_http_rule_t *nx_int__libinject_xss; /*ID:18*/
 
 
 
+#ifdef _MSC_VER
+#define dummy_error_fatal(ctx, r, ...) do {				\
+    if (ctx) ctx->block = 1;						\
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,  \
+		  "XX-******** NGINX NAXSI INTERNAL ERROR ********");	\
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, __VA_ARGS__); \
+    ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, \
+		  "XX-func:%s file:%s line:%d", \
+		  __func__, __FILE__, __LINE__);			\
+    if (r && r->uri.data) ngx_log_debug1(NGX_LOG_DEBUG_HTTP, \
+					r->connection->log, 0, \
+					"XX-uri:%s", r->uri.data);	\
+    } while (0)
+#else
 #define dummy_error_fatal(ctx, r, ...) do {				\
     if (ctx) ctx->block = 1;						\
     if (ctx) ctx->drop = 1;						\
@@ -124,7 +138,8 @@ ngx_http_rule_t *nx_int__libinject_xss; /*ID:18*/
     if (r && r->uri.data) ngx_log_debug(NGX_LOG_DEBUG_HTTP, \
 					r->connection->log, 0, \
 					"XX-uri:%s", r->uri.data);	\
-  } while (0)
+    } while (0)
+#endif
 
 
 

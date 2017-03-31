@@ -352,8 +352,12 @@ nx_find_wl_in_hash(ngx_str_t *mstr,
   
 
   for (i = 0; i < mstr->len; i++)
+#ifdef _MSC_VER
+    mstr->data[i] = (unsigned char)tolower(mstr->data[i]);
+#else
     mstr->data[i] = tolower(mstr->data[i]);
-  
+#endif
+
   k = ngx_hash_key_lc(mstr->data, mstr->len);
   
   if ((zone == BODY || zone == FILE_EXT) && cf->wlr_body_hash && cf->wlr_body_hash->size > 0)
@@ -784,8 +788,15 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   u_int		sz_left, sub, offset = 0, i;
   ngx_str_t	*fragment, *tmp_uri;
   ngx_http_special_score_t	*sc;
+
+/*  &zu is not supported, c99 issue */
+#ifdef _MSC_VER
+  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&vers=%.*s&total_processed=%u&total_blocked=%u&block=%d";
+  const char	*fmt_score = "&cscore%d=%.*s&score%d=%u";
+#else
   const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&learning=%d&vers=%.*s&total_processed=%zu&total_blocked=%zu&block=%d";
   const char	*fmt_score = "&cscore%d=%.*s&score%d=%zu";
+#endif
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_http_matched_rule_t	*mr;
@@ -1014,7 +1025,11 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 			       &empty); 
     return (NGX_HTTP_OK);
   }
+
+/* The above if then else both have a return(), nothing passed this will ever be executed, C4702 */
+#ifndef _MSC_VER
   return (NGX_ERROR);
+#endif
 }
 
 /*

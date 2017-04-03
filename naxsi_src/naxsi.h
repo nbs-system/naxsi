@@ -313,6 +313,7 @@ typedef struct
   ngx_flag_t	allow:1;
   ngx_flag_t	drop:1;
   ngx_flag_t	log:1;
+  ngx_flag_t	ifnext:1;
 } ngx_http_check_rule_t;
 
 /* TOP level rule structure */

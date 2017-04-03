@@ -2177,56 +2177,86 @@ ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx,
 }
 
 
+static const char *sc_tag_cmp_name[INF_OR_EQUAL+1] =
+ { [SUP]=">",[SUP_OR_EQUAL]=">=",
+   [INF]="<",[INF_OR_EQUAL]="<=" };
 
 void	
 ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx, 
 					 ngx_http_dummy_loc_conf_t	*cf, 
 					 ngx_http_request_t *r)
 {
-  unsigned int	i, z, matched;
+  unsigned int	i, z, matched, cond_match, score_pos;
   ngx_http_check_rule_t		*cr;
   ngx_http_special_score_t	*sc;
+  char score_data[256],score_str[32];
 
-  NX_DEBUG(_debug_custom_score, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    NX_DEBUG(_debug_custom_score, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		"XX-custom check rules");
 
-  /*cr, sc, cf, ctx*/
-  if (cf->check_rules && ctx->special_scores) {
+    /*cr, sc, cf, ctx*/
+    if (!cf->check_rules || !ctx->special_scores)
+	  return;
     NX_DEBUG(_debug_custom_score,   NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-we have custom check rules and CTX got special score :)");
 
     cr = cf->check_rules->elts;
     sc = ctx->special_scores->elts;
-    for (z = 0; z < ctx->special_scores->nelts; z++)
-      for (i = 0; i < cf->check_rules->nelts; i++) {
+    score_pos = 0;
+    for (z = 0; z < ctx->special_scores->nelts; z++) {
+	  int l = snprintf(score_str,sizeof(score_str)-1,
+			  "%s:%lu",sc[z].sc_tag->data, sc[z].sc_score);
+	  if(score_pos + l > sizeof(score_data)-1) {
+		NX_DEBUG(_debug_custom_score, 	NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+			      "XX- current context:%s",score_data);
+		score_pos = 0;
+	  }
+	  score_pos += snprintf(&score_data[score_pos],sizeof(score_data)-1," %s",score_str);
+    }
+    if(score_pos)
 	NX_DEBUG(_debug_custom_score, 	NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		      "XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
-		      cr[i].sc_tag.data, cr[i].sc_score,
-		      sc[z].sc_tag->data, sc[z].sc_score, cr[i].cmp);
+			      "XX- current context:%s",score_data);
 
-	if (!ngx_strcmp(sc[z].sc_tag->data, cr[i].sc_tag.data)) {
-	  NX_DEBUG(_debug_custom_score, 	  NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-			"XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
-			cr[i].sc_tag.data, cr[i].sc_score,
-			sc[z].sc_tag->data, sc[z].sc_score, cr[i].cmp);
+    cond_match = 0; 
+    for (i = 0; i < cf->check_rules->nelts; i++) {
+      NX_DEBUG(_debug_custom_score, 	NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+		      "XX- rule says: %s %s %d %s %s%s",
+		      cr[i].sc_tag.data,
+		      cr[i].cmp >= SUP && cr[i].cmp <= INF_OR_EQUAL ?
+		      sc_tag_cmp_name[cr[i].cmp] : "<?>",
+		      cr[i].sc_score, cr[i].ifnext ? " AND":"",
+		      !cr[i].ifnext && cond_match ? "LAST":"",
+		      cond_match ? " Failed":"");
+      /* 0 - ONE/LAST rule,  1 - condition rule failed */
+      if (cond_match == 1) {
+	if(!cr[i].ifnext) cond_match = 0;
+	continue;
+      }
 
-	  matched=0;
+      matched=0;
+      for (z = 0; z < ctx->special_scores->nelts; z++) {
+	  if(ngx_strcmp(sc[z].sc_tag->data, cr[i].sc_tag.data)) continue;
+     
+          matched=1;
 	  // huglier than your mom :)
 	  switch (cr[i].cmp) {
 	  case SUP:
-	    matched = sc[z].sc_score > cr[i].sc_score ? 1 : 0;
+	    matched = sc[z].sc_score > cr[i].sc_score ? 2 : 0;
 	    break;
 	  case SUP_OR_EQUAL:
-	    matched = sc[z].sc_score >= cr[i].sc_score ? 1 : 0;
+	    matched = sc[z].sc_score >= cr[i].sc_score ? 2 : 0;
 	    break;
 	  case INF:
-	    matched = sc[z].sc_score < cr[i].sc_score ? 1 : 0;
+	    matched = sc[z].sc_score < cr[i].sc_score ? 2 : 0;
 	    break;
 	  case INF_OR_EQUAL:
-	    matched = sc[z].sc_score <= cr[i].sc_score ? 1 : 0;
+	    matched = sc[z].sc_score <= cr[i].sc_score ? 2 : 0;
 	    break;
 	  }
-	  if (matched) {
+	  break;
+      }
+      if (matched == 2) {
+	  if (!cr[i].ifnext) {
 	    NX_DEBUG(_debug_custom_score, 	    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 			  "XX- custom score rule triggered ..");
 
@@ -2239,10 +2269,18 @@ ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx,
 	      ctx->allow = 1;
 	    if (cr[i].log)
 	      ctx->log = 1;
-	  }
-	}
+	    cond_match = 0;
+	  } else
+	    NX_DEBUG(_debug_custom_score, 	    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+			  "XX- check next rule ..");
+      } else {
+	  NX_DEBUG(_debug_custom_score, 	    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+			  "XX- custom score %s",matched ? "Failed":"Missing");
+	    if (cr[i].ifnext) // Failed non-last rule
+		    cond_match = 1;
       }
-  }
+
+    }
 }
 
 

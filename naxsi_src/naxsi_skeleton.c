@@ -664,6 +664,8 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     rule_c->log = 1;
   else if (ngx_strstr(value[2].data, "DROP"))
     rule_c->drop = 1;
+  else if (ngx_strstr(value[2].data, "AND"))
+    rule_c->ifnext = 1;
   else {
     /* LCOV_EXCL_START */
     ngx_http_dummy_line_conf_error(cf, value);

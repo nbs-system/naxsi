@@ -280,3 +280,182 @@ location /RequestDenied {
 GET /
 --- error_code: 200
 --- response_body: [ - $LEARNING-PASS]
+
+=== TEST 13.1: Vars - naxsi_server, naxsi_uri, naxsi_learning, naxsi_block
+--- main_config
+$TEST_NGINX_MAIN_CONF
+--- http_config
+$TEST_NGINX_HTTP_CONF
+--- config
+location / {
+    LearningMode;
+    SecRulesEnabled;
+    DeniedUrl "/RequestDenied";
+    CheckRule "$SQL >= 8" BLOCK;
+    return 200 "$naxsi_server $naxsi_uri $naxsi_learning $naxsi_block";
+}
+location /RequestDenied {
+    return 412 "$naxsi_server $naxsi_uri $naxsi_learning $naxsi_block";
+}
+--- request
+GET /bla
+--- error_code: 200
+--- response_body: localhost /bla 1 0
+
+=== TEST 13.2: Vars - naxsi_server, naxsi_uri, naxsi_learning, naxsi_block
+--- main_config
+$TEST_NGINX_MAIN_CONF
+--- http_config
+$TEST_NGINX_HTTP_CONF
+--- config
+location / {
+    LearningMode;
+    SecRulesEnabled;
+    DeniedUrl "/RequestDenied";
+    CheckRule "$SQL >= 8" BLOCK;
+    return 200 "$naxsi_server $naxsi_uri $naxsi_learning $naxsi_block";
+}
+location /RequestDenied {
+    return 412 "$naxsi_server $naxsi_uri $naxsi_learning $naxsi_block";
+}
+--- request
+GET /bla?a=--select
+--- error_code: 200
+--- response_body: localhost /bla 1 1
+
+=== TEST 13.3: Vars - naxsi_server, naxsi_uri, naxsi_learning, naxsi_block
+--- main_config
+$TEST_NGINX_MAIN_CONF
+--- http_config
+$TEST_NGINX_HTTP_CONF
+--- config
+location / {
+    SecRulesEnabled;
+    DeniedUrl "/RequestDenied";
+    CheckRule "$SQL >= 8" BLOCK;
+    return 200 "$naxsi_server $naxsi_uri $naxsi_learning $naxsi_block";
+}
+location /RequestDenied {
+    return 412 "$naxsi_server $naxsi_uri $naxsi_learning $naxsi_block";
+}
+--- request
+GET /bla
+--- error_code: 200
+--- response_body: localhost /bla 0 0
+
+=== TEST 13.4: Vars - naxsi_server, naxsi_uri, naxsi_learning, naxsi_block
+--- main_config
+$TEST_NGINX_MAIN_CONF
+--- http_config
+$TEST_NGINX_HTTP_CONF
+--- config
+location / {
+    SecRulesEnabled;
+    DeniedUrl "/RequestDenied";
+    CheckRule "$SQL >= 8" BLOCK;
+    return 200 "$naxsi_server $naxsi_uri $naxsi_learning $naxsi_block";
+}
+location /RequestDenied {
+    return 412 "$naxsi_server $naxsi_uri $naxsi_learning $naxsi_block";
+}
+--- request
+GET /bla?a=--select
+--- error_code: 412
+--- response_body: localhost /RequestDenied 0 1
+
+=== TEST 14: Vars - naxsi_total_processed, naxsi_total_blocked - HTF test that?
+--- main_config
+$TEST_NGINX_MAIN_CONF
+--- http_config
+$TEST_NGINX_HTTP_CONF
+--- config
+location / {
+    SecRulesEnabled;
+    DeniedUrl "/RequestDenied";
+    CheckRule "$SQL >= 8" BLOCK;
+    return 200 "$naxsi_total_processed $naxsi_total_blocked";
+}
+location /RequestDenied {
+    return 412 "$naxsi_total_processed $naxsi_total_blocked";
+}
+--- request
+GET /bla?a=--select
+--- error_code: 412
+--- response_body: 0 0
+
+=== TEST 14.1: Vars - naxsi_score
+--- main_config
+$TEST_NGINX_MAIN_CONF
+--- http_config
+$TEST_NGINX_HTTP_CONF
+--- config
+location / {
+    SecRulesEnabled;
+    DeniedUrl "/RequestDenied";
+    CheckRule "$SQL >= 8" BLOCK;
+    CheckRule "$RFI >= 8" BLOCK;
+    CheckRule "$TRAVERSAL >= 4" BLOCK;
+    CheckRule "$XSS >= 8" BLOCK;
+    return 200 "$naxsi_score";
+}
+location /RequestDenied {
+    return 412 "$naxsi_score";
+}
+--- request
+GET /bla?a=--select
+--- error_code: 412
+--- response_body: 0:$SQL:8
+
+=== TEST 14.2: Vars - naxsi_score
+--- main_config
+$TEST_NGINX_MAIN_CONF
+--- http_config
+$TEST_NGINX_HTTP_CONF
+--- config
+location / {
+    LearningMode;
+    SecRulesEnabled;
+    DeniedUrl "/RequestDenied";
+    CheckRule "$SQL >= 8" BLOCK;
+    CheckRule "$RFI >= 8" BLOCK;
+    CheckRule "$TRAVERSAL >= 4" BLOCK;
+    CheckRule "$XSS >= 8" BLOCK;
+    return 200 "$naxsi_score";
+}
+location /RequestDenied {
+    return 412 "$naxsi_score";
+}
+--- request eval
+use URI::Escape;
+"POST /select--?a=../..
+
+"
+--- error_code: 200
+--- response_body: $OTHERS,0:$SQL:8,1:$TRAVERSAL:8
+
+=== TEST 15.1: Vars - naxsi_match
+--- main_config
+$TEST_NGINX_MAIN_CONF
+--- http_config
+$TEST_NGINX_HTTP_CONF
+--- config
+location / {
+    LearningMode;
+    SecRulesEnabled;
+    DeniedUrl "/RequestDenied";
+    CheckRule "$SQL >= 8" BLOCK;
+    CheckRule "$RFI >= 8" BLOCK;
+    CheckRule "$TRAVERSAL >= 4" BLOCK;
+    CheckRule "$XSS >= 8" BLOCK;
+    return 200 "$naxsi_match";
+}
+location /RequestDenied {
+    return 412 "$naxsi_match";
+}
+--- request eval
+use URI::Escape;
+"POST /select--?a=../..
+
+"
+--- error_code: 200
+--- response_body: 0:1000:URL:-,1:1007:URL:-,2:1200:ARGS:a,3:16:BODY:-

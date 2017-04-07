@@ -1345,12 +1345,12 @@ void ngx_http_libinjection(ngx_pool_t *pool,
 }
 
 int 
-ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
+ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
 			   ngx_str_t	*name,
 			   ngx_str_t	*value,
-			   ngx_array_t *rules,
-			   ngx_http_request_t *req,
-			   ngx_http_request_ctx_t *ctx,
+			   ngx_array_t	*rules,
+			   ngx_http_request_t		*req,
+			   ngx_http_request_ctx_t	*ctx,
 			   enum DUMMY_MATCH_ZONE	zone)
 {
   ngx_http_rule_t		   *r;
@@ -1490,20 +1490,25 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	 (zone == FILE_EXT && r[i].br->file_ext) ) {
 
 
-      NX_DEBUG(_debug_basestr_ruleset,     NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-	       "XX-test rulematch [zone-wide]!1 [%V]=[%V] [rule =%d] (%d times)", name, value, r[i].rule_id, nb_match); 
-
+      /*
+      ** If the Rule **specifically** targets name (ie. mz:BODY|NAME), only check against name
+      */
+      if (!r[i].br->target_name) {
+	NX_DEBUG(_debug_basestr_ruleset,     NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		 "XX-test rulematch (value) [zone-wide]!1 [%V]=[%V] [rule =%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+	
     
-      /* check the rule against the value*/
-      ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
-      /*if our rule matched, apply effects (score etc.)*/
-      if (ret == 1) {
-	NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		 "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
-
-	ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);
+	/* check the rule against the value*/
+	ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
+	/*if our rule matched, apply effects (score etc.)*/
+	if (ret == 1) {
+	  NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		   "XX-apply rulematch (value) [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+	  
+	  ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);
+	}
       }
-    
+      
       if (!r[i].br->negative) {
 	NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		 "XX-test rulematch [against-name]!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 

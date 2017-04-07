@@ -952,14 +952,14 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   if (r->internal) {   
     NX_DEBUG(_debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 	     "XX-DON'T PROCESS (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
-	     r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
-	     r->internal);
+	     r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" :
+	     r->method == NGX_HTTP_PATCH  ? "PATCH" : "UNKNOWN!!", r->internal);
     return (NGX_DECLINED);
   } 
   NX_DEBUG(_debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 	   "XX-processing (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
-	   r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
-	   r->internal);
+	   r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" :
+	   r->method == NGX_HTTP_PATCH ? "PATCH" : "UNKNOWN!!", r->internal);
   if (!ctx) {
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_request_ctx_t));
     if (ctx == NULL)
@@ -1092,7 +1092,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       return (NGX_DECLINED);
     
 
-    if  ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) 
+    if  ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT || r->method == NGX_HTTP_PATCH) 
 	 && !ctx->ready) {
       NX_DEBUG( _debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		"XX-dummy : body_request : before !");

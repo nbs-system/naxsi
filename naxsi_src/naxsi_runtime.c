@@ -114,6 +114,7 @@ ngx_http_rule_t *nx_int__libinject_xss; /*ID:18*/
 
 #define dummy_error_fatal(ctx, r, ...) do {				\
     if (ctx) ctx->block = 1;						\
+    if (ctx) ctx->drop = 1;						\
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,  \
 		  "XX-******** NGINX NAXSI INTERNAL ERROR ********");	\
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, __VA_ARGS__); \
@@ -820,7 +821,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 		 r->connection->addr_text.data,
 		 r->headers_in.server.len, r->headers_in.server.data,
 		 tmp_uri->len, tmp_uri->data, ctx->learning ? 1 : 0, strlen(NAXSI_VERSION),
-		 NAXSI_VERSION, cf->request_processed, cf->request_blocked, ctx->block ? 1 : 0);
+		 NAXSI_VERSION, cf->request_processed, cf->request_blocked, ctx->block ? 1 : (ctx->drop ? 1 : 0));
   
   if (sub >= sz_left)
     sub = sz_left - 1;
@@ -942,7 +943,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ** If we shouldn't block the request, 
   ** but a log score was reached, stop.
   */
-  if (ctx->log && !ctx->block)
+  if (ctx->log && (!ctx->block && !ctx->drop))
     return (NGX_DECLINED);
   /*
   ** If we are in learning without post_action and without drop
@@ -1300,8 +1301,8 @@ void ngx_http_libinjection(ngx_pool_t *pool,
 			    enum DUMMY_MATCH_ZONE	zone) {
   /* 
   ** Libinjection integration : 
-  ** 1 - check if libinjection_sql is explicitely enabled
-  ** 2 - check if libinjection_xss is explicitely enabled
+  ** 1 - check if libinjection_sql is explicitly enabled
+  ** 2 - check if libinjection_xss is explicitly enabled
   ** if 1 is true : perform check on both name and content,
   **		    in case of match, apply internal rule
   **		    increasing the LIBINJECTION_SQL score
@@ -1344,12 +1345,12 @@ void ngx_http_libinjection(ngx_pool_t *pool,
 }
 
 int 
-ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
+ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
 			   ngx_str_t	*name,
 			   ngx_str_t	*value,
-			   ngx_array_t *rules,
-			   ngx_http_request_t *req,
-			   ngx_http_request_ctx_t *ctx,
+			   ngx_array_t	*rules,
+			   ngx_http_request_t		*req,
+			   ngx_http_request_ctx_t	*ctx,
 			   enum DUMMY_MATCH_ZONE	zone)
 {
   ngx_http_rule_t		   *r;
@@ -1489,20 +1490,25 @@ ngx_http_basestr_ruleset_n(ngx_pool_t *pool,
 	 (zone == FILE_EXT && r[i].br->file_ext) ) {
 
 
-      NX_DEBUG(_debug_basestr_ruleset,     NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-	       "XX-test rulematch [zone-wide]!1 [%V]=[%V] [rule =%d] (%d times)", name, value, r[i].rule_id, nb_match); 
-
+      /*
+      ** If the Rule **specifically** targets name (ie. mz:BODY|NAME), only check against name
+      */
+      if (!r[i].br->target_name) {
+	NX_DEBUG(_debug_basestr_ruleset,     NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		 "XX-test rulematch (value) [zone-wide]!1 [%V]=[%V] [rule =%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+	
     
-      /* check the rule against the value*/
-      ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
-      /*if our rule matched, apply effects (score etc.)*/
-      if (ret == 1) {
-	NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
-		 "XX-apply rulematch!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
-
-	ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);
+	/* check the rule against the value*/
+	ret = ngx_http_process_basic_rule_buffer(value, &(r[i]), &nb_match);
+	/*if our rule matched, apply effects (score etc.)*/
+	if (ret == 1) {
+	  NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		   "XX-apply rulematch (value) [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 
+	  
+	  ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);
+	}
       }
-    
+      
       if (!r[i].br->negative) {
 	NX_DEBUG(_debug_basestr_ruleset, 	NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		 "XX-test rulematch [against-name]!1 [%V]=[%V] [rule=%d] (%d times)", name, value, r[i].rule_id, nb_match); 

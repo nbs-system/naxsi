@@ -1,0 +1,14 @@
+POST /test_uri HTTP/1.1
+Host: localhost
+Connection: close
+Content-Type: application/json
+Content-Length: 183
+
+{
+  "oh" : ["there", "is", "no", "way"],
+  "this" : { "will" : ["work", "does"],
+  "it" : "??" },
+  "trigger" : {"test_1234" : ["foobar", "will", "trigger", "it"]},
+  "foo" : "baar"
+}
+

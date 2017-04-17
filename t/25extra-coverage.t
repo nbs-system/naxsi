@@ -210,6 +210,158 @@ location /RequestDenied {
 --- request
 GET /ratata?x=tututu
 --- error_code: 412
+=== TEST 1.5.0: HEADER_VAR_X
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+MainRule id:4241 "str:ratata" "mz:$HEADERS_VAR_X:ruuu" "s:BLOCK";
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+set $naxsi_flag_post_acton 1;
+location / {
+	 SecRulesEnabled;
+#	 BasicRule id:4241 "str:ratata" "mz:URL" "s:BLOCK";
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+	# return 412;
+}
+--- more_headers
+ruuu: ratata1
+--- request
+GET /ratata?x=tututu
+--- error_code: 412
+=== TEST 1.5.1: HEADER_VAR_X
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+MainRule id:4241 "str:ratata" "mz:$HEADERS_VAR_X:ruuu|$URL_X:^/fufu" "s:BLOCK";
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+set $naxsi_flag_post_acton 1;
+location / {
+	 SecRulesEnabled;
+#	 BasicRule id:4241 "str:ratata" "mz:URL" "s:BLOCK";
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+	# return 412;
+}
+--- more_headers
+ruuu: ratata1
+--- request
+GET /fufu?x=tututu
+--- error_code: 412
+=== TEST 1.5.2: HEADER_VAR_X
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+MainRule id:4241 "str:ratata" "mz:$HEADERS_VAR_X:ruuu|$URL_X:^/fufu" "s:BLOCK";
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+set $naxsi_flag_post_acton 1;
+location / {
+	 SecRulesEnabled;
+#	 BasicRule id:4241 "str:ratata" "mz:URL" "s:BLOCK";
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+	# return 412;
+}
+--- more_headers
+ruuu: ratata1
+--- request
+GET /fuf?x=tututu
+--- error_code: 404
+=== TEST 1.6.0: URL + URL wl
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+MainRule id:4241 "str:ratata" "mz:URL" "s:BLOCK";
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+set $naxsi_flag_post_acton 1;
+location / {
+	 SecRulesEnabled;
+	 BasicRule wl:4241 "mz:URL";
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+	# return 412;
+}
+--- request
+GET /ratata
+--- error_code: 404
+=== TEST 1.6.1: URL + URL wl
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+MainRule id:4241 "str:ratata" "mz:URL" "s:BLOCK";
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+set $naxsi_flag_post_acton 1;
+location / {
+	 SecRulesEnabled;
+	 BasicRule wl:4241 "mz:BODY";
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TEST >= 8" ALLOW;
+
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+	# return 412;
+}
+--- request
+GET /ratata
+--- error_code: 412
+
 
 
 

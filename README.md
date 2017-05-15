@@ -5,6 +5,7 @@
 [![coveralls](https://coveralls.io/repos/github/nbs-system/naxsi/badge.svg?branch=master)](https://coveralls.io/github/nbs-system/naxsi?branch=master)
 [![codecov](http://codecov.io/github/nbs-system/naxsi/coverage.svg?branch=master)](http://codecov.io/github/nbs-system/naxsi?branch=master)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/740/badge)](https://bestpractices.coreinfrastructure.org/projects/740)
+[![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/nbs-system/naxsi)
 
 ### We need your help
 

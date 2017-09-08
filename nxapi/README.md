@@ -311,18 +311,20 @@ First, look at a generic one to understand how it works :
         }
 
 Here is how nxtool will use this to generate whitelists:
-  1. extract global_filters from nxapi.json, and create the base ES filter :
-     { "whitelisted" : "false" }
-  2. merge base ES filter with provided cmd line filter (--filter, -s www.x1.fr)
-     { "whitelisted" : "false", "server" : "www.x1.fr" }
-  3. For each static field of the template, merge it in base ES filter :
-     { "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie" }
-  4. For each field to be expanded (value is `?`) :
-   4.1. select all possible values for this field (id) matching base ES filter, (ie. 1000 and 1001 here)
-   4.2. attempt to generate a whitelist for each possible value, and evaluate its scores.
-	{ "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie", "id" : "1000"}
-	{ "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie", "id" : "1001"}
-  5. For each final set that provided results, output a whitelist.
+
+1. extract global_filters from nxapi.json, and create the base ES filter: `{ "whitelisted" : "false" }`
+2. merge base ES filter with provided cmd line filter (`--filter`, `-s www.x1.fr`): `{ "whitelisted" : "false", "server" : "www.x1.fr" }`
+3. For each static field of the template, merge it in base ES filter: `{ "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie" }`
+4. For each field to be expanded (value is `?`) :
+    
+    4.1. select all possible values for this field (id) matching base ES filter, (ie. 1000 and 1001 here)
+    
+    4.2. attempt to generate a whitelist for each possible value, and evaluate its scores:
+    
+    	{ "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie", "id" : "1000"}
+        { "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie", "id" : "1001"}
+	
+5. For each final set that provided results, output a whitelist.
 
 
 Templates support :

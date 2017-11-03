@@ -1181,8 +1181,9 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
   NX_DEBUG(_debug_spliturl_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		"XX-check url-like [%s]", str);
 
-
-  orig = str;
+  
+  
+  orig = str;  
   full_len = strlen(orig);
   while (str < (orig+full_len) && *str) {
     if (*str == '&') {
@@ -2005,7 +2006,7 @@ ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
 
     NX_DEBUG(_debug_post_heavy,   NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 	     "XX-POST DATA [%V]", &tmp);
-    
+
     if(ngx_http_spliturl_ruleset(r->pool, (char *)tmp.data, 
 				 cf->body_rules, main_cf->body_rules, 
 				 r, ctx, BODY)) {
@@ -2072,6 +2073,12 @@ ngx_http_dummy_uri_parse(ngx_http_dummy_main_conf_t *main_cf,
     return ;
   }
   memcpy(tmp.data, r->uri.data, r->uri.len);
+  if (naxsi_escape_nullbytes(&tmp) > 0) {
+    ngx_str_t tmp_name, tmp_val;
+    tmp_name.data = tmp_val.data = NULL;
+    tmp_name.len = tmp_val.len = 0;
+    ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, r, &tmp_name, &tmp_val, URL, 1, 0);
+  }
   name.data = NULL;
   name.len = 0;
   if (cf->generic_rules)
@@ -2103,6 +2110,7 @@ ngx_http_dummy_args_parse(ngx_http_dummy_main_conf_t *main_cf,
     return ;
   }
   memcpy(tmp.data, r->args.data, r->args.len);
+
   if(ngx_http_spliturl_ruleset(r->pool, (char *)tmp.data, 
 			       cf->get_rules, main_cf->get_rules, r, 
 			       ctx, ARGS)) {
@@ -2137,6 +2145,12 @@ ngx_http_dummy_headers_parse(ngx_http_dummy_main_conf_t *main_cf,
       part = part->next;
       h = part->elts;
       i = 0;
+    }
+    if (naxsi_escape_nullbytes(&h[i].key) > 0) {
+      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, r, &h[i].key, &h[i].val, HEADER, 1, 1);
+    }
+    if (naxsi_escape_nullbytes(&h[i].key) > 0) {
+      ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, r, &h[i].key, &h[i].val, HEADER, 1, 0);
     }
     if (cf->header_rules)
       ngx_http_basestr_ruleset_n(r->pool, &(h[i].key), &(h[i].value), 

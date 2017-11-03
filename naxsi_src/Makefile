@@ -12,7 +12,7 @@ FUZZ		?= 0
 STOCK		?= 1
 
 #Allows to force for specific UT only
-TEST 		:= "02*.t"
+#TEST 		:= "02*.t"
 NGINX_VERS := "1.9.11"
 
 

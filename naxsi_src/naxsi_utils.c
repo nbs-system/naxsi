@@ -85,6 +85,20 @@ strfaststr(unsigned char *haystack, unsigned int hl,
   return (NULL);
 }
 
+u_int naxsi_escape_nullbytes(ngx_str_t *str) {
+  
+  size_t i = 0;
+  u_int nullbytes = 0;
+
+  for (i = 0; i < str->len; i++) {
+    if (str->data[i] == 0) {
+      str->data[i] = '0';
+      nullbytes++;
+    }
+  }
+  return nullbytes;  
+}
+
 /* unescape routine, returns number of nullbytes present */
 int naxsi_unescape(ngx_str_t *str) {
   u_char *dst, *src;

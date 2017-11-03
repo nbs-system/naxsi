@@ -272,7 +272,7 @@ location /RequestDenied {
 	 return 412;
 }
 --- more_headers
-Cookie: foobar
+cookie: foobar
 --- request
 GET /another-page
 --- error_code: 200
@@ -361,7 +361,7 @@ location /RequestDenied {
 	 return 412;
 }
 --- more_headers
-COOKIE: foobar
+cookie: foobar
 --- request
 GET /another-page
 --- error_code: 200

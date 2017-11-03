@@ -2156,7 +2156,7 @@ ngx_http_dummy_headers_parse(ngx_http_dummy_main_conf_t *main_cf,
     if (naxsi_escape_nullbytes(&h[i].key) > 0) {
       ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, r, &h[i].key, &h[i].value, HEADERS, 1, 1);
     }
-    if (naxsi_escape_nullbytes(&h[i].key) > 0) {
+    if (naxsi_escape_nullbytes(&h[i].value) > 0) {
       ngx_http_apply_rulematch_v_n(&nx_int__uncommon_hex_encoding, ctx, r, &h[i].key, &h[i].value, HEADERS, 1, 0);
     }
     if (cf->header_rules)

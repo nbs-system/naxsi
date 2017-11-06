@@ -1417,17 +1417,11 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
       for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
 	
 	if (location[z].specific_url) {	
-	  NX_DEBUG(_debug_basestr_ruleset , NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		   "location %d has specific url : %p vs %p", z, req->uri, location[z].target);
 	  /* if matchzone is a regex, ensure it matches (ie. BODY_VAR_X / ARGS_VAR_X / ..) */
 	  if (r[i].br->rx_mz) {
 	    
 	    if (ngx_http_dummy_pcre_wrapper(location[z].target_rx, req->uri.data, req->uri.len) == -1) {
 	      uri_constraint_ok = 0;
-	    }
-	    else {
-	      NX_DEBUG(_debug_basestr_ruleset , NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		       "rx uri_constraint is ok");
 	    }
 	  }
 	  
@@ -1437,14 +1431,8 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
 								      (const char *) location[z].target.data, 
 								      req->uri.len) != 0) {
 	      uri_constraint_ok = 0;
-	    } else {
-	      NX_DEBUG(_debug_basestr_ruleset , NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		       "static uri_constraint is ok : %s vs %s", req->uri.data, location[z].target.data);
 	    }
 	  }
-	  NX_DEBUG(_debug_basestr_ruleset , NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		   "uri_constraint is : %d (was mz:%d)", uri_constraint_ok, r[i].br->rx_mz);
-	  
 	  break;
 	}
       }

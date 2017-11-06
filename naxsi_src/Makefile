@@ -13,7 +13,7 @@ STOCK		?= 1
 
 #Allows to force for specific UT only
 #TEST 		:= ""
-NGINX_VERS := "1.10.0"
+NGINX_VERS := "1.12.2"
 
 
 NGINX_OPTIONS="--with-select_module"

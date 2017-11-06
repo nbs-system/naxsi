@@ -209,3 +209,70 @@ use URI::Escape;
 "POST /wp-json/wp/v2/posts/111
 id=1a&foo2=bar2"
 --- error_code: 412
+=== WL TEST 3.0: false-positive on virtual-patch with empty var name
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule "rx:FOOBAR" "mz:$URL:/wp-includes/js/plupload/plupload.flash.swf|ARGS" "msg:Wordpress PlUpload XSS" "s:$UWA:8,$XSS_UWA:1"  id:42000485;
+--- config
+location / {
+         SecRulesEnabled;
+	 CheckRule "$LOG_TEST >= 1" LOG;
+	 CheckRule "$UWA >= 8" BLOCK;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 4" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /?a=bui&FOOBAR
+--- error_code: 200
+=== WL TEST 3.0: false-positive on virtual-patch with empty var name
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule "rx:FOOBAR" "mz:$URL:/wp-includes/js/plupload/plupload.flash.swf|ARGS" "msg:Wordpress PlUpload XSS" "s:$UWA:8,$XSS_UWA:1"  id:42000485;
+--- config
+location / {
+         SecRulesEnabled;
+	 CheckRule "$LOG_TEST >= 1" LOG;
+	 CheckRule "$UWA >= 8" BLOCK;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 4" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /wp-includes/js/plupload/plupload.flash.swf?a=bui&FOOBAR
+--- error_code: 412
+=== WL TEST 3.01: false-positive on virtual-patch with empty var name
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule "rx:FOOBAR" "mz:$URL:/wp-includes/js/plupload/plupload.flash.swf|ARGS" "msg:Wordpress PlUpload XSS" "s:$UWA:8,$XSS_UWA:1"  id:42000485;
+--- config
+location / {
+         SecRulesEnabled;
+	 CheckRule "$LOG_TEST >= 1" LOG;
+	 CheckRule "$UWA >= 8" BLOCK;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 4" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request
+GET /wp-includes/js/plupload/plupload.flash.swf/xxx/?a=bui&FOOBAR
+--- error_code: 404
+

@@ -1184,8 +1184,6 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
   int		len, full_len;
   int nullbytes=0;
   
-  NX_DEBUG(_debug_spliturl_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
-		"XX-check url-like [%s]", str);
 
 
   if (naxsi_escape_nullbytes(nx_str) > 0) {
@@ -1196,6 +1194,9 @@ ngx_http_spliturl_ruleset(ngx_pool_t *pool,
   }
   str = (char *)nx_str->data;
   
+  NX_DEBUG(_debug_spliturl_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
+		"XX-check url-like [%s]", str);
+ 
   orig = str;
   full_len = strlen(orig);
   while (str < (orig+full_len) && *str) {
@@ -1403,7 +1404,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
 	     "XX-RULE %d : START", r[i].rule_id);
     
     /* does the rule have a custom location ? custom location means checking only on a specific argument */
-    if (name && name->len > 0 && r[i].br->custom_location) {
+    if (name && r[i].br->custom_location) {
       location = r[i].br->custom_locations->elts;
 
       /*
@@ -1415,18 +1416,23 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
       */
       for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
 	
-	if (location[z].specific_url) {
-	  
+	if (location[z].specific_url) {	
 	  /* if matchzone is a regex, ensure it matches (ie. BODY_VAR_X / ARGS_VAR_X / ..) */
-	  if (r[i].br->rx_mz && ngx_http_dummy_pcre_wrapper(location[z].target_rx, req->uri.data, req->uri.len) == -1)
-	    uri_constraint_ok = 0;
+	  if (r[i].br->rx_mz) {
+	    
+	    if (ngx_http_dummy_pcre_wrapper(location[z].target_rx, req->uri.data, req->uri.len) == -1) {
+	      uri_constraint_ok = 0;
+	    }
+	  }
 	  
 	  /* if it was a static string, ensure it matches (ie. BODY_VAR / ARGS_VAR / ..) */
-	  if ( (!r[i].br->rx_mz) && strncasecmp((const char *) req->uri.data, 
-						(const char *) location[z].target.data, 
-						req->uri.len) )
-	    uri_constraint_ok = 0;
-	  
+	  if (!r[i].br->rx_mz) {
+	    if (req->uri.len != location[z].target.len || strncasecmp((const char *) req->uri.data, 
+								      (const char *) location[z].target.data, 
+								      req->uri.len) != 0) {
+	      uri_constraint_ok = 0;
+	    }
+	  }
 	  break;
 	}
       }
@@ -1435,8 +1441,11 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
       ** if one of the custom location rule specifies an $URL/$URL_X
       ** and it was mismatched, skip the rule.
       */
-      if (uri_constraint_ok == 0)
+      if (uri_constraint_ok == 0) {
+	NX_DEBUG(_debug_basestr_ruleset , NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
+		 "XX URI CONSTRAINT MISMATCH, SKIP");
 	continue;
+      }
       
       /* for each custom location */
       for (z = 0; z < r[i].br->custom_locations->nelts; z++) {
@@ -1447,7 +1456,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
 	     !(zone == HEADERS && location[z].headers_var != 0) &&
 	     !(zone == ARGS && location[z].args_var != 0))
 	  continue;
-	
+
 	/* if matchzone is a regex, ensure it matches (ie. BODY_VAR_X / ARGS_VAR_X / ..) */
 	if (r[i].br->rx_mz && ngx_http_dummy_pcre_wrapper(location[z].target_rx, name->data, name->len) == -1)
 	  continue;
@@ -1458,7 +1467,6 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
 					       (const char *) location[z].target.data, 
 					       location[z].target.len)) )
 	  continue;
-	
 	
 	NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0,
 		 "XX-[SPECIFIC] check one rule [%d] iteration %d * %d", r[i].rule_id, i, z);

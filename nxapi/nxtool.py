@@ -154,8 +154,15 @@ try:
     use_ssl = bool(cfg.cfg["elastic"]["use_ssl"])
 except KeyError:
     use_ssl = False
-    
-es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"], use_ssl=use_ssl)
+
+# https://github.com/nbs-system/naxsi/issues/399
+# For elastic authentication 
+# Please setup user & pass in nxapi.json    
+#es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"], use_ssl=use_ssl)
+es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"],
+http_auth=(cfg.cfg["elastic"]["user"],cfg.cfg["elastic"],["pass"]),
+verify_certs=False,
+use_ssl=use_ssl)
 # Get ES version from the client and avail it at cfg
 es_version =  es.info()['version'].get('number', None)
 if es_version is not None:

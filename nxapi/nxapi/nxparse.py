@@ -407,6 +407,12 @@ class ESInject(NxInjector):
             try:
                 self.es.indices.create(
                     index=self.cfg["elastic"]["index"],
+                    body = {
+                        "settings" : {
+                            "number_of_shards": self.cfg["elastic"]["number_of_shards"],
+                            "number_of_replicas": self.cfg["elastic"]["number_of_replicas"]
+                        }
+                    },
                     ignore=400 # Ignore 400 cause by IndexAlreadyExistsException when creating an index
                 )
             except Exception as idxadd_error:
@@ -440,7 +446,12 @@ class ESInject(NxInjector):
                     index=self.cfg["elastic"]["index"],
                     doc_type=self.cfg["elastic"]["doctype"],
                     #            id=repo_name,
-                    body={},
+                    body = {
+                        "settings" : {
+                            "number_of_shards": self.cfg["elastic"]["number_of_shards"],
+                            "number_of_replicas": self.cfg["elastic"]["number_of_replicas"]
+                        }
+                    },
                     ignore=409 # 409 - conflict - would be returned if the document is already there
                 )
             except Exception as idxadd_error:

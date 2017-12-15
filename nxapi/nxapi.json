@@ -3,6 +3,8 @@
  "host" : "127.0.0.1:9200",
  "use_ssl" : false,
  "index" : "nxapi",
+ "number_of_shards" : "4",
+ "number_of_replicas" : "0",
  "doctype" : "events",
  "default_ttl" : "7200",
  "max_size" : "1000",

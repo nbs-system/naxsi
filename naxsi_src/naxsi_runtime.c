@@ -886,7 +886,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 	strcat(tmp_zone, "FILE_EXT");
       if (mr[i].target_name)
 	strcat(tmp_zone, "|NAME");
-      //url-encode stuff
+
       ngx_str_t tmp_val;
       
       tmp_val.len = mr[i].name->len + (2 * ngx_escape_uri(NULL, mr[i].name->data, mr[i].name->len, NGX_ESCAPE_URI_COMPONENT));

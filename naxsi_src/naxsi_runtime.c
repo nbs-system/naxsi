@@ -889,7 +889,12 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 
       ngx_str_t tmp_val;
       
+      if (mr[i].name->len  >= (NGX_MAX_UINT32_VALUE/4)-1) {
+	mr[i].name->len /= 4;
+      }
+      
       tmp_val.len = mr[i].name->len + (2 * ngx_escape_uri(NULL, mr[i].name->data, mr[i].name->len, NGX_ESCAPE_URI_COMPONENT));
+
       tmp_val.data = ngx_pcalloc(r->pool, tmp_val.len+1);
       ngx_escape_uri(tmp_val.data, mr[i].name->data, mr[i].name->len, NGX_ESCAPE_URI_COMPONENT);
       

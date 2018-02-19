@@ -803,6 +803,10 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   if (!tmp_uri)
     return (NGX_ERROR);
   *ret_uri = tmp_uri;
+
+  if (r->uri.len  >= (NGX_MAX_UINT32_VALUE/4)-1) {
+    r->uri.len /= 4;
+  }
   
   tmp_uri->len = r->uri.len + (2 * ngx_escape_uri(NULL, r->uri.data, r->uri.len,
 						  NGX_ESCAPE_ARGS));

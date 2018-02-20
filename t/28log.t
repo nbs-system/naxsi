@@ -79,8 +79,8 @@ GET /x,y?uuu=b,c
 --- error_code: 404
 --- error_log eval
 [qr@NAXSI_FMT: ip=127\.0\.0\.1&server=localhost&uri=/x,y&learning=1&vers=[^&]+&total_processed=1&total_blocked=1&block=1&cscore0=\$SQL&score0=8&zone0=URL&id0=1015&var_name0=&zone1=ARGS&id1=1015&var_name1=uuu@,
-qr@NAXSI_EXLOG: ip=127\.0\.0\.1&server=localhost&uri=/x,y&id=1015&zone=URL&var_name=&content=/x,y,@,
-qr@NAXSI_EXLOG: ip=127\.0\.0\.1&server=localhost&uri=/x,y&id=1015&zone=ARGS&var_name=uuu&content=b,c@
+qr@NAXSI_EXLOG: ip=127\.0\.0\.1&server=localhost&uri=%2Fx%2Cy&id=1015&zone=URL&var_name=&content=%2Fx%2Cy@,
+qr@NAXSI_EXLOG: ip=127\.0\.0\.1&server=localhost&uri=%2Fx%2Cy&id=1015&zone=ARGS&var_name=uuu&content=b%2Cc@
 ]
 === TEST 1.4 : learning + no-block score + naxsi_extensive_log, NAXSI_EXLOG only
 --- main_config
@@ -104,7 +104,7 @@ location /RequestDenied {
 GET /x,y?uuu=bc
 --- error_code: 404
 --- error_log eval
-qr@NAXSI_EXLOG: ip=127\.0\.0\.1&server=localhost&uri=/x,y&id=1015&zone=URL&var_name=&content=/x,y, client: 127\.0\.0\.1,@
+qr@NAXSI_EXLOG: ip=127\.0\.0\.1&server=localhost&uri=%2Fx%2Cy&id=1015&zone=URL&var_name=&content=%2Fx%2Cy, client: 127\.0\.0\.1,@
 --- no_error_log
 NAXSI_FMT
 === TEST 1.6 : learning + block-score + naxsi_extensive_log, NAXSI_EXLOG only

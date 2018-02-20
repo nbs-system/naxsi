@@ -803,6 +803,10 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   if (!tmp_uri)
     return (NGX_ERROR);
   *ret_uri = tmp_uri;
+
+  if (r->uri.len  >= (NGX_MAX_UINT32_VALUE/4)-1) {
+    r->uri.len /= 4;
+  }
   
   tmp_uri->len = r->uri.len + (2 * ngx_escape_uri(NULL, r->uri.data, r->uri.len,
 						  NGX_ESCAPE_ARGS));
@@ -886,9 +890,21 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 	strcat(tmp_zone, "FILE_EXT");
       if (mr[i].target_name)
 	strcat(tmp_zone, "|NAME");
+
+      ngx_str_t tmp_val;
+      
+      if (mr[i].name->len  >= (NGX_MAX_UINT32_VALUE/4)-1) {
+	mr[i].name->len /= 4;
+      }
+      
+      tmp_val.len = mr[i].name->len + (2 * ngx_escape_uri(NULL, mr[i].name->data, mr[i].name->len, NGX_ESCAPE_URI_COMPONENT));
+
+      tmp_val.data = ngx_pcalloc(r->pool, tmp_val.len+1);
+      ngx_escape_uri(tmp_val.data, mr[i].name->data, mr[i].name->len, NGX_ESCAPE_URI_COMPONENT);
+      
       sub = snprintf(0, 0, fmt_rm, i, tmp_zone, i, 
-		     mr[i].rule->rule_id, i, mr[i].name->len, 
-		     mr[i].name->data);
+		     mr[i].rule->rule_id, i, tmp_val.len, 
+		     tmp_val.data);
       /*
       ** This one would not fit :
       ** append a seed to the current fragment,
@@ -902,7 +918,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 	}
       sub = snprintf((char *)fragment->data+offset, sz_left, 
 		     fmt_rm, i, tmp_zone, i, mr[i].rule->rule_id, i, 
-		     mr[i].name->len, mr[i].name->data);
+		     tmp_val.len, tmp_val.data);
       if (sub >= sz_left)
 	sub = sz_left - 1;
       offset += sub;

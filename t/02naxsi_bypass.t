@@ -317,3 +317,30 @@ location /RequestDenied {
 --- request
 GET /?val&
 --- error_code: 412
+=== TEST 5.1: DENY : XSS bypass vector true nullbyte
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+CheckRule "$SQL >= 8" BLOCK;
+CheckRule "$RFI >= 2" BLOCK;
+CheckRule "$TRAVERSAL >= 4" BLOCK;
+CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+--- request eval
+use URI::Escape;
+"POST /foobar
+a=a <><><>"
+--- error_code: 412

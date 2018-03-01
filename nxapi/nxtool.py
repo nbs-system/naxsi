@@ -275,7 +275,12 @@ if options.ips is not None:
 # statistics
 if options.stats is True:
     print translate.red.format("# Whitelist(ing) ratio :")
-    translate.fetch_top(cfg.cfg["global_filters"], "whitelisted", limit=2)
+    for e in translate.fetch_top(cfg.cfg["global_filters"], "whitelisted", limit=2):
+        try:
+            list_e = e.split()
+            print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+        except:
+            print "--malformed--"
     print translate.red.format("# Top servers :")
     for e in translate.fetch_top(cfg.cfg["global_filters"], "server", limit=10):
         try:

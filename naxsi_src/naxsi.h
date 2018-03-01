@@ -32,7 +32,7 @@
 #ifndef __FOO_H__
 #define __FOO_H__
 
-#define NAXSI_VERSION "0.55.3"
+#define NAXSI_VERSION "0.56"
 
 #include <nginx.h>
 #include <ngx_config.h>
@@ -548,6 +548,7 @@ ngx_int_t		ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
 						       ngx_http_request_t *r);
 int			nx_check_ids(ngx_int_t match_id, ngx_array_t *wl_ids);
 int			naxsi_unescape(ngx_str_t *str);
+u_int			naxsi_escape_nullbytes(ngx_str_t *str);
 
 void			ngx_http_dummy_json_parse(ngx_http_request_ctx_t *ctx, 
 						  ngx_http_request_t	 *r,

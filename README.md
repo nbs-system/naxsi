@@ -5,6 +5,7 @@
 [![coveralls](https://coveralls.io/repos/github/nbs-system/naxsi/badge.svg?branch=master)](https://coveralls.io/github/nbs-system/naxsi?branch=master)
 [![codecov](http://codecov.io/github/nbs-system/naxsi/coverage.svg?branch=master)](http://codecov.io/github/nbs-system/naxsi?branch=master)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/740/badge)](https://bestpractices.coreinfrastructure.org/projects/740)
+[![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/nbs-system/naxsi)
 
 ### We need your help
 
@@ -55,3 +56,8 @@ It depends on `libpcre` for its regexp support, and is reported to work great on
 
 <img alt="nxapi-dashboard logo" src="https://raw.githubusercontent.com/wiki/nbs-system/naxsi/Images/kibana.png" align="center"/>   
 
+## Security issues
+If you find a security issue, please send it by email to `tko@nbs-system.com`;
+you can use the gpg key
+[0x251A28DE2685AED4](https://pgp.mit.edu/pks/lookup?op=vindex&search=0x251A28DE2685AED4)
+to encrypt it.

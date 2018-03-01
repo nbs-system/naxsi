@@ -85,6 +85,20 @@ strfaststr(unsigned char *haystack, unsigned int hl,
   return (NULL);
 }
 
+u_int naxsi_escape_nullbytes(ngx_str_t *str) {
+  
+  size_t i = 0;
+  u_int nullbytes = 0;
+
+  for (i = 0; i < str->len; i++) {
+    if (str->data[i] == 0) {
+      str->data[i] = '0';
+      nullbytes++;
+    }
+  }
+  return nullbytes;  
+}
+
 /* unescape routine, returns number of nullbytes present */
 int naxsi_unescape(ngx_str_t *str) {
   u_char *dst, *src;
@@ -756,32 +770,32 @@ void naxsi_log_offending(ngx_str_t *name, ngx_str_t *val, ngx_http_request_t *re
   
   //encode uri
   tmp_uri.len = req->uri.len + (2 * ngx_escape_uri(NULL, req->uri.data, req->uri.len,
-						   NGX_ESCAPE_ARGS));
+						   NGX_ESCAPE_URI_COMPONENT));
   tmp_uri.data = ngx_pcalloc(req->pool, tmp_uri.len+1);
   if (tmp_uri.data == NULL)
     return ;
-  ngx_escape_uri(tmp_uri.data, req->uri.data, req->uri.len, NGX_ESCAPE_ARGS);
+  ngx_escape_uri(tmp_uri.data, req->uri.data, req->uri.len, NGX_ESCAPE_URI_COMPONENT);
   //encode val
   if (val->len <= 0)
     tmp_val = empty;
   else {
     tmp_val.len = val->len + (2 * ngx_escape_uri(NULL, val->data, val->len,
-						 NGX_ESCAPE_ARGS));
+						 NGX_ESCAPE_URI_COMPONENT));
     tmp_val.data = ngx_pcalloc(req->pool, tmp_val.len+1);
     if (tmp_val.data == NULL)
       return ;
-    ngx_escape_uri(tmp_val.data, val->data, val->len, NGX_ESCAPE_ARGS);
+    ngx_escape_uri(tmp_val.data, val->data, val->len, NGX_ESCAPE_URI_COMPONENT);
   }
   //encode name
   if (name->len <= 0)
     tmp_name = empty;
   else {
     tmp_name.len = name->len + (2 * ngx_escape_uri(NULL, name->data, name->len,
-						   NGX_ESCAPE_ARGS));
+						   NGX_ESCAPE_URI_COMPONENT));
     tmp_name.data = ngx_pcalloc(req->pool, tmp_name.len+1);
     if (tmp_name.data == NULL)
       return ;
-    ngx_escape_uri(tmp_name.data, name->data, name->len, NGX_ESCAPE_ARGS);
+    ngx_escape_uri(tmp_name.data, name->data, name->len, NGX_ESCAPE_URI_COMPONENT);
   }
   
   ngx_log_error(NGX_LOG_ERR, req->connection->log, 0, 

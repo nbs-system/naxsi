@@ -272,7 +272,7 @@ location /RequestDenied {
 	 return 412;
 }
 --- more_headers
-Cookie: foobar
+cookie: foobar
 --- request
 GET /another-page
 --- error_code: 200
@@ -361,7 +361,7 @@ location /RequestDenied {
 	 return 412;
 }
 --- more_headers
-COOKIE: foobar
+cookie: foobar
 --- request
 GET /another-page
 --- error_code: 200
@@ -1192,3 +1192,81 @@ location /RequestDenied {
 --- request
 GET /?a123a=lol
 --- error_code: 200
+=== WL TEST 20.0 : wl:0 in cookies (#405)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4242 "str:123" "mz:$HEADERS_VAR:cookie" s:BLOCK;
+--- config
+location / {
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- more_headers
+Cookie: 123
+--- request
+GET /
+--- error_code: 412
+=== WL TEST 20.1 : wl:0 in cookies (#405)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4242 "str:123" "mz:$HEADERS_VAR:cookie" s:BLOCK;
+--- config
+location / {
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- more_headers
+Cookie: 124
+--- request
+GET /
+--- error_code: 200
+=== WL TEST 20.0 : wl:0 in cookies (#405)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule id:4242 "str:123" "mz:$HEADERS_VAR:cookie" s:BLOCK;
+--- config
+location / {
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 BasicRule wl:0 "mz:$HEADERS_VAR:cookie";
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- more_headers
+Cookie: 123
+--- request
+GET /
+--- error_code: 200
+
+

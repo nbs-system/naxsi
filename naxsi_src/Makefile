@@ -12,8 +12,8 @@ FUZZ		?= 0
 STOCK		?= 1
 
 #Allows to force for specific UT only
-#TEST 		:= "29*.t"
-NGINX_VERS := "1.9.11"
+#TEST 		:= ""
+NGINX_VERS := "1.12.2"
 
 
 NGINX_OPTIONS="--with-select_module"
@@ -27,12 +27,13 @@ NGINX_OPTIONS+="--modules-path=/tmp/naxsi_ut/modules/"
 NGINX_OPTIONS+="--without-mail_pop3_module"
 NGINX_OPTIONS+="--without-mail_smtp_module"
 NGINX_OPTIONS+="--without-mail_imap_module"
+NGINX_OPTIONS+="--with-http_v2_module"
 NGINX_OPTIONS+="--without-http_uwsgi_module"
 NGINX_OPTIONS+="--without-http_scgi_module"
 #dynamic or not NGINX_OPTIONS+="--add-dynamic-module=$(MOD_PATH)"
 NGINX_OPTIONS+="--prefix=/tmp"
 
-CFLAGS:="-Wall -Wextra"
+CFLAGS:="-Wall -Wextra -Werror"
 
 all: nginx_download configure build install deploy
 
@@ -72,8 +73,8 @@ clean:
 nginx_download:
 	wget --no-clobber "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz" || exit 1
 	wget --no-clobber "http://nginx.org/download/nginx-"$(NGINX_VERS)".tar.gz.asc" || exit 1
-	gpg --keyserver pgp.key-server.io --recv-keys 0x251a28de2685aed4 0x520A9993A1C052F8
-	gpg --verify "nginx-"$(NGINX_VERS)".tar.gz.asc" "nginx-"$(NGINX_VERS)".tar.gz" || exit 1
+#	gpg --keyserver pgp.key-server.io --recv-keys 0x251a28de2685aed4 0x520A9993A1C052F8
+#	gpg --verify "nginx-"$(NGINX_VERS)".tar.gz.asc" "nginx-"$(NGINX_VERS)".tar.gz" || exit 1
 	mkdir -p $(TMP_DIR)/
 	tar -C $(TMP_DIR)/ -xzf nginx-$(NGINX_VERS).tar.gz  --strip-components=1
 
@@ -106,6 +107,7 @@ else
 	@cp ../t/confs/nginx.conf.example /tmp/naxsi_ut/nginx.conf
 endif
 	@cp ../naxsi_config/naxsi_core.rules /tmp/naxsi_ut/naxsi_core.rules
+	@openssl req -batch -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/nginx.key -out /tmp/nginx.crt
 
 
 # RUN UNIT TESTS

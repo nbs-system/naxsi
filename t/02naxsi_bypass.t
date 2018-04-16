@@ -3,7 +3,7 @@
 
 # A AJOUTER :
 # TEST CASE AVEC UNE REGLE SUR UN HEADER GENERIQUE
-# La même sur des arguments :)
+# La meme sur des arguments :)
 
 use lib 'lib';
 use Test::Nginx::Socket;
@@ -109,7 +109,6 @@ location /RequestDenied {
 --- request
 GET /?a=a%00<%00script
 --- error_code: 412
-
 === TEST 2.3: DENY : XSS bypass vector %00 (nullbyte) URL
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
@@ -352,24 +351,56 @@ load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
-	 #LearningMode;
-	 SecRulesEnabled;
-	 DeniedUrl "/RequestDenied";
-CheckRule "$SQL >= 8" BLOCK;
-CheckRule "$RFI >= 2" BLOCK;
-CheckRule "$TRAVERSAL >= 4" BLOCK;
-CheckRule "$XSS >= 8" BLOCK;
-  	 root $TEST_NGINX_SERVROOT/html/;
+         #LearningMode;
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
          index index.html index.htm;
+         error_page 405 = $uri;
 }
 location /RequestDenied {
-	 return 412;
+         return 412;
 }
 --- more_headers
-Connection: keep-alive
-Content-Type: application/x-www-form-urlencoded; charset=ibm037
+Content-Type: application/x-www-form-urlencoded; charset=imb037
 --- request eval
 use URI::Escape;
 "POST /foobar
-Hello=%2589%2595%2597%25A4%25A3%25F1%3D%257D%25A4%2595%2589%2596%2595%2540%2581%2593%2593%2540%25A2%2585%2593%2585%2583%25A3%2540%255C%2540%2586%2599%2596%2594%2540%25A4%25A2%2585%2599%25A2%2560%2560"
+foo1=%2589%2595%2597%25A4%25A3%25F1%3D%257D%25A4%2595%2589%2596%2595%2540%2581%2593%2593%2540%25A2%2585%2593%2585%2583%25A3%2540%255C%2540%2586%2599%2596%2594%2540%25A4%25A2%2585%2599%25A2%2560%2560"
 --- error_code: 404
+
+=== TEST 6.1: DENY : Encoding bypass (failure from naxsi)
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule "rx:charset\s*=\s*(?!utf\-8)" "mz:$HEADERS_VAR:content-type" "s:DROP";
+--- config
+location / {
+         #LearningMode;
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+         error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/x-www-form-urlencoded; charset=imb037
+--- request eval
+use URI::Escape;
+"POST /foobar
+foo1=%2589%2595%2597%25A4%25A3%25F1%3D%257D%25A4%2595%2589%2596%2595%2540%2581%2593%2593%2540%25A2%2585%2593%2585%2583%25A3%2540%255C%2540%2586%2599%2596%2594%2540%25A4%25A2%2585%2599%25A2%2560%2560"
+--- error_code: 412
+
+

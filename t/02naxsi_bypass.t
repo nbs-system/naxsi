@@ -345,7 +345,7 @@ use URI::Escape;
 a=a <><><>"
 --- error_code: 412
 
-=== TEST 5.1: DENY : Encoding bypass
+=== TEST 6: DENY : Encoding bypass (failure from naxsi)
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config

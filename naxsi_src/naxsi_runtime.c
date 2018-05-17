@@ -2061,6 +2061,11 @@ ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
 			    (u_char *) "application/json", 16)) {
     ngx_http_dummy_json_parse(ctx, r, full_body, full_body_len); 
   }
+  /* 22 = echo -n "application/csp-report | wc -c */
+  else if (!ngx_strncasecmp(r->headers_in.content_type->value.data,
+                (u_char *) "application/csp-report", 22)) {
+    ngx_http_dummy_json_parse(ctx, r, full_body, full_body_len);
+  }
   else {
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		  "[POST] Unknown content-type");

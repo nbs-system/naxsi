@@ -91,6 +91,7 @@ ngx_http_nx_json_quoted(ngx_json_t *js, ngx_str_t *ve)
     if (*(js->src+js->off) == '\\') {
       js->off += 2;
       if (js->off >= js->len) break;
+      continue;
     }
     if (*(js->src+js->off) == '"') {
       vn_end = js->src+js->off;
@@ -161,7 +162,7 @@ ngx_http_nx_json_val(ngx_json_t *js) {
 	  ngx_http_basestr_ruleset_n(js->r->pool, &js->ckey, &val,
 				     js->main_cf->body_rules, js->r, js->ctx, 
 				     BODY);
-	NX_DEBUG(_debug_json, NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "JSON '%V' : '%V'",
+	NX_DEBUG(_debug_json, NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "quoted-JSON '%V' : '%V'",
 		 &(js->ckey), &(val));
       }
     return (ret);
@@ -318,7 +319,7 @@ ngx_http_dummy_json_parse(ngx_http_request_ctx_t *ctx,
 {
   ngx_json_t				*js;
   
-  
+
   js = ngx_pcalloc(r->pool, sizeof(ngx_json_t));
   if (!js) return ;
   js->json.data = js->src = src;
@@ -327,7 +328,7 @@ ngx_http_dummy_json_parse(ngx_http_request_ctx_t *ctx,
   js->ctx = ctx;
   js->loc_cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   js->main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
-  
+
   if (ngx_http_nx_json_seek(js, '{')) {
     ngx_http_apply_rulematch_v_n(&nx_int__invalid_json, ctx, r, NULL, NULL, BODY, 1, 0);
     return ;

@@ -2226,7 +2226,7 @@ ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx,
   /* check args */
   ngx_http_dummy_args_parse(main_cf, cf, ctx, r);
   /* check method */
-  if ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) && 
+  if ((r->method == NGX_HTTP_PATCH || r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) &&
       /* presence of body rules (POST/PUT rules) */
       (cf->body_rules || main_cf->body_rules) && 
       /* and the presence of data to parse */

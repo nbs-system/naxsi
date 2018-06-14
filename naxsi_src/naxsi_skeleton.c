@@ -503,7 +503,7 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
       }
-      /* push in body match rules (POST/PUT) */
+      /* push in body match rules (PATCH/POST/PUT) */
       if (rule.br->body || rule.br->body_var) {
 	if (alcf->body_rules == NULL) {
 	  alcf->body_rules = ngx_array_create(cf->pool, 2,
@@ -515,7 +515,7 @@ ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 	if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
 	memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
       }
-      /* push in raw body match rules (POST/PUT) */
+      /* push in raw body match rules (PATCH/POST/PUT) */
       if (rule.br->raw_body) {
 	NX_LOG_DEBUG(_debug_readconf, NGX_LOG_EMERG, cf, 0,
 		 "pushing rule %d in (read conf) raw_body rules", rule.rule_id);
@@ -828,7 +828,7 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
   }
-  /* push in body match rules (POST/PUT) */
+  /* push in body match rules (PATCH/POST/PUT) */
   if (rule.br->body || rule.br->body_var) {
     NX_LOG_DEBUG(_debug_main_conf, NGX_LOG_EMERG, cf, 0, 
 		 "pushing rule %d in body rules", rule.rule_id);  
@@ -842,7 +842,7 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
   }
-  /* push in raw body match rules (POST/PUT) xx*/
+  /* push in raw body match rules (PATCH/POST/PUT) xx*/
   if (rule.br->raw_body) {
     NX_LOG_DEBUG(_debug_main_conf, NGX_LOG_EMERG, cf, 0, 
 		 "pushing rule %d in raw (main) body rules", rule.rule_id);  
@@ -892,7 +892,7 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 ** [ENTRY POINT] does : this is the function called by nginx : 
 ** - Set up the context for the request
 ** - Check if the job is done and we're called again
-** - if it's a POST/PUT request, setup hook for body dataz
+** - if it's a PATCH/POST/PUT request, setup hook for body dataz
 ** - call dummy_data_parse
 ** - check our context struct (with scores & stuff) against custom check rules
 ** - check if the request should be denied
@@ -952,13 +952,13 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   if (r->internal) {   
     NX_DEBUG(_debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 	     "XX-DON'T PROCESS (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
-	     r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
+	     r->method == NGX_HTTP_PATCH ? "PATCH" : r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
 	     r->internal);
     return (NGX_DECLINED);
   } 
   NX_DEBUG(_debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 	   "XX-processing (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
-	   r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
+	   r->method == NGX_HTTP_PATCH ? "PATCH" : r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
 	   r->internal);
   if (!ctx) {
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_request_ctx_t));
@@ -1092,7 +1092,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       return (NGX_DECLINED);
     
 
-    if  ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) 
+    if  ((r->method == NGX_HTTP_PATCH || r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) 
 	 && !ctx->ready) {
       NX_DEBUG( _debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		"XX-dummy : body_request : before !");

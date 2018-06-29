@@ -43,7 +43,7 @@ is [Free software]( https://www.gnu.org/licenses/gpl.html ) (as in freedom)
 and free (as in free beer) to use.
 
 ## What does it run on?
-Naxsi is compatible with any nginx version, although it currently doesn't play well with the new HTTPv2 protocol added in recent nginx versions. See [issue #227]( https://github.com/nbs-system/naxsi/issues/227 ) for more details.
+Naxsi should be compatible with any nginx version.
 
 It depends on `libpcre` for its regexp support, and is reported to work great on NetBSD, FreeBSD, OpenBSD, Debian, Ubuntu and CentOS.
 

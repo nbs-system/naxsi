@@ -108,6 +108,14 @@ ngx_http_rule_t nx_int__empty_post_body = {/*type*/ 0, /*whitelist flag*/ 0,
 ngx_http_rule_t *nx_int__libinject_sql; /*ID:17*/
 ngx_http_rule_t *nx_int__libinject_xss; /*ID:18*/
 
+ngx_http_rule_t nx_int__no_rules = {/*type*/ 0, /*whitelist flag*/ 0, 
+				    /*wl_id ptr*/ NULL, /*rule_id*/ 19,
+				    /*log_msg*/ NULL, /*score*/ 0, 
+				    /*sscores*/ NULL,
+				    /*sc_block*/ 0,  /*sc_allow*/ 0, 
+				    /*block*/ 0,  /*allow*/ 0, /*drop*/ 1, /*log*/ 0,
+				    /*br ptrs*/ NULL};
+
 
 
 
@@ -2061,6 +2069,11 @@ ngx_http_dummy_body_parse(ngx_http_request_ctx_t *ctx,
 			    (u_char *) "application/json", 16)) {
     ngx_http_dummy_json_parse(ctx, r, full_body, full_body_len); 
   }
+  /* 22 = echo -n "application/csp-report" | wc -c */
+  else if (!ngx_strncasecmp(r->headers_in.content_type->value.data,
+                            (u_char *) "application/csp-report", 22)) {
+    ngx_http_dummy_json_parse(ctx, r, full_body, full_body_len);
+  }
   else {
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
 		  "[POST] Unknown content-type");
@@ -2100,7 +2113,9 @@ ngx_http_dummy_uri_parse(ngx_http_dummy_main_conf_t *main_cf,
   if ( (ctx->block && !ctx->learning) || ctx->drop )
     return ;
   if (!main_cf->generic_rules && !cf->generic_rules) {
-    dummy_error_fatal(ctx, r, "no generic rules ?!");
+    tmp.data = NULL;
+    tmp.len = 0;
+    ngx_http_apply_rulematch_v_n(&nx_int__no_rules, ctx, r, &tmp, &tmp, URL, 1, 0);
     return ;
   }
   tmp.len = r->uri.len;

@@ -99,14 +99,88 @@ u_int naxsi_escape_nullbytes(ngx_str_t *str) {
   return nullbytes;  
 }
 
-/* unescape routine, returns number of nullbytes present */
+/*
+** Shamelessly ripped off from https://www.cl.cam.ac.uk/~mgk25/ucs/utf8_check.c
+** and adapted to ngx_str_t
+*/
+unsigned char *ngx_utf8_check(ngx_str_t *str)
+{
+  unsigned int offset = 0;
+  unsigned char *s;
+
+  s = str->data;
+  
+  while (offset < str->len && *s) {
+    if (*s < 0x80) {
+      /* 0xxxxxxx */
+      s++;
+      offset++;
+    }
+    else if ((s[0] & 0xe0) == 0xc0) {
+      if (offset+1 >= str->len) {
+	//not enough bytes
+	return s;
+      }
+      /* 110XXXXx 10xxxxxx */
+      if ((s[1] & 0xc0) != 0x80 ||
+	  (s[0] & 0xfe) == 0xc0)                        /* overlong? */
+	return s;
+      else {
+	s += 2;
+	offset += 2;
+      }
+    }
+    else if ((s[0] & 0xf0) == 0xe0) {
+      if (offset+2 >= str->len) {
+	//not enough bytes
+	return s;
+      }
+      /* 1110XXXX 10Xxxxxx 10xxxxxx */
+      if ((s[1] & 0xc0) != 0x80 ||
+	  (s[2] & 0xc0) != 0x80 ||
+	  (s[0] == 0xe0 && (s[1] & 0xe0) == 0x80) ||    /* overlong? */
+	  (s[0] == 0xed && (s[1] & 0xe0) == 0xa0) ||    /* surrogate? */
+	  (s[0] == 0xef && s[1] == 0xbf &&
+	   (s[2] & 0xfe) == 0xbe))                      /* U+FFFE or U+FFFF? */
+	return s;
+      else
+	s += 3;
+    }
+    else if ((s[0] & 0xf8) == 0xf0) {
+      if (offset+3 >= str->len) {
+	//not enough bytes
+	return s;
+      }
+      /* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
+      if ((s[1] & 0xc0) != 0x80 ||
+	  (s[2] & 0xc0) != 0x80 ||
+	  (s[3] & 0xc0) != 0x80 ||
+	  (s[0] == 0xf0 && (s[1] & 0xf0) == 0x80) ||    /* overlong? */
+	  (s[0] == 0xf4 && s[1] > 0x8f) || s[0] > 0xf4) /* > U+10FFFF? */
+	return s;
+      else
+	s += 4;
+    }
+    else
+      return s;
+  }
+  return NULL;
+}
+
+
+/* unescape routine :
+ - returns number of nullbytes present 
+ - returns -1 if overlong utf8 sequence
+*/
+
 int naxsi_unescape(ngx_str_t *str) {
   u_char *dst, *src;
   u_int nullbytes = 0, bad = 0, i;
   
   dst = str->data;
   src = str->data;
-      
+
+  
   bad = naxsi_unescape_uri(&src, &dst,
 			   str->len, 0);      
   str->len =  src - str->data;
@@ -119,7 +193,6 @@ int naxsi_unescape(ngx_str_t *str) {
       }
   return (nullbytes+bad);
 }
-
 
 /*
 ** Patched ngx_unescape_uri : 

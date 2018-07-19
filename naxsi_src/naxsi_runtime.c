@@ -1428,7 +1428,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
     ngx_http_apply_rulematch_v_n(&nx_int__bad_utf8, ctx, req, NULL, NULL, zone, 1, 1);
     return (0);
   }
-  if (ngx_utf8_check(value) != NULL) {
+  else if (ngx_utf8_check(value) != NULL) {
     ngx_http_apply_rulematch_v_n(&nx_int__bad_utf8, ctx, req, NULL, NULL, zone, 1, 0);
     return (0);
   }

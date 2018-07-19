@@ -169,7 +169,9 @@ unsigned char *ngx_utf8_check(ngx_str_t *str)
 
 
 /* 
-   unescape routine : returns number of nullbytes present 
+   unescape routine : 
+ - returns number of nullbytes present 
+ - returns the number of invalid url-encoded characters
 */
 int naxsi_unescape(ngx_str_t *str) {
   u_char *dst, *src;

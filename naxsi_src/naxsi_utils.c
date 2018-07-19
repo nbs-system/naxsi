@@ -168,11 +168,9 @@ unsigned char *ngx_utf8_check(ngx_str_t *str)
 }
 
 
-/* unescape routine :
- - returns number of nullbytes present 
- - returns -1 if overlong utf8 sequence
+/* 
+   unescape routine : returns number of nullbytes present 
 */
-
 int naxsi_unescape(ngx_str_t *str) {
   u_char *dst, *src;
   u_int nullbytes = 0, bad = 0, i;

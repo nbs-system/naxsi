@@ -123,8 +123,9 @@ unsigned char *ngx_utf8_check(ngx_str_t *str)
       }
       /* 110XXXXx 10xxxxxx */
       if ((s[1] & 0xc0) != 0x80 ||
-	  (s[0] & 0xfe) == 0xc0)                        /* overlong? */
+	  (s[0] & 0xfe) == 0xc0) {                        /* overlong? */ 
 	return s;
+      }
       else {
 	s += 2;
 	offset += 2;
@@ -156,22 +157,25 @@ unsigned char *ngx_utf8_check(ngx_str_t *str)
 	  (s[2] & 0xc0) != 0x80 ||
 	  (s[3] & 0xc0) != 0x80 ||
 	  (s[0] == 0xf0 && (s[1] & 0xf0) == 0x80) ||    /* overlong? */
-	  (s[0] == 0xf4 && s[1] > 0x8f) || s[0] > 0xf4) /* > U+10FFFF? */
+	  (s[0] == 0xf4 && s[1] > 0x8f) || s[0] > 0xf4) { /* > U+10FFFF? */
 	return s;
-      else
+      }
+      else {
 	s += 4;
+      }
     }
-    else
+    else {
       return s;
+    }
   }
   return NULL;
 }
 
 
 /* 
-   unescape routine : 
- - returns number of nullbytes present 
- - returns the number of invalid url-encoded characters
+   unescape routine returns a sum of :
+ - number of nullbytes present 
+ - number of invalid url-encoded characters
 */
 int naxsi_unescape(ngx_str_t *str) {
   u_char *dst, *src;

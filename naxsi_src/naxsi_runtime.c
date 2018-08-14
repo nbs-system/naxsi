@@ -1505,7 +1505,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
 	  NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		   "XX-apply rulematch [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
 	  if (!ngx_strncmp((name)->data, "content-type", 12) 
-	      && !ngx_strncmp((char *)"%", (char *)(&(r[i].br->rx)->pattern)->data, 1)) {
+	        && strstr((char *)(&(r[i].br->rx)->pattern)->data, "%") != NULL ) {
 	      content_type_filter = 1;
 	  }
 	  rule_matched = 1;

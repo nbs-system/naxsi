@@ -29,7 +29,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "naxsi.h"
-
+static int content_type_filter = 0;
 /* used to store locations during the configuration time. 
    then, accessed by the hashtable building feature during "init" time. */
 
@@ -1050,6 +1050,10 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   else {
     ngx_http_internal_redirect(r, cf->denied_url,  
 			       &empty); 
+    if (content_type_filter) { 
+    ngx_http_finalize_request(r, NGX_HTTP_FORBIDDEN);  // struts2-045 046 defense
+	  /* MainRule "rx:%" "mz:$HEADERS_VAR:content-type" "s:DROP"; */
+    }
     return (NGX_HTTP_OK);
   }
   return (NGX_ERROR);
@@ -1517,6 +1521,10 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
 	if (ret == 1) {
 	  NX_DEBUG(_debug_basestr_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		   "XX-apply rulematch [%V]=[%V] [rule=%d] (match %d times)", name, value, r[i].rule_id, nb_match); 
+	  if (!ngx_strncmp((name)->data, "content-type", 12) 
+	        && strstr((char *)(&(r[i].br->rx)->pattern)->data, "%") != NULL ) {
+	      content_type_filter = 1;
+	  }
 	  rule_matched = 1;
 	  ngx_http_apply_rulematch_v_n(&(r[i]), ctx, req, name, value, zone, nb_match, 0);	    
 	}

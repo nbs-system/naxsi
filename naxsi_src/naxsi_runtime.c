@@ -116,6 +116,14 @@ ngx_http_rule_t nx_int__no_rules = {/*type*/ 0, /*whitelist flag*/ 0,
 				    /*block*/ 0,  /*allow*/ 0, /*drop*/ 1, /*log*/ 0,
 				    /*br ptrs*/ NULL};
 
+ngx_http_rule_t nx_int__bad_utf8 = {/*type*/ 0, /*whitelist flag*/ 0, 
+				    /*wl_id ptr*/ NULL, /*rule_id*/ 20,
+				    /*log_msg*/ NULL, /*score*/ 0, 
+				    /*sscores*/ NULL,
+				    /*sc_block*/ 0,  /*sc_allow*/ 0, 
+				    /*block*/ 0,  /*allow*/ 0, /*drop*/ 1, /*log*/ 0,
+				    /*br ptrs*/ NULL};
+
 
 
 
@@ -160,7 +168,7 @@ void			ngx_http_dummy_rawbody_parse(ngx_http_request_ctx_t *ctx,
 						     ngx_http_request_t	 *r,
 						     u_char			*src,
 						     u_int			 len);
-
+unsigned char		*ngx_utf8_check(ngx_str_t *str);
 
 /*
 ** in : string to inspect, associated rule
@@ -1405,6 +1413,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
 	   zone == RAW_BODY ? "RAW_BODY" : "UNKNOWN"); 
 
   
+  
   if (!rules) {
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 		  "XX-no rules, wtf ?!"); 
@@ -1414,7 +1423,15 @@ ngx_http_basestr_ruleset_n(ngx_pool_t	*pool,
   NX_DEBUG(_debug_basestr_ruleset , NGX_LOG_DEBUG_HTTP, req->connection->log, 0, 
 	   "XX-checking %d rules ...", rules->nelts); 
 
-  
+  /* check for overlong/surrogate utf8 encoding */
+  if (ngx_utf8_check(name) != NULL) {
+    ngx_http_apply_rulematch_v_n(&nx_int__bad_utf8, ctx, req, NULL, NULL, zone, 1, 1);
+    return (0);
+  }
+  else if (ngx_utf8_check(value) != NULL) {
+    ngx_http_apply_rulematch_v_n(&nx_int__bad_utf8, ctx, req, NULL, NULL, zone, 1, 0);
+    return (0);
+  }
   
   /* call to libinjection */
   ngx_http_libinjection(pool, name, value, ctx, req, zone);

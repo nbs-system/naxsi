@@ -37,9 +37,8 @@ is to add required ACCEPT rules for the target website to work properly.
 
 Contrary to most Web Application Firewalls, Naxsi doesn't rely on a
 signature base like an antivirus, and thus cannot be circumvented by an
-"unknown" attack pattern. Another main difference between Naxsi and other
-WAFs, Naxsi filters only GET and POST requests,
-is [Free software]( https://www.gnu.org/licenses/gpl.html ) (as in freedom)
+"unknown" attack pattern.
+Naxsi is [Free software]( https://www.gnu.org/licenses/gpl.html ) (as in freedom)
 and free (as in free beer) to use.
 
 ## What does it run on?

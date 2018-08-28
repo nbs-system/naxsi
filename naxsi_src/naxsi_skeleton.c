@@ -352,7 +352,7 @@ ngx_http_dummy_init(ngx_conf_t *cf)
       main_cf == NULL)
     return (NGX_ERROR); /*LCOV_EXCL_LINE*/
   
-  /* Register for access phase */
+  /* Register for rewrite phase */
   h = ngx_array_push(&cmcf->phases[NGX_HTTP_REWRITE_PHASE].handlers);
   if (h == NULL) 
     return (NGX_ERROR); /*LCOV_EXCL_LINE*/

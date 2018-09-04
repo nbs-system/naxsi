@@ -1,4 +1,4 @@
-<img alt="naxsi logo" src="https://www.nbs-system.com/wp-content/uploads/nbs-logo-naxsi1.png" align="center"/>   
+<img alt="naxsi logo" src="https://www.nbs-system.com/wp-content/uploads/nbs-logo-naxsi1.png" align="center"/>
 
 [![coverity](https://scan.coverity.com/projects/1883/badge.svg)](https://scan.coverity.com/projects/1883)
 [![travis-ci](https://travis-ci.org/nbs-system/naxsi.svg?branch=master)](https://travis-ci.org/nbs-system/naxsi)
@@ -14,7 +14,7 @@
 
 ## What is Naxsi?
 
-NAXSI means [Nginx]( http://nginx.org/ ) Anti [XSS]( https://www.owasp.org/index.php/Cross-site_Scripting_%28XSS%29 ) & [SQL Injection]( https://www.owasp.org/index.php/SQL_injection ). 
+NAXSI means [Nginx]( http://nginx.org/ ) Anti [XSS]( https://www.owasp.org/index.php/Cross-site_Scripting_%28XSS%29 ) & [SQL Injection]( https://www.owasp.org/index.php/SQL_injection ).
 
 Technically, it is a third party nginx module, available as a package for
 many UNIX-like platforms. This module, by default, reads a small subset of
@@ -53,7 +53,7 @@ It depends on `libpcre` for its regexp support, and is reported to work great on
 - The [nxapi/nxtool]( https://github.com/nbs-system/naxsi/tree/master/nxapi ) to generate rules
 
 
-<img alt="nxapi-dashboard logo" src="https://raw.githubusercontent.com/wiki/nbs-system/naxsi/Images/kibana.png" align="center"/>   
+<img alt="nxapi-dashboard logo" src="https://raw.githubusercontent.com/wiki/nbs-system/naxsi/Images/kibana.png" align="center"/>
 
 ## Security issues
 If you find a security issue, please send it by email to `tko@nbs-system.com`;

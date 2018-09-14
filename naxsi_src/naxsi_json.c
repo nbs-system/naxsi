@@ -170,7 +170,8 @@ ngx_http_nx_json_val(ngx_json_t *js) {
   if ((js->c >= '0' && js->c <= '9') || js->c == '-') {
     val.data = js->src+js->off;
     while ( ((*(js->src+js->off) >= '0' && *(js->src+js->off) <= '9') ||
-	     *(js->src+js->off) == '.' || *(js->src+js->off) == '-') && js->off < js->len) {
+	     *(js->src+js->off) == '.' || *(js->src+js->off) == '-' || *(js->src+js->off) == 'e')
+		    && js->off < js->len) {
       val.len++;
       js->off++;
     }

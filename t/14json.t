@@ -772,3 +772,34 @@ use URI::Escape;
   \"ERROR_REPORT:{\\\"request\\\":{\\\"bar\\\":\\\"\\\"},\\\"response\\\":{\\\"bar\\\":[{\\\"schema_id\\\":\\\"foo\\\"}]}}\"
 }"
 --- error_code: 412
+
+=== JSON14 : bug_437
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+set $naxsi_extensive_log 1;
+location / {
+         SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 root $TEST_NGINX_SERVROOT/html/;
+	 index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"POST /
+{
+ \"number\": -2.806683719414e-14
+}"
+--- error_code: 200

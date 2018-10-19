@@ -75,7 +75,7 @@ $ cat nxapi.json
   	`./nxtool.py -c nxapi.json -x`
 # Simple usage approach
 
-##1. Get info about db
+## 1. Get info about db
 
     $ ./nxtool.py -x --colors -c nxapi.json
 Will issue a summary of database content, including :
@@ -97,7 +97,7 @@ A TOP10 list of dst URIs raising the most exceptions. It is very useful in combi
   * Top Zones.
 List of most active zones of exceptions.
 
-##2. Generate whitelists
+## 2. Generate whitelists
 Let's say I had the following output :
 
     ./nxtool.py -c nxapi.json  -x --colors
@@ -165,7 +165,7 @@ nxtool attempts to provide extra information to allow user to decides wether it'
   * var_name : example(s) of variable names in which the content was triggered
   * success and warnings : nxapi will provide you with scoring information (see 'scores').
 
-##3. Interactive whitelist generation
+## 3. Interactive whitelist generation
 
 Another way of creating whitelists is to use the -g option. This option provide
 an interactive way to generate whitelists. This option use the EDITOR env
@@ -188,7 +188,7 @@ typical output when generating wl is:
 
 As you can see you'll see each filter and each file for each selections.
 
-##4. Tagging events
+## 4. Tagging events
 
 Once I chose the whitelists that I think are appropriate, I will write them in a whitelist file. 
 Then, I can tag corresponding events :

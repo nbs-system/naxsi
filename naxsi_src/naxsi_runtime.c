@@ -843,13 +843,14 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   /* 
   ** don't handle uri > 4k, string will be split
   */
+  
   sub = snprintf((char *)fragment->data, sz_left, fmt_base, r->connection->addr_text.len,
 		 r->connection->addr_text.data,
 		 r->headers_in.server.len, r->headers_in.server.data,
 		 tmp_uri->len, tmp_uri->data,  strlen(NAXSI_VERSION),
 		 NAXSI_VERSION, cf->request_processed, cf->request_blocked,
-		 strlen(ctx->learning ? "learning" :  (ctx->block ? "block" : (ctx->drop ? "drop" : "unknown"))),
-		 ctx->learning ? "learning" :  (ctx->block ? "block" : (ctx->drop ? "drop" : "unknown")));
+		 strlen(ctx->learning ? (ctx->drop ? "learning/drop" : "learning") :  (ctx->block ? "block" : (ctx->drop ? "drop" : "unknown"))),
+		 ctx->learning ? (ctx->drop ? "learning/drop" : "learning") :  (ctx->block ? "block" : (ctx->drop ? "drop" : "unknown")));
   
   if (sub >= sz_left)
     sub = sz_left - 1;

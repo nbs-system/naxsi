@@ -806,9 +806,11 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   u_int		sz_left, sub, offset = 0, i;
   ngx_str_t	*fragment, *tmp_uri;
   ngx_http_special_score_t	*sc;
-  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&vers=%.*s&total_processed=%zu&total_blocked=%zu&config=%.*";
+  const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&vers=%.*s&total_processed=%zu&total_blocked=%zu&config=%.*s";
   const char	*fmt_score = "&cscore%d=%.*s&score%d=%zu";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
+  const char    *fmt_config =  ctx->learning ? (ctx->drop ? "learning-drop" : "learning" ) :  (ctx->block ? "block" : (ctx->drop ? "drop" : "unknown"));
+
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_http_matched_rule_t	*mr;
   char		 tmp_zone[30];
@@ -849,8 +851,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
 		 r->headers_in.server.len, r->headers_in.server.data,
 		 tmp_uri->len, tmp_uri->data,  strlen(NAXSI_VERSION),
 		 NAXSI_VERSION, cf->request_processed, cf->request_blocked,
-		 strlen(ctx->learning ? (ctx->drop ? "learning/drop" : "learning") :  (ctx->block ? "block" : (ctx->drop ? "drop" : "unknown"))),
-		 ctx->learning ? (ctx->drop ? "learning/drop" : "learning") :  (ctx->block ? "block" : (ctx->drop ? "drop" : "unknown")));
+		 strlen(fmt_config), fmt_config);
   
   if (sub >= sz_left)
     sub = sz_left - 1;

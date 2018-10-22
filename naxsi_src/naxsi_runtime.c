@@ -29,7 +29,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "naxsi.h"
-
+#include "assert.h"
 /* used to store locations during the configuration time. 
    then, accessed by the hashtable building feature during "init" time. */
 
@@ -809,7 +809,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&vers=%.*s&total_processed=%zu&total_blocked=%zu&config=%.*s";
   const char	*fmt_score = "&cscore%d=%.*s&score%d=%zu";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
-  const char    *fmt_config =  ctx->learning ? (ctx->drop ? "learning-drop" : "learning" ) :  (ctx->block ? "block" : (ctx->drop ? "drop" : "unknown"));
+  const char    *fmt_config =  ctx->learning ? (ctx->drop ? "learning-drop" : "learning" ) :  (ctx->block ? "block" : (ctx->drop ? "drop" : ""));
 
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_http_matched_rule_t	*mr;
@@ -845,7 +845,8 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   /* 
   ** don't handle uri > 4k, string will be split
   */
-  
+
+  assert(strlen(fmt_config) != 0);
   sub = snprintf((char *)fragment->data, sz_left, fmt_base, r->connection->addr_text.len,
 		 r->connection->addr_text.data,
 		 r->headers_in.server.len, r->headers_in.server.data,

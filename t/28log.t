@@ -35,6 +35,28 @@ location /RequestDenied {
 --- error_code: 404
 --- error_log eval
 qr@NAXSI_FMT: ip=127\.0\.0\.1&server=localhost&uri=/x,y&vers=[^&]+&total_processed=1&total_blocked=1&config=learning&cscore0=\$SQL&score0=8&zone0=URL&id0=1015&var_name0=&zone1=ARGS&id1=1015&var_name1=uuu@
+=== TEST 1.1 : learning + drop score, NAXSI_FMT
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+MainRule "str:," "msg:, in stuff" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1015;
+--- config
+location / {
+         SecRulesEnabled;
+	 LearningMode;
+         DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" DROP;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+}
+location /RequestDenied {
+         return 412;
+}
+--- request eval
+"GET /x,y?uuu=b,c"
+--- error_code: 412
+--- error_log eval
+qr@NAXSI_FMT: ip=127\.0\.0\.1&server=localhost&uri=/x,y&vers=[^&]+&total_processed=1&total_blocked=1&config=learning-drop&cscore0=\$SQL&score0=8&zone0=URL&id0=1015&var_name0=&zone1=ARGS&id1=1015&var_name1=uuu@
 === TEST 1.2 : no-learning + block score, NAXSI_FMT
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;

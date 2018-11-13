@@ -809,13 +809,15 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   const char 	*fmt_base = "ip=%.*s&server=%.*s&uri=%.*s&vers=%.*s&total_processed=%zu&total_blocked=%zu&config=%.*s";
   const char	*fmt_score = "&cscore%d=%.*s&score%d=%zu";
   const char	*fmt_rm = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
+  char *tmp ;
   if (ctx->log) {
-      const char  *fmt_config = ctx->learning ? (ctx->drop ? "log-learning-drop" : "log-learning" ) :  (ctx->drop ? "log-drop" : (ctx->block ? "log-block" : ""));
-	}
-  else {
-    const char  *fmt_config = ctx->learning ? (ctx->drop ? "learning-drop" : "learning" ) :  (ctx->drop ? "drop" : (ctx->block ? "block" : ""));
+    tmp = ctx->learning ? (ctx->drop ? "log-learning-drop" : "log-learning" ) :  (ctx->drop ? "log-drop" : (ctx->block ? "log-block" : ""));
   }
-
+  else {
+    tmp = ctx->learning ? (ctx->drop ? "learning-drop" : "learning" ) :  (ctx->drop ? "drop" : (ctx->block ? "block" : ""));
+  }
+  const char *fmt_config = (const char*)tmp;
+    
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_http_matched_rule_t	*mr;
   char		 tmp_zone[30];

@@ -414,13 +414,8 @@ ngx_http_dummy_init(ngx_conf_t *cf)
   libjct_sql->sc_tag->data = ngx_pcalloc(cf->pool, 18 /* LIBINJECTION_SQL */);
   libjct_xss->sc_tag->data = ngx_pcalloc(cf->pool, 18 /* LIBINJECTION_XSS */);
   if (!libjct_sql->sc_tag->data || !libjct_xss->sc_tag->data) return (NGX_ERROR); /* LCOV_EXCL_LINE */
-  /* avoid stringop-truncation false positive. 
-     nginx_str_t is not null terminated */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
   strncpy((char *)libjct_sql->sc_tag->data, (char *)"$LIBINJECTION_SQL", 17);
   strncpy((char *)libjct_xss->sc_tag->data, (char *)"$LIBINJECTION_XSS", 17);
-#pragma GCC diagnostic pop  
   libjct_xss->sc_tag->len = 17;
   libjct_sql->sc_tag->len = 17;
   libjct_sql->sc_score = 8;

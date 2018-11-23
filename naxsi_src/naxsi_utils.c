@@ -455,11 +455,11 @@ ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
 		   "whitelist targets |NAME");
 
       
-      strcat(*fullname, (const char *) "#");
+      strncat(*fullname, (const char *) "#", 1);
     }
     strncat(*fullname, (const char *) custloc_array(curr->br->custom_locations->elts)[uri_idx].target.data, 
 	    custloc_array(curr->br->custom_locations->elts)[uri_idx].target.len);
-    strcat(*fullname, (const char *) "#");
+    strncat(*fullname, (const char *) "#", 1);
     strncat(*fullname, (const char *) custloc_array(curr->br->custom_locations->elts)[name_idx].target.data, 
 	    custloc_array(curr->br->custom_locations->elts)[name_idx].target.len);
   }
@@ -477,7 +477,7 @@ ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
 		   "whitelist targets |NAME");
 
       
-      strcat(*fullname, (const char *) "#");
+      strncat(*fullname, (const char *) "#", 1);
     }
 
 
@@ -492,7 +492,7 @@ ngx_http_wlr_find(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t *dlc,
 
     *fullname = ngx_pcalloc(cf->pool, custloc_array(curr->br->custom_locations->elts)[name_idx].target.len + 2);
     if (curr->br->target_name)
-      strcat(*fullname, (const char *) "#");
+      strncat(*fullname, (const char *) "#", 1);
     strncat(*fullname, (const char *) custloc_array(curr->br->custom_locations->elts)[name_idx].target.data, 
 	    custloc_array(curr->br->custom_locations->elts)[name_idx].target.len);
   }

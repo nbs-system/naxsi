@@ -1,38 +1,49 @@
 #!/usr/bin/env python
+#
+# Naxsi learning utility
+#
 
+# Builtins
 import glob, fcntl, termios
 import sys
 import socket
-import elasticsearch
 import time
 import os
 import tempfile
 import subprocess
 import json
-
+import logging
 from collections import defaultdict
 from optparse import OptionParser, OptionGroup
+
+# Third party
+import elasticsearch
 from nxapi.nxtransform import *
 from nxapi.nxparse import *
 
+# Default values
 F_SETPIPE_SZ = 1031  # Linux 2.6.35+
 F_GETPIPE_SZ = 1032  # Linux 2.6.35+
 
+# Initialize logging
+logging.basicConfig(stream=sys.stdout, level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s: %(message)s (%(name)s)',
+                    datefmt='%c')
 
 def open_fifo(fifo):
     try:
         os.mkfifo(fifo)
     except OSError:
-        print "Fifo ["+fifo+"] already exists (non fatal)."
+        logging.warning("Fifo ["+fifo+"] already exists (non fatal).")
     except Exception, e:
-        print "Unable to create fifo ["+fifo+"]"
+        logging.error("Unable to create fifo ["+fifo+"]")
     try:
-        print "Opening fifo ... will return when data is available."
+        logging.debug("Opening fifo ... will return when data is available.")
         fifo_fd = open(fifo, 'r')
         fcntl.fcntl(fifo_fd, F_SETPIPE_SZ, 1000000)
-        print "Pipe (modified) size : "+str(fcntl.fcntl(fifo_fd, F_GETPIPE_SZ))
+        logging.debug("Pipe (modified) size : "+str(fcntl.fcntl(fifo_fd, F_GETPIPE_SZ)))
     except Exception, e:
-        print "Unable to create fifo, error: "+str(e)
+        logging.error("Unable to create fifo, error: "+str(e))
         return None
     return fifo_fd
 
@@ -47,17 +58,10 @@ def macquire(line):
                 event['country'] = geoloc.ip2cc(event['ip'])
             except NameError:
                 pass
-        # print "Got data :)"
-        # pprint.pprint(z)
-        #print ".",
-        print z
+        logging.debug(z)
         injector.insert(z)
     else:
         pass
-        #print "No data ? "+line
-    #print ""
-
-
 
 opt = OptionParser()
 # group : config
@@ -120,7 +124,7 @@ for x in mutally_exclusive:
     if options.ensure_value(x, None) is not None:
         count += 1
 if count > 1:
-    print "Mutually exclusive options are present (ie. import and stats), aborting."
+    logging.critical("Mutually exclusive options are present (ie. import and stats), aborting.")
     sys.exit(-1)
 
 
@@ -161,7 +165,7 @@ es_version =  es.info()['version'].get('number', None)
 if es_version is not None:
     cfg.cfg["elastic"]["version"] = es_version.split(".")[0]
 if cfg.cfg["elastic"].get("version", None) is None:
-    print "Failed to get version from ES, Specify version ['1'/'2'/'5'] in [elasticsearch] section"
+    logging.critical("Failed to get version from ES, Specify version ['1'/'2'/'5'] in [elasticsearch] section")
     sys.exit(-1)
 
 translate = NxTranslate(es, cfg)
@@ -178,9 +182,9 @@ if options.full_auto is True:
     results = translate.full_auto()
     if results:
         for result in results:
-            print "{0}".format(result)
+            logging.debug("{0}".format(result))
     else:
-        print "No hits for this filter."
+        logging.critical("No hits for this filter.")
         sys.exit(1)
     sys.exit(0)
 
@@ -190,7 +194,7 @@ if options.template is not None:
     tpls = translate.expand_tpl_path(options.template)
     gstats = {}
     if len(tpls) <= 0:
-        print "No template matching"
+        logging.error("No template matching")
         sys.exit(1)
     # prepare statistics for global scope
     scoring.refresh_scope('global', translate.tpl2esq(cfg.cfg["global_filters"]))
@@ -198,29 +202,27 @@ if options.template is not None:
         scoring.refresh_scope('rule', {})
         scoring.refresh_scope('template', {})
 
-        print translate.grn.format("#Loading tpl '"+tpl_f+"'")
+        logging.debug(translate.grn.format("Loading template '"+tpl_f+"'"))
         tpl = translate.load_tpl_file(tpl_f)
         # prepare statistics for filter scope
         scoring.refresh_scope('template', translate.tpl2esq(tpl))
-        #pprint.pprint(tpl)
-        print "Hits of template : "+str(scoring.get('template', 'total'))
+        logging.debug("Hits of template : "+str(scoring.get('template', 'total')))
 
         whitelists = translate.gen_wl(tpl, rule={})
-        print str(len(whitelists))+" whitelists ..."
+        logging.debug(str(len(whitelists))+" whitelists ...")
         for genrule in whitelists:
             #pprint.pprint(genrule)
             scoring.refresh_scope('rule', genrule['rule'])
             scores = scoring.check_rule_score(tpl)
             if (len(scores['success']) > len(scores['warnings']) and scores['deny'] == False) or cfg.cfg["naxsi"]["strict"] == "false":
-                #print "?deny "+str(scores['deny'])
-                print translate.fancy_display(genrule, scores, tpl)
-                print translate.grn.format(translate.tpl2wl(genrule['rule'], tpl)).encode('utf-8')
+                logging.debug(translate.fancy_display(genrule, scores, tpl))
+                logging.debug(translate.grn.format(translate.tpl2wl(genrule['rule'], tpl)).encode('utf-8'))
     sys.exit(0)
 
 # tagging options
 
 if options.wl_file is not None and options.server is None:
-    print translate.red.format("Cannot tag events in database without a server name !")
+    logging.critical(translate.red.format("Cannot tag events in database without a server name !"))
     sys.exit(2)
 
 if options.wl_file is not None:
@@ -228,11 +230,11 @@ if options.wl_file is not None:
     wl_files.extend(glob.glob(options.wl_file))
     count = 0
     for wlf in wl_files:
-        print translate.grn.format("#Loading tpl '"+wlf+"'")
+        logging.debug(translate.grn.format("Loading template '"+wlf+"'"))
         try:
             wlfd = open(wlf, "r")
         except:
-            print translate.red.format("Unable to open wl file '"+wlf+"'")
+            logging.critical(translate.red.format("Unable to open wl file '"+wlf+"'"))
             sys.exit(-1)
         for wl in wlfd:
             [res, esq] = translate.wl2esq(wl)
@@ -244,7 +246,7 @@ if options.wl_file is not None:
                     if x == 0:
                         break
 
-        print translate.grn.format(str(count)) + " items tagged ..."
+        logging.debug(translate.grn.format(str(count)) + " items tagged ...")
         count = 0
     sys.exit(0)
 
@@ -259,56 +261,56 @@ if options.ips is not None:
         try:
             wlfd = open(wlf, "r")
         except:
-            print "Unable to open ip file '"+wlf+"'"
+            logging.critical("Unable to open ip file '"+wlf+"'")
             sys.exit(-1)
         for wl in wlfd:
-            print "=>"+wl
+            logging.debug("=>"+wl)
             tpl["ip"] = wl.strip('\n')
             esq = translate.tpl2esq(tpl)
             pprint.pprint(esq)
             pprint.pprint(tpl)
             count += translate.tag_events(esq, "BadIPS", tag=options.tag)
-        print translate.grn.format(str(count)) + " items to be tagged ..."
+        logging.debug(translate.grn.format(str(count)) + " items to be tagged ...")
         count = 0
     sys.exit(0)
 
 # statistics
 if options.stats is True:
-    print translate.red.format("# Whitelist(ing) ratio :")
+    logging.info(translate.red.format("# Whitelist(ing) ratio :"))
     for e in translate.fetch_top(cfg.cfg["global_filters"], "whitelisted", limit=2):
         try:
             list_e = e.split()
-            print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+            logging.info('# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3]))
         except:
-            print "--malformed--"
-    print translate.red.format("# Top servers :")
+            logging.warning("--malformed--")
+    logging.info(translate.red.format("# Top servers :"))
     for e in translate.fetch_top(cfg.cfg["global_filters"], "server", limit=10):
         try:
             list_e = e.split()
-            print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+            logging.info('# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3]))
         except:
-            print "--malformed--"
-    print translate.red.format("# Top URI(s) :")
+            logging.warning("--malformed--")
+    logging.info(translate.red.format("# Top URI(s) :"))
     for e in translate.fetch_top(cfg.cfg["global_filters"], "uri", limit=10):
         try:
             list_e = e.split()
-            print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+            logging.info('# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3]))
         except:
-            print "--malformed--"
-    print translate.red.format("# Top Zone(s) :")
+            logging.warning("--malformed--")
+    logging.info(translate.red.format("# Top Zone(s) :"))
     for e in translate.fetch_top(cfg.cfg["global_filters"], "zone", limit=10):
         try:
             list_e = e.split()
-            print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+            logging.info('# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3]))
         except:
-            print "--malformed--"
-    print translate.red.format("# Top Peer(s) :")
+            logging.warning("--malformed--")
+    logging.info(translate.red.format("# Top Peer(s) :"))
     for e in translate.fetch_top(cfg.cfg["global_filters"], "ip", limit=10):
         try:
             list_e = e.split()
-            print '# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3])
+            logging.info('# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3]))
         except:
-            print "--malformed--"
+            logging.warning("--malformed--")
     sys.exit(0)
 
 
@@ -318,7 +320,7 @@ def write_generated_wl(filename, results):
         for result in results:
             for key, items in result.iteritems():
                 if items:
-                    print "{} {}".format(key, items)
+                    logging.debug("{} {}".format(key, items))
                     if key == 'genrule':
                         wl_file.write("# {}\n{}\n".format(key, items))
                     else:
@@ -376,7 +378,7 @@ def generate_wl(selection_dict):
         for idx, (selection, item) in enumerate(items):
            global_filters_context[selection] = item
            translate.cfg["global_filters"] = global_filters_context
-           print 'generating wl with filters {0}'.format(global_filters_context)
+           logging.debug('generating wl with filters {0}'.format(global_filters_context))
            wl_dict_list = []
            res = translate.full_auto(wl_dict_list)
            del global_filters_context[selection]
@@ -410,7 +412,7 @@ if options.int_gen is True:
     if not uris and not zones:
         for server in servers:
             translate.cfg["global_filters"]["server"] = server
-            print 'generating with filters: {0}'.format(translate.cfg["global_filters"])
+            logging.debug('generating with filters: {0}'.format(translate.cfg["global_filters"]))
             res = translate.full_auto()
             writing_generated_wl("server_{0}.wl".format(server), res)
 
@@ -434,7 +436,7 @@ if options.files_in is not None or options.fifo_in is not None or options.stdin 
     try:
         geoloc = NxGeoLoc(cfg.cfg)
     except:
-        print "Unable to get GeoIP"
+        logging.critical("Unable to get GeoIP")
 
 if options.files_in is not None:
     reader = NxReader(macquire, lglob=[options.files_in])
@@ -449,11 +451,11 @@ if options.fifo_in is not None:
     else:
         reader = NxReader(macquire, fd=fd)
     while True:
-        print "start-",
+        logging.debug("start-",)
         if reader.read_files() == False:
             break
-        print "stop"
-    print 'End of fifo input...'
+        logging.debug("stop")
+    logging.debug('End of fifo input...')
     injector.stop()
     sys.exit(0)
 
@@ -472,11 +474,11 @@ if options.stdin is True:
     else:
         reader = NxReader(macquire, lglob=[], fd=sys.stdin)
     while True:
-        print "start-",
+        logging.debug("start-",)
         if reader.read_files() == False:
             break
-        print "stop"
-    print 'End of stdin input...'
+        logging.debug("stop")
+    logging.debug('End of stdin input...')
     injector.stop()
     sys.exit(0)
 

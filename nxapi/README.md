@@ -11,7 +11,7 @@ nxapi/nxtool is the new learning tool, that attempts to perform the following :
 nxapi uses a JSON file for its settings, such as :
 
 
-$ cat nxapi.json 
+$ cat nxapi.json
 
 
     {
@@ -58,18 +58,18 @@ $ cat nxapi.json
 * Download the archive with the binary files from https://www.elastic.co/downloads/elasticsearch
 * Extract the archive
 * Start ElasticSearch by executing `bin/elasticsearch` in the extracted folder
-* Check whether ElasticSearch is running correctly:  
+* Check whether ElasticSearch is running correctly:
 	`curl -XGET http://localhost:9200/`
-* Add a nxapi index with the following command:  
+* Add a nxapi index with the following command:
 	`curl -XPUT 'http://localhost:9200/nxapi/'`
 
 ## Populating ElasticSearch with data
 * Enable learning mode
 * Browse website to generate data in the logfile
 * Change into nxapi directory
-* Load the data from the log file into ElasticSearch with the following command:  
+* Load the data from the log file into ElasticSearch with the following command:
 	`./nxtool.py -c nxapi.json --files=/PATH/TO/LOGFILE.LOG`
-* Check if data was added correctly:  
+* Check if data was added correctly:
 	`curl -XPOST "http://localhost:9200/nxapi/events/_search?pretty" -d '{}' `
 * Check if nxtool sees it correctly:
   	`./nxtool.py -c nxapi.json -x`
@@ -190,7 +190,7 @@ As you can see you'll see each filter and each file for each selections.
 
 ## 4. Tagging events
 
-Once I chose the whitelists that I think are appropriate, I will write them in a whitelist file. 
+Once I chose the whitelists that I think are appropriate, I will write them in a whitelist file.
 Then, I can tag corresponding events :
     nxtool.py -c nxapi.json -w /tmp/whitelist.conf --tag
 
@@ -212,9 +212,9 @@ if you provide something like `-t "ARGS/*"` only templates specific to ARGS whit
 
   * Create your own templates
 
-If you manage applications that do share code/framework/technology, you will quickly find yourself 
-generating the same wl again and again. Stop that! Write your own templates, improving generation time, 
-accuracy and reducing false positives. Take a practical example: 
+If you manage applications that do share code/framework/technology, you will quickly find yourself
+generating the same wl again and again. Stop that! Write your own templates, improving generation time,
+accuracy and reducing false positives. Take a practical example:
 I'm dealing with magento, like a *lot*. One of the recurring patterns is the "onepage" checkout, so I created specific templates:
 
     {
@@ -236,9 +236,9 @@ Restrict context of whitelist generation or stats display to specific FQDN.
 
 `--filter=FILTER`
 
-A filter (in the form of a dict) to merge with 
+A filter (in the form of a dict) to merge with
 existing templates/filters: 'uri /foobar zone BODY'.
-You can combine several filters, for example : `--filter "country FR" --filter "uri /foobar"`.
+You can combine several filters, for example : `--filter "country FR" --filter "uri /foobar"` and you can use `--filter "country ZZ"` in order to filter by private IP addresses or to get GeoIP failures to identify geo location.
 
 
 ## Whitelist generation options
@@ -316,14 +316,14 @@ Here is how nxtool will use this to generate whitelists:
 2. merge base ES filter with provided cmd line filter (`--filter`, `-s www.x1.fr`): `{ "whitelisted" : "false", "server" : "www.x1.fr" }`
 3. For each static field of the template, merge it in base ES filter: `{ "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie" }`
 4. For each field to be expanded (value is `?`) :
-    
+
     4.1. select all possible values for this field (id) matching base ES filter, (ie. 1000 and 1001 here)
-    
+
     4.2. attempt to generate a whitelist for each possible value, and evaluate its scores:
-    
+
     	{ "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie", "id" : "1000"}
         { "whitelisted" : "false", "server" : "www.x1.fr", "zone" : "HEADERS", "var_name" : "cookie", "id" : "1001"}
-	
+
 5. For each final set that provided results, output a whitelist.
 
 
@@ -351,7 +351,7 @@ Scoring mechanism :
 _note:_
 In order to understand scoring mechanism, it is crucial to tell the difference between a template and a rule.
 A template is a .json file which can match many events. A rule is usually a subpart of a template results.
-For example, if we have this data : 
+For example, if we have this data :
 
     [ {"id" : 1, "zone" : HEADERS, ip:A.A.A.A},
       {"id" : 2, "zone" : HEADERS, ip:A.A.A.A},
@@ -389,13 +389,6 @@ The default filters enabled in nxapi, from nxapi.json :
     * '"rule_ip" : ["<=", 10 ],' : True if less than 10 unique IPs hit the event
     * '"rule_var_name" : [ "<=", "5" ]' : True if less than 5 unique variable names hit the event
   * template_N <= X : "at least" X uniq(N) where present in the specific events from which the WL is generated.
-    * Note the difference with "rule_X" rules. 
+    * Note the difference with "rule_X" rules.
   * global_rule_ip_ratio < X : "at least" X% of the users that triggered events triggered this one as well.
     * however, ration can theorically apply to anything, just ip_ratio is the most common.
-
-
-
-
-
-
-

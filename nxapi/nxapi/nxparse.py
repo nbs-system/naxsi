@@ -546,7 +546,7 @@ class NxGeoLoc():
         country = self.gi.country_code_by_addr(ip)
         # pun intended
         if country is None or len(country) < 2:
-            country = "CN"
+            country = "ZZ"
         return country
     def ip2ll(self, ip):
         return self.cc2ll(self.ip2cc(ip))

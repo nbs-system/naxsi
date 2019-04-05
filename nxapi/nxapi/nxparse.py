@@ -403,7 +403,7 @@ class ESInject(NxInjector):
     #         return False
     #     return True
     def set_mappings(self):
-        if self.es_version == '5':
+        if (self.es_version == '6') or (self.es_version == '5'):
             try:
                 self.es.indices.create(
                     index=self.cfg["elastic"]["index"],
@@ -433,6 +433,7 @@ class ESInject(NxInjector):
                                 "zone" : {"type": "keyword"},
                                 "server" : {"type": "keyword"},
                                 "whitelisted" : {"type" : "keyword"},
+                                "id" : {"type" : "keyword"},
                                 "ip" : {"type" : "keyword"}
                             }
                         }

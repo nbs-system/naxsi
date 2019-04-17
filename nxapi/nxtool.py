@@ -27,8 +27,8 @@ F_GETPIPE_SZ = 1032  # Linux 2.6.35+
 
 # Initialize logging
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s: %(message)s (%(name)s)',
-                    datefmt='%c')
+                    format=None,
+                    datefmt=None)
 
 def open_fifo(fifo):
     try:
@@ -158,7 +158,7 @@ try:
     use_ssl = bool(cfg.cfg["elastic"]["use_ssl"])
 except KeyError:
     use_ssl = False
-    
+
 es = elasticsearch.Elasticsearch(cfg.cfg["elastic"]["host"], use_ssl=use_ssl)
 # Get ES version from the client and avail it at cfg
 es_version =  es.info()['version'].get('number', None)
@@ -182,7 +182,7 @@ if options.full_auto is True:
     results = translate.full_auto()
     if results:
         for result in results:
-            logging.debug("{0}".format(result))
+            logging.info("{0}".format(result))
     else:
         logging.critical("No hits for this filter.")
         sys.exit(1)

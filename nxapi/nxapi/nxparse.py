@@ -428,7 +428,9 @@ class ESInject(NxInjector):
                             # That is why time based indexes are recommended over this sort of thing and why
                             # _ttl was deprecated in the first place)
                             #"_ttl" : { "enabled" : "true", "default" : "4d" },
-                            "properties" : { "var_name" : {"type": "keyword"},
+                            "properties" : {
+                                "id" : {"type": "keyword"},
+                                "var_name" : {"type": "keyword"},
                                 "uri" : {"type": "keyword"},
                                 "zone" : {"type": "keyword"},
                                 "server" : {"type": "keyword"},
@@ -465,7 +467,9 @@ class ESInject(NxInjector):
                     body={
                         "events" : {
                             "_ttl" : { "enabled" : "true", "default" : "4d" },
-                            "properties" : { "var_name" : {"type": "string", "index":"not_analyzed"},
+                            "properties" : {
+                                        "id" : {"type": "string", "index":"not_analyzed"},
+                                        "var_name" : {"type": "string", "index":"not_analyzed"},
                                         "uri" : {"type": "string", "index":"not_analyzed"},
                                         "zone" : {"type": "string", "index":"not_analyzed"},
                                         "server" : {"type": "string", "index":"not_analyzed"},

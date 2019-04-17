@@ -433,7 +433,8 @@ class ESInject(NxInjector):
                                 "zone" : {"type": "keyword"},
                                 "server" : {"type": "keyword"},
                                 "whitelisted" : {"type" : "keyword"},
-                                "ip" : {"type" : "keyword"}
+                                "ip" : {"type" : "keyword"},
+                                "country" : {"type" : "keyword"}
                             }
                         }
                 })
@@ -470,7 +471,8 @@ class ESInject(NxInjector):
                                         "server" : {"type": "string", "index":"not_analyzed"},
                                         "whitelisted" : {"type" : "string", "index":"not_analyzed"},
                                         "content" : {"type" : "string", "index":"not_analyzed"},
-                                        "ip" : { "type" : "string", "index":"not_analyzed"}
+                                        "ip" : { "type" : "string", "index":"not_analyzed"},
+                                        "country" : { "type" : "string", "index":"not_analyzed"}
                             }
                         }
                 })

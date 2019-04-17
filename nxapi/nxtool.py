@@ -311,6 +311,13 @@ if options.stats is True:
             logging.info('# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3]))
         except:
             logging.warning("--malformed--")
+    logging.info(translate.red.format("# Top Country(ies) :"))
+    for e in translate.fetch_top(cfg.cfg["global_filters"], "country", limit=10):
+        try:
+            list_e = e.split()
+            logging.info('# {0} {1} {2}{3}'.format(translate.grn.format(list_e[0]), list_e[1], list_e[2], list_e[3]))
+        except:
+            logging.warning("--malformed--")
     sys.exit(0)
 
 

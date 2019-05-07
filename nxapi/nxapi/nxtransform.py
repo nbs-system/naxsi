@@ -252,7 +252,7 @@ class NxTranslate():
         output.append("#Rule ({0}) {1}\n".format(rid, self.core_msg.get(rid, 'Unknown ..')))
         if self.cfg["output"]["verbosity"] >= 4:
             output.append("#total hits {0}\n".format(full_wl['total_hits']))
-            for x in ["content", "peers", "uri", "var_name"]:
+            for x in ["content", "peers", "country", "uri", "var_name"]:
                 if x not in full_wl.keys():
                     continue
                 for y in full_wl[x]:
@@ -721,12 +721,15 @@ class NxTranslate():
         if res['hits']['total'] > 0:
             clist = []
             peers = []
+            country = []
             uri = []
             var_name = []
 
             for x in res['hits']['hits']:
                 if len(x.get("_source").get("ip", "")) > 0 and x.get("_source").get("ip", "") not in peers:
                     peers.append(x["_source"]["ip"])
+                if len(x.get("_source").get("country", "")) > 0 and x.get("_source").get("country", "") not in country:
+                    country.append(x["_source"]["country"])
                 if len(x.get("_source").get("uri", "")) > 0 and x.get("_source").get("uri", "") not in uri:
                     uri.append(x["_source"]["uri"])
                 if len(x.get("_source").get("var_name", "")) > 0 and x.get("_source").get("var_name", "") not in var_name:
@@ -735,7 +738,7 @@ class NxTranslate():
                     clist.append(x["_source"]["content"])
                     if len(clist) >= 5:
                         break
-            retlist.append({'rule' : rule, 'content' : clist[:5], 'total_hits' : res['hits']['total'], 'peers' : peers[:5], 'uri' : uri[:5],
+            retlist.append({'rule' : rule, 'content' : clist[:5], 'total_hits' : res['hits']['total'], 'peers' : peers[:5], 'country' : country[:5], 'uri' : uri[:5],
                             'var_name' : var_name[:5]})
             return retlist
         return []

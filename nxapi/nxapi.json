@@ -8,7 +8,7 @@
  "doctype" : "events",
  "default_ttl" : "7200",
  "max_size" : "1000",
- "version" : "2"
+ "version" : "5"
 },
 "syslogd": {
  "host" : "0.0.0.0",

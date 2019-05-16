@@ -44,6 +44,15 @@ re: clean all test
 FUZZ_PATH := "../fuzz"
 AFL_PATH  := $(PWD)"/"$(FUZZ_PATH)"/afl/"
 
+# - download nginx
+# - install preeny ()
+# - patch nginx to allow fast fuzz
+# - 
+oss_fuzz: nginx_download install_preeny
+	cd $(TMP_DIR) && patch -p1 "./src/core/ngx_cycle.c"  < $(MOD_PATH)"/../t/confs/ngx_cycle.patch"
+	cd $(TMP_DIR) && patch -p1 "./src/os/unix/ngx_process_cycle.c"  < $(MOD_PATH)"/../t/confs/ngx_process_cycle.patch"
+	AFL_PATH=/src/afl/ STOCK=0 FUZZ=1 make configure build install deploy
+
 install_afl:
 	mkdir -p $(FUZZ_PATH)
 	cd $(FUZZ_PATH) && (wget -nc --no-clobber  "http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz" || exit 1)

@@ -34,7 +34,7 @@ NGINX_OPTIONS+="--prefix=/tmp"
 #for coverity NGINX_OPTIONS+="--with-cc=/usr/bin/gcc-6"	
 #for coverity NGINX_OPTIONS+="--add-dynamic-module=$(MOD_PATH)"
 
-CFLAGS:="-Wextra -Wall -Werror"
+CFLAGS:="-Wextra -Wall -Werror -D_FORTIFY_SOURCE=2 -fstack-protector-strong --param ssp-buffer-size=4 -Wl,-z,relro,-z,now -mmitigate-rop  -fPIC  -ftrapv -Wl,-z,noexecstack  -mcmodel=large -fPIE -pie"
 
 all: nginx_download configure build install deploy
 
@@ -90,7 +90,7 @@ ifeq ($(COV),1)
 endif
 
 ifeq ($(STOCK),1)
-	cd $(TMP_DIR)/ && ./configure --with-cc-opt="-g3 -ggdb" $(NGINX_OPTIONS) --add-dynamic-module=$(MOD_PATH) --error-log-path=/tmp/naxsi_ut/error.log --conf-path=/tmp/naxsi_ut/nginx.conf
+	cd $(TMP_DIR)/ && ./configure --with-cc-opt=$(CFLAGS) $(NGINX_OPTIONS) --add-dynamic-module=$(MOD_PATH) --error-log-path=/tmp/naxsi_ut/error.log --conf-path=/tmp/naxsi_ut/nginx.conf
 endif
 
 
@@ -118,7 +118,6 @@ ifeq ($(COV),1)
 endif
 	if [ ! $(TEST) ] ; then TEST="*.t" ; fi
 	export PATH="$(TMP_DIR)/objs/:"$(PATH) ; \
-	export PERL5LIB="~/perl5/lib/perl5/" ;\
 	cd .. ; prove -r "t/$(TEST)"
 ifeq ($(COV),1)
 	lcov --directory $(TMP_DIR)/objs/addon/naxsi_src/ --capture --output-file naxsi.info --base-directory $(TMP_DIR)

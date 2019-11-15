@@ -334,8 +334,6 @@ ngx_http_dummy_json_parse(ngx_http_request_ctx_t *ctx,
 	ngx_http_apply_rulematch_v_n(&nx_int__invalid_json, ctx, r, NULL, NULL, BODY, 1, 0);
 	NX_DEBUG(_debug_json, NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "nx_json_val returned error, apply invalid_json.");
   }
-  /* we are now on closing bracket, check for garbage. */
-  js->off++;
   ngx_http_nx_json_forward(js);
   if (js->off != js->len)
     ngx_http_apply_rulematch_v_n(&nx_int__invalid_json, ctx, r, NULL, NULL, BODY, 1, 0);

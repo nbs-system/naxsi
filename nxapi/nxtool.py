@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Naxsi learning utility
 #
 
 # Builtins
+from __future__ import print_function
 import glob, fcntl, termios
 import sys
 import socket
@@ -15,11 +16,11 @@ import json
 import logging
 from collections import defaultdict
 from optparse import OptionParser, OptionGroup
-
 # Third party
 import elasticsearch
 from nxapi.nxtransform import *
 from nxapi.nxparse import *
+from nxapi.nxtypificator import Typificator
 
 # Default values
 F_SETPIPE_SZ = 1031  # Linux 2.6.35+
@@ -35,14 +36,14 @@ def open_fifo(fifo):
         os.mkfifo(fifo)
     except OSError:
         logging.warning("Fifo ["+fifo+"] already exists (non fatal).")
-    except Exception, e:
+    except Exception as e:
         logging.error("Unable to create fifo ["+fifo+"]")
     try:
         logging.debug("Opening fifo ... will return when data is available.")
         fifo_fd = open(fifo, 'r')
         fcntl.fcntl(fifo_fd, F_SETPIPE_SZ, 1000000)
         logging.debug("Pipe (modified) size : "+str(fcntl.fcntl(fifo_fd, F_GETPIPE_SZ)))
-    except Exception, e:
+    except Exception as e:
         logging.error("Unable to create fifo, error: "+str(e))
         return None
     return fifo_fd

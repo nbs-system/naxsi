@@ -296,6 +296,8 @@ ngx_http_dummy_merge_loc_conf(ngx_conf_t *cf, void *parent,
 
   if (conf->whitelist_rules == NULL) 
     conf->whitelist_rules = prev->whitelist_rules;
+  if (conf->pass_rules == NULL)
+    conf->pass_rules = prev->pass_rules;
   if (conf->check_rules == NULL) 
     conf->check_rules = prev->check_rules;
   if (conf->body_rules == NULL) 
@@ -328,7 +330,7 @@ ngx_http_dummy_init(ngx_conf_t *cf)
       main_cf == NULL)
     return (NGX_ERROR); /*LCOV_EXCL_LINE*/
   
-  /* Register for rewrite phase */
+  /* Register for access phase */
   h = ngx_array_push(&cmcf->phases[NGX_HTTP_REWRITE_PHASE].handlers);
   if (h == NULL) 
     return (NGX_ERROR); /*LCOV_EXCL_LINE*/
@@ -359,6 +361,9 @@ ngx_http_dummy_init(ngx_conf_t *cf)
       return (NGX_ERROR);
       /* LCOV_EXCL_STOP */
     }
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                         "WhiteList Hash building succeded");
+
   }
   
   /* initialize prng (used for fragmented logs) */
@@ -413,7 +418,7 @@ static char *
 ngx_http_dummy_read_conf(ngx_conf_t *cf, ngx_command_t *cmd, 
 			 void *conf)
 {
-  ngx_http_dummy_loc_conf_t	*alcf = conf, **bar;
+ ngx_http_dummy_loc_conf_t	*alcf = conf, **bar;
   
   ngx_http_dummy_main_conf_t	*main_cf;
   ngx_str_t			*value;
@@ -553,7 +558,6 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
   ngx_http_check_rule_t		*rule_c;
   unsigned int	i;
   u_char			*var_end;
-
   
 
   if (!alcf || !cf)
@@ -572,10 +576,8 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
       ngx_strcmp(value[0].data, TOP_CHECK_RULE_N))
     return (NGX_CONF_ERROR);
   
-/* #ifdef _debug_readconf */
-/*   ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,  */
-/* 		     "pushing rule %d in check rules", rule.rule_id);   */
-/* #endif */
+     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                   "pushing rule %s in check rules", value[1].data);
 
   i = 0;
   if (!alcf->check_rules)
@@ -804,7 +806,7 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
   }
-  /* push in body match rules (PATCH/POST/PUT) */
+  /* push in body match rules (POST/PUT) */
   if (rule.br->body || rule.br->body_var) {
     NX_LOG_DEBUG(_debug_main_conf, NGX_LOG_EMERG, cf, 0, 
 		 "pushing rule %d in body rules", rule.rule_id);  
@@ -818,7 +820,7 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
   }
-  /* push in raw body match rules (PATCH/POST/PUT) xx*/
+  /* push in raw body match rules (POST/PUT) xx*/
   if (rule.br->raw_body) {
     NX_LOG_DEBUG(_debug_main_conf, NGX_LOG_EMERG, cf, 0, 
 		 "pushing rule %d in raw (main) body rules", rule.rule_id);  
@@ -868,7 +870,7 @@ ngx_http_dummy_read_main_conf(ngx_conf_t *cf, ngx_command_t *cmd,
 ** [ENTRY POINT] does : this is the function called by nginx : 
 ** - Set up the context for the request
 ** - Check if the job is done and we're called again
-** - if it's a PATCH/POST/PUT request, setup hook for body dataz
+** - if it's a POST/PUT request, setup hook for body dataz
 ** - call dummy_data_parse
 ** - check our context struct (with scores & stuff) against custom check rules
 ** - check if the request should be denied
@@ -928,13 +930,13 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   if (r->internal) {   
     NX_DEBUG(_debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 	     "XX-DON'T PROCESS (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
-	     r->method == NGX_HTTP_PATCH ? "PATCH" : r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
+	     r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
 	     r->internal);
     return (NGX_DECLINED);
   } 
   NX_DEBUG(_debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 	   "XX-processing (%V)|CTX:%p|ARGS:%V|METHOD=%s|INTERNAL:%d", &(r->uri), ctx, &(r->args),
-	   r->method == NGX_HTTP_PATCH ? "PATCH" : r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
+	   r->method == NGX_HTTP_POST ? "POST" : r->method == NGX_HTTP_PUT ? "PUT" : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
 	   r->internal);
   if (!ctx) {
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_request_ctx_t));
@@ -1068,7 +1070,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
       return (NGX_DECLINED);
     
 
-    if  ((r->method == NGX_HTTP_PATCH || r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) 
+    if  ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) 
 	 && !ctx->ready) {
       NX_DEBUG( _debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		"XX-dummy : body_request : before !");
@@ -1134,4 +1136,3 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
 
   return NGX_DECLINED;
 }
-

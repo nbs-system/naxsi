@@ -654,7 +654,7 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf,
 
     char cbuff;
 
-    int nlines = 0; // counter of new lines
+    unsigned int nlines = 0; // counter of new lines
     int chr = 0;    // counter of chars (except new line char)
     int netmask = 0;
 
@@ -713,7 +713,6 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf,
       ngx_hash_t *hash;
       ngx_array_t *elements;
 
-      ngx_cacheline_size = 32;
 
       hash = (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(hash));
       hash_init.hash = hash;
@@ -724,8 +723,8 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf,
       hash_init.pool = cf->pool;
       hash_init.temp_pool = NULL;
 
-      elements = ngx_array_create(cf->pool, 32, sizeof(ngx_hash_key_t));
-      for (i = 0; i < 1; i++) {
+      elements = ngx_array_create(cf->pool, nlines, sizeof(ngx_hash_key_t));
+      for (i = 0; i < nlines; i++) {
         arr_node = (ngx_hash_key_t *)ngx_array_push(elements);
         arr_node->key = (names[i]);
         arr_node->key_hash =

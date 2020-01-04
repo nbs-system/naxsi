@@ -494,7 +494,7 @@ static ngx_int_t
 ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc) {
   int get_sz = 0, headers_sz = 0, body_sz = 0, uri_sz = 0;
   ngx_array_t *get_ar = NULL, *headers_ar = NULL, *body_ar = NULL, *uri_ar = NULL;
-  ngx_hash_key_t *arr_node = NULL;
+  ngx_hash_key_t *arr_node;
   ngx_hash_init_t hash_init;
   uint i;
 
@@ -646,7 +646,6 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
                      dlc->wlr_headers_hash->size);
     }
   }
-  ngx_memset(arr_node, 0, sizeof(ngx_hash_key_t));
 
   FILE *file;
   char *fname = "/etc/nginx/whitelist.txt";

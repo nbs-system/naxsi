@@ -958,6 +958,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_array_t	*ostr;
   ngx_table_elt_t	    *h;
+  unsigned int i=0;
   
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   /* get array of signatures strings */

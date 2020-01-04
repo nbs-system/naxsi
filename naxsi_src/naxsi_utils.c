@@ -497,10 +497,9 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
   ngx_hash_key_t *arr_node;
   ngx_hash_init_t hash_init;
   uint i;
-  
-  NX_LOG_DEBUG(_debug_whitelist_heavy,
-  NGX_LOG_EMERG, cf, 0, 
-	       "finalizing hashtables");
+
+  NX_LOG_DEBUG(_debug_whitelist_heavy, NGX_LOG_EMERG, cf, 0,
+               "finalizing hashtables");
 
   if (dlc->whitelist_rules) {
 
@@ -647,6 +646,7 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
                      dlc->wlr_headers_hash->size);
     }
   }
+  ngx_memset(arr_node, 0, sizeof(ngx_hash_key_t));
 
   FILE *file;
   char *fname = "/etc/nginx/whitelist.txt";
@@ -657,7 +657,7 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
     char cbuff;
 
     unsigned int nlines = 0; // counter of new lines
-    int chr = 0;    // counter of chars (except new line char)
+    int chr = 0;             // counter of chars (except new line char)
     int netmask = 0;
 
     int maxlen = 0;
@@ -669,38 +669,31 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
 
         chr = 0;
         nlines++;
+      } else {
+        chr++;
       }
+
       if (cbuff == '/') {
         netmask = 1;
         break;
-      }
-
-      else {
-        chr++;
       }
     }
     if (!netmask) {
 
       rewind(file);
 
-      char *list[nlines];
-
       ngx_str_t names[nlines];
       char descs[nlines];
 
-      list[0] = ngx_pcalloc(cf->pool, 1);
-
-      strcpy(list[0], "");
-
-      int buffsize = maxlen * sizeof(char);
-      char buff[buffsize];
+      char buff[100];
 
       ngx_str_t string;
 
       i = 0;
-      while (fgets(buff, buffsize, file)) {
+      while (fgets(buff, 100, file)) {
 
-        list[i] = ngx_pcalloc(cf->pool, strlen(buff));
+        buff[strcspn(buff, "\n")] = 0;
+
         string.len = strlen(buff);
         string.data = ngx_pcalloc(cf->pool, string.len + 1);
         memcpy(string.data, buff, string.len);
@@ -715,7 +708,6 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
       ngx_hash_t *hash;
       ngx_array_t *elements;
 
-
       hash = (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(hash));
       hash_init.hash = hash;
       hash_init.key = &ngx_hash_key_lc;
@@ -724,12 +716,9 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
       hash_init.name = "passr_headers_hash";
       hash_init.pool = cf->pool;
       hash_init.temp_pool = NULL;
-   
 
-      NX_LOG_DEBUG(
-        _debug_whitelist, NGX_LOG_EMERG, cf, 0,
-        "Found %i whitelisted IPs",nlines);
-
+      NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0,
+                   "Found %i whitelisted IPs", nlines);
 
       elements = ngx_array_create(cf->pool, nlines, sizeof(ngx_hash_key_t));
       for (i = 0; i < nlines; i++) {
@@ -752,11 +741,9 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
           "No netmask/CIDR allowed. Please specify each IP individually !");
       return (NGX_ERROR);
     }
-
   }
   return (NGX_OK);
 }
-
 
 /*
 ** This function will take the whitelist basicrules generated during the configuration

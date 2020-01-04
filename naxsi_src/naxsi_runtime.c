@@ -382,19 +382,19 @@ ngx_http_pass_rule_t *nx_find_pass_in_hash(ngx_http_request_t *req,
                                            enum DUMMY_MATCH_ZONE zone) {
   ngx_http_pass_rule_t *b = NULL;
 
-  ngx_uint_t key;
+  ngx_uint_t k;
 
   ngx_str_t scratch = {.data = mstr->data, .len = mstr->len};
+  scratch.data = ngx_pcalloc(req->pool, scratch.len);
+  memcpy(scratch.data, mstr->data, scratch.len);
 
-  ngx_str_t k1 = ngx_string("key1");
-  key = ngx_hash_key(k1.data, k1.len);
+  k = ngx_hash_key_lc(scratch.data, scratch.len);
 
-  b = (ngx_http_pass_rule_t *)ngx_hash_find(cf->passr_headers_hash, key,
-                                            scratch.data, scratch.len);
+  b = (ngx_http_pass_rule_t *)ngx_hash_find(
+      cf->passr_headers_hash, k, (u_char *)scratch.data, scratch.len);
 
   return b;
 }
-
 
 #define custloc_array(x) ((ngx_http_custom_rule_location_t *) x)
 

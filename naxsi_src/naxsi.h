@@ -32,13 +32,13 @@ extern ngx_module_t ngx_http_naxsi_module;
 ** The idea is that the compiler will optimize out the do { if (0) ... } while (0);
 */
 
-#define _naxsi_rawbody 1
-#define _debug_basestr_ruleset 1
-#define _debug_custom_score 1
+#define _naxsi_rawbody 0
+#define _debug_basestr_ruleset 0
+#define _debug_custom_score 0
 #define _debug_body_parse 0
-#define _debug_cfg_parse_one_rule 1
+#define _debug_cfg_parse_one_rule 0
 #define _debug_zone 0
-#define _debug_extensive_log 1
+#define _debug_extensive_log 0
 #define _debug_loc_conf 0
 #define _debug_main_conf 0
 #define _debug_mechanics 0
@@ -47,15 +47,14 @@ extern ngx_module_t ngx_http_naxsi_module;
 #define _debug_payload_handler 0
 #define _debug_post_heavy 0
 #define _debug_rawbody 0
-#define _debug_readconf 1
+#define _debug_readconf 0
 #define _debug_rx 0
 #define _debug_score 0
 #define _debug_spliturl_ruleset 0
-#define _debug_whitelist_compat 1
-#define _debug_whitelist 1
-#define _debug_whitelist_heavy 1
-#define _debug_whitelist_light 1
-#define _debug_pass 1
+#define _debug_whitelist_compat 0
+#define _debug_whitelist 0
+#define _debug_whitelist_heavy 0
+#define _debug_whitelist_light 0
 #define wl_debug_rx 0
 
 #ifndef __NAXSI_DEBUG
@@ -202,7 +201,6 @@ typedef struct
   ngx_array_t			*ids;
 } ngx_http_whitelist_rule_t;
 
-
 typedef struct
 {
   /*ngx_http_whitelist_location_t **/
@@ -219,7 +217,6 @@ typedef struct
   ngx_int_t                     hash;
   ngx_array_t                   *ids;
 } ngx_http_pass_rule_t;
-
 
 
 
@@ -318,7 +315,6 @@ typedef struct
      wl_id array will be used to store the whitelisted IDs */
   ngx_flag_t			whitelist:1;
   ngx_array_t			*wlid_array;
-  ngx_array_t                   *passid_array;
   /* "common" data for all rules */
   ngx_int_t			rule_id;
   ngx_str_t			*log_msg; // a specific log message
@@ -365,15 +361,9 @@ typedef struct
   ngx_array_t	*check_rules;
   /* raw array of whitelisted rules */
   ngx_array_t   *whitelist_rules;
-  /* raw array of pass rules */
-  ngx_array_t   *pass_rules;
   /* raw array of transformed whitelists */
   ngx_array_t	*tmp_wlr;
   /* raw array of regex-mz whitelists */
-  ngx_array_t   *tmp_passr;
-  /* raw array of regex-mz whitelists */
-
-
   ngx_array_t   *rxmz_wlr;
   /* hash table of whitelisted URL rules */
   ngx_hash_t	*wlr_url_hash;
@@ -383,16 +373,9 @@ typedef struct
   ngx_hash_t	*wlr_body_hash;
   /* hash table of whitelisted HEADERS rules */
   ngx_hash_t	*wlr_headers_hash;
-  /* hash table of pass URL rules */
-  ngx_hash_t    *passr_url_hash;
-  /* hash table of pass ARGS rules */
-  ngx_hash_t    *passr_args_hash;
-  /* hash table of pass BODY rules */
-  ngx_hash_t    *passr_body_hash;
   /* hash table of pass HEADERS rules */
   ngx_hash_t    *passr_headers_hash;
   /* rules that are globally disabled in one location */
-
   ngx_array_t	*disabled_rules;
   /* counters for both processed requests and
      blocked requests, used in naxsi_fmt */
@@ -520,7 +503,6 @@ typedef struct ngx_http_nx_json_s {
 #define STR_T "str:"
 #define MATCH_ZONE_T "mz:"
 #define WHITELIST_T "wl:"
-#define PASS_T "pass:"
 #define LIBINJ_XSS_T "d:libinj_xss"
 #define LIBINJ_SQL_T "d:libinj_sql"
 #define NEGATIVE_T  "negative"
@@ -591,8 +573,8 @@ ngx_int_t		ngx_http_nx_json_obj(ngx_json_t *js);
 void			ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx, 
 								 ngx_http_dummy_loc_conf_t *cf, 
 								 ngx_http_request_t *r,
-                                                                  ngx_str_t *name,
-                                                                 ngx_str_t *value);
+                 ngx_str_t *name,
+                 ngx_str_t *value);
 int			ngx_http_process_basic_rule_buffer(ngx_str_t *str, ngx_http_rule_t *rl, 
 							   ngx_int_t *match);
 void			ngx_http_dummy_payload_handler(ngx_http_request_t *r);

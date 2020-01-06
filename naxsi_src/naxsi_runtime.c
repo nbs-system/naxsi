@@ -376,11 +376,11 @@ nx_find_wl_in_hash(
   return (b);
 }
 
-ngx_http_pass_rule_t *nx_find_pass_in_hash(ngx_http_request_t *req,
+int nx_find_pass_in_hash(ngx_http_request_t *req,
                                            ngx_str_t *mstr,
                                            ngx_http_dummy_loc_conf_t *cf,
                                            enum DUMMY_MATCH_ZONE zone) {
-  ngx_http_pass_rule_t *b = NULL;
+  char *find;
 
   ngx_uint_t k;
 
@@ -388,13 +388,19 @@ ngx_http_pass_rule_t *nx_find_pass_in_hash(ngx_http_request_t *req,
   scratch.data = ngx_pcalloc(req->pool, scratch.len);
   memcpy(scratch.data, mstr->data, scratch.len);
 
+
   k = ngx_hash_key_lc(scratch.data, scratch.len);
 
-  b = (ngx_http_pass_rule_t *)ngx_hash_find(
+  find = (char *) ngx_hash_find(
       cf->passr_headers_hash, k, (u_char *)scratch.data, scratch.len);
 
-  return b;
+  if(find)
+    return 1;
+  else
+    return 0;
+
 }
+
 
 #define custloc_array(x) ((ngx_http_custom_rule_location_t *) x)
 
@@ -2357,7 +2363,7 @@ void ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t *ctx,
   NX_DEBUG(_debug_custom_score, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
            "XX-custom check rules");
 
-  ngx_http_pass_rule_t *b = NULL;
+  int b = 0;
   ngx_table_elt_t **h;
   ngx_array_t a;
   if (r->headers_in.x_forwarded_for.nelts >= 1) {

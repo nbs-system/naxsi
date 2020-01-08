@@ -556,8 +556,8 @@ ngx_int_t		ngx_http_nx_json_obj(ngx_json_t *js);
 void			ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx, 
 								 ngx_http_dummy_loc_conf_t *cf, 
 								 ngx_http_request_t *r,
-                                 ngx_str_t *name,
-                                 ngx_str_t *value);
+								 ngx_str_t *name,
+								 ngx_str_t *value);
 int			ngx_http_process_basic_rule_buffer(ngx_str_t *str, ngx_http_rule_t *rl, 
 							   ngx_int_t *match);
 void			ngx_http_dummy_payload_handler(ngx_http_request_t *r);

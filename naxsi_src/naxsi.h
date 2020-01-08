@@ -357,7 +357,7 @@ typedef struct
   /* hash table of whitelisted HEADERS rules */
   ngx_hash_t	*wlr_headers_hash;
   /* hash table of pass HEADERS rules */
-  ngx_hash_t    *passr_headers_hash;
+  ngx_hash_t  *passr_headers_hash;
   /* rules that are globally disabled in one location */
   ngx_array_t	*disabled_rules;
   /* counters for both processed requests and

@@ -56,7 +56,39 @@ It depends on `libpcre` for its regexp support, and is reported to work great on
 <img alt="nxapi-dashboard logo" src="https://raw.githubusercontent.com/wiki/nbs-system/naxsi/Images/kibana.png" align="center"/>   
 
 ## Security issues
-If you find a security issue, please send it by email to `tko@nbs-system.com`;
-you can use the gpg key
-[0x251A28DE2685AED4](https://pgp.mit.edu/pks/lookup?op=vindex&search=0x251A28DE2685AED4)
-to encrypt it.
+
+
+If you find a security issue, please send us a mail to the security user, on nbs-system.com, using the gpg key 498C46FF087EDC36E7EAF9D445414A82A9B22D78:
+
+```
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQENBFnKHhoBCADaOa0MKEqRy0h2ohIzczblzkMQCbU9oD1HwJ1VkYnn7TGW2iKi
+NISxisExIXpy2Bn/pA27GiV0V/Do3NL6D9r0oOCrGR27muGM0N/dk9UMv7MWw8zv
+K8cO+Sa28s0cAv7r2ogUJj5YOo8D4wHEpE8424TE89V9+Qg/SaFCxKoELFP0c7wu
+mtsm0PnL65piZ1EB7lQo2gxg+8AV45MD1Y2rREMKUoZE23X+nXKsmEh9BFEPaU5M
+7WQp0NasqeMNoGhwfw9ttVAeLhkEkaTjW1PkNRIb7vrtV9KVb5uKucflfbOnDlzu
+tQ9U3tYto0mcSCRchAClfEmoSi/0mKyb5N6ZABEBAAG0NVNlY3VyaXR5IHRlYW0g
+b2YgTkJTIFN5c3RlbSA8c2VjdXJpdHlAbmJzLXN5c3RlbS5jb20+iQE3BBMBCAAh
+BQJZyh4aAhsDBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEEVBSoKpsi14jy0H
+/1/XB9THhvmG0ow81sld2Zx8qhnNed8VvYDS6mEjpDWNVPxENwDbnakEjisq1Hrb
+2UQPYCyQ5dekPNFVwQHIGXkX0eb1Ank+4esBJuEpQ2985tgNhJy5ZX+Imb5C8nZC
+90uYSN1UUg559nUsFeElOXSEH6tIXK/TvjsvMYoi2Ukl6lb7PbIU2fjLY9Iqv3QY
+32p8/Bl1fVKWbXOk0HDgJ6zA3Kr56QhZOLBkxjOa2XAnnIE76jZxUJ9qPCwWd1vW
+GFxtx1Y+eZriqHiC9CPe6aBWcIHaTXSu1WBbXrFu8/eCWw243Rxm8l9wgA/a7VWq
+WBfO45IhJUwh95naRpw8/4a5AQ0EWcoeGgEIAJtzSyyzfn2RX+BsyoRFANUpIgrV
+/9eohYQVNqK3AFthmq7Kjmt4+hszF5+0wCFmWwYqGnqk1/dsWmqpkXsJldEn6oPJ
+Bng+Dc67Yki2dR3TroAf95UmI08fhyM7TMXp8m46BPRRMzPNwalEeEm49Oclmfxb
+JsWWCChWVLWGz2xgPEAv3fPHqus7Rwz/WIl53l/qy1Wf0ewmjRpVEfnEMKBExtBK
+4kRxQ40LzUZ1SfpyGc3nMbswhevT7/klqrdJdCnlu67Y/IfRGxGZuNj1n1Dib3Hx
+zTBHo3Y2R3BB93Ix8dkbLaxLqFbOYVdijCgJklqUWhx7btpQ2xnZyzyCMuUAEQEA
+AYkBHwQYAQgACQUCWcoeGgIbDAAKCRBFQUqCqbIteFRvB/9u3Mae8n8ELrJKOn+P
+PEbWjutObIuTplvY4QcbnNb9dsgsKryamp4CFJsA5XuitPpC31GDMXBZO5/LLOuH
+HoMaXFJdic0NToL/3REhu+aZkNIU6S/iaPRNVhkSV4lwQsvncz+nBaiDUJjyfJm2
+kEjVcRTM8yqzcNo/9Gn0ts+XCUqRj7+S1M4Bj3NySoO/w2n+7OLbIAj+wQZcj3Gf
+5QhBYaY4YaFxrJE0IZxyXGHw8xhKR6AN+u4TO7LRCW+cWV/sHWir1MXieJoEG8+R
+W/BhrB0Rz5uxOXMoGCCD2TUiHq7zpuHGnYFVmAnHQZaaQxXve4VrcmznxgpV8lpW
+mZug
+=+eIv
+-----END PGP PUBLIC KEY BLOCK-----
+```

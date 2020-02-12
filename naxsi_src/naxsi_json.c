@@ -305,17 +305,10 @@ ngx_http_dummy_json_parse(ngx_http_request_ctx_t *ctx,
   js->loc_cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   js->main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
 
-  if (ngx_http_nx_json_seek(js, '{')) {
-    ngx_http_apply_rulematch_v_n(&nx_int__invalid_json, ctx, r, NULL, NULL, BODY, 1, 0);
-    return ;
+  if (ngx_http_nx_json_val(js) != NGX_OK) {
+	ngx_http_apply_rulematch_v_n(&nx_int__invalid_json, ctx, r, NULL, NULL, BODY, 1, 0);
+	NX_DEBUG(_debug_json, NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "nx_json_val returned error, apply invalid_json.");
   }
-  if (ngx_http_nx_json_obj(js) != NGX_OK) {
-    ngx_http_apply_rulematch_v_n(&nx_int__invalid_json, ctx, r, NULL, NULL, BODY, 1, 0);
-    NX_DEBUG(_debug_json, NGX_LOG_DEBUG_HTTP, js->r->connection->log, 0, "nx_json_obj returned error, apply invalid_json.");
-    
-  }
-  /* we are now on closing bracket, check for garbage. */
-  js->off++;
   ngx_http_nx_json_forward(js);
   if (js->off != js->len)
     ngx_http_apply_rulematch_v_n(&nx_int__invalid_json, ctx, r, NULL, NULL, BODY, 1, 0);

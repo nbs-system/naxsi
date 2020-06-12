@@ -709,10 +709,10 @@ ngx_http_dummy_is_rule_whitelisted_n(ngx_http_request_t *req,
   tmp_hashname.data = ngx_pcalloc(req->pool, tmp_hashname.len+2);
   if (target_name) {
     tmp_hashname.len++;
-    strncat((char*)tmp_hashname.data, "#", 1);
+    strcat((char*)tmp_hashname.data, "#");
   }
   strncat((char*) tmp_hashname.data, (char*)req->uri.data, req->uri.len);
-  strncat((char*)tmp_hashname.data, "#", 1);
+  strcat((char*)tmp_hashname.data, "#");
   strncat((char*)tmp_hashname.data, (char*)name->data, name->len);
     
   NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "hashing MIX [%V] ($URL:x|$X_VAR:y) or ($URL:x|$X_VAR:y|NAME)", &tmp_hashname);

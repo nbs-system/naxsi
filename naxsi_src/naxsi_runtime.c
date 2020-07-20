@@ -965,6 +965,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ngx_array_t	*ostr;
   ngx_table_elt_t	    *h;
   unsigned int i=0;
+  int skip=0;
   
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   /* get array of signatures strings */
@@ -985,16 +986,23 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     char value[128] = "";
     char *item = line; // set pointer to start of line
     size_t span = 0;
-    char json[1024] = "{ ";
+    char json[16384] = "{ ";
     int items_cnt = 0;
 
     while (*item) {
+      if(!(strlen(json)>16384-2))
+        break;
+
       span = strcspn(item, "="); // count characters to next =
       if (span >= sizeof key) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s",
                       "key sub-string too long");
+        skip=1;
       }
-      strncpy(key, item, span); // copy those characters to key
+      if(!skip)
+      {
+        strncpy(key, item, span); // copy those characters to key
+      }
       key[span] = 0;            // zero terminate
       strcat(json, "\"");
       strcat(json, key);
@@ -1004,22 +1012,29 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
       item += !!*item; //!!*item add one if not terminating zero, count does not
                        //! include =
       span = strcspn(item, "&");
-      if (span >= sizeof value) {
-        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s",
-                      "value sub-string too long");
-      }
-      strncpy(value, item, span);
-      value[span] = 0;
 
+      if (span >= sizeof value) {
+          ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s",
+                      "value sub-string too long");
+          skip=1;
+          
+      }
+   
+      if(!skip)
+      { 
+        strncpy(value, item, span);
+      }
+      
+      value[span] = 0;
       strcat(json, value);
       strcat(json, "\",");
       item += span;
       item += !!*item;
       items_cnt = items_cnt + 1;
+     
     }
   
   int len = strlen(json);
-
   json[len - 1] = '\0';
   strcat(json, " }");
   

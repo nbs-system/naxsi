@@ -990,7 +990,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
     int items_cnt = 0;
 
     while (*item) {
-      if(!(strlen(json)>16384-2))
+      if(!(strlen(json)>16384))
         break;
 
       span = strcspn(item, "="); // count characters to next =

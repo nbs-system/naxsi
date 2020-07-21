@@ -1021,7 +1021,6 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
       item += !!*item; //!!*item add one if not terminating zero, count does not
                        //! include =
       span = strcspn(item, "&");
-       NX_DEBUG(_debug_whitelist_compat, NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "span %d",span);
 
         
       if (span >= sizeof value) {

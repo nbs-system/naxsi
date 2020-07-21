@@ -13,7 +13,7 @@ STOCK		?= 1
 
 #Allows to force for specific UT only
 #TEST 		:= ""
-NGINX_VERS := "1.12.2"
+NGINX_VERS := "1.15.5"
 
 
 NGINX_OPTIONS="--with-select_module"
@@ -30,10 +30,11 @@ NGINX_OPTIONS+="--without-mail_imap_module"
 NGINX_OPTIONS+="--with-http_v2_module"
 NGINX_OPTIONS+="--without-http_uwsgi_module"
 NGINX_OPTIONS+="--without-http_scgi_module"
-#dynamic or not NGINX_OPTIONS+="--add-dynamic-module=$(MOD_PATH)"
 NGINX_OPTIONS+="--prefix=/tmp"
+#for coverity NGINX_OPTIONS+="--with-cc=/usr/bin/gcc-6"	
+#for coverity NGINX_OPTIONS+="--add-dynamic-module=$(MOD_PATH)"
 
-CFLAGS:="-Wall -Wextra -Werror"
+CFLAGS:="-Wextra -Wall -Werror"
 
 all: nginx_download configure build install deploy
 
@@ -125,15 +126,21 @@ ifeq ($(COV),1)
 endif
 
 #Build for coverity and submit build !
-coverity: 
+#Remember to enforce gcc-6 when doing so, coverity doesn't support gcc-7 or gcc-8
+coverity: nginx_download
 	@CAK=$(shell cat ../../coverity.key | cut -d ':' -f2) ; \
 	CAN=$(shell cat ../../coverity.key | cut -d ':' -f1) ; \
 	echo "Coverity token/login : $$CAK and $$CAN"; \
-	wget -nc  https://scan.coverity.com/download/linux-64 --post-data "token=$$CAK&project=nbs-system%2Fnaxsi" -O /tmp/coverity.tgz ; \
-	mkdir /tmp/cov && cd /tmp/cov && cat ../coverity.tgz  | tar --strip-components=1 -xvzf - ; \
+	wget -nc  https://scan.coverity.com/download/cxx/linux64 --post-data "token=$$CAK&project=nbs-system%2Fnaxsi" -O /tmp/coverity.tgz ; \
+	if ! [ -d /tmp/cov ] ; then \
+		mkdir -p /tmp/cov && \
+		cd /tmp/cov && \
+		cat ../coverity.tgz  | tar --strip-components=2 -xvzf - && \
+		/tmp/cov/bin/cov-configure  --comptype gcc --compiler gcc-6 --template ; \
+	fi ; \
 	cd $(TMP_DIR) ; \
 	./configure $(NGINX_OPTIONS) && \
-	/tmp/cov/bin/cov-build --dir cov-int make && \
+	/tmp/cov/bin/cov-build --dir cov-int make -j4 && \
 	tar cvzf coverity-res-naxsi.tgz cov-int/ ; \
 	curl --form token="$$CAK" \
 	  --form email="$$CAN" \

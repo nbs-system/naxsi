@@ -52,7 +52,7 @@ $ cat nxapi.json
     }
     }
 
-# Prequisites
+# Prerequisites
 
 ## Set up ElasticSearch
 * Download the archive with the binary files from https://www.elastic.co/downloads/elasticsearch
@@ -266,7 +266,7 @@ Given a whitelist file, finds matching events in database.
 
 `-i IPS, --ip-path=IPS`
 
-Given a list of ips (separatated by \n), finds matching events in database.
+Given a list of ips (separated by \n), finds matching events in database.
 
 `--tag`
 
@@ -391,4 +391,4 @@ The default filters enabled in nxapi, from nxapi.json :
   * template_N <= X : "at least" X uniq(N) where present in the specific events from which the WL is generated.
     * Note the difference with "rule_X" rules.
   * global_rule_ip_ratio < X : "at least" X% of the users that triggered events triggered this one as well.
-    * however, ration can theorically apply to anything, just ip_ratio is the most common.
+    * however, ration can theoretically apply to anything, just ip_ratio is the most common.

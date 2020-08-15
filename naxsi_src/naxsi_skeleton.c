@@ -108,6 +108,25 @@ static ngx_command_t  ngx_http_dummy_commands[] =  {
     0,
     NULL },
 
+  /* WhitelistFile */
+  { ngx_string(TOP_WHITELIST_FILE_T),
+    NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
+    |NGX_CONF_1MORE,
+    ngx_http_naxsi_ud_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },
+
+  /* WhitelistFile - nginx style */
+  { ngx_string(TOP_WHITELIST_FILE_N),
+    NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
+    |NGX_CONF_1MORE,
+    ngx_http_naxsi_ud_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },
+
+
   /* CheckRule */
   { ngx_string(TOP_CHECK_RULE_T),
     NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
@@ -345,10 +364,13 @@ ngx_http_dummy_init(ngx_conf_t *cf)
       return (NGX_ERROR);
       /* LCOV_EXCL_STOP */
     }
+
+
     loc_cf[i]->flag_enable_h = ngx_hash_key_lc((u_char *)RT_ENABLE, strlen(RT_ENABLE));
     loc_cf[i]->flag_learning_h = ngx_hash_key_lc((u_char *)RT_LEARNING, strlen(RT_LEARNING));
     loc_cf[i]->flag_post_action_h = ngx_hash_key_lc((u_char *)RT_POST_ACTION, strlen(RT_POST_ACTION));
     loc_cf[i]->flag_extensive_log_h = ngx_hash_key_lc((u_char *)RT_EXTENSIVE_LOG, strlen(RT_EXTENSIVE_LOG));
+    loc_cf[i]->flag_json_log_h = ngx_hash_key_lc((u_char *)RT_JSON_LOG, strlen(RT_JSON_LOG));
     loc_cf[i]->flag_libinjection_xss_h = ngx_hash_key_lc((u_char *)RT_LIBINJECTION_XSS, strlen(RT_LIBINJECTION_XSS));
     loc_cf[i]->flag_libinjection_sql_h = ngx_hash_key_lc((u_char *)RT_LIBINJECTION_SQL, strlen(RT_LIBINJECTION_SQL));
     
@@ -688,6 +710,21 @@ ngx_http_naxsi_ud_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd,
     alcf->denied_url->len = value[1].len;
     return (NGX_CONF_OK);
   }
+  /* store whitelist file for location */
+  if ( (!ngx_strcmp(value[0].data, TOP_WHITELIST_FILE_N) ||
+    !ngx_strcmp(value[0].data, TOP_WHITELIST_FILE_T))
+       && value[1].len) {
+    alcf->whitelist_file = ngx_pcalloc(cf->pool, sizeof(ngx_str_t));
+    if (!alcf->whitelist_file)
+      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
+    alcf->whitelist_file->data = ngx_pcalloc(cf->pool, value[1].len+1);
+    if (!alcf->whitelist_file->data)
+      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
+    memcpy(alcf->whitelist_file->data, value[1].data, value[1].len);
+    alcf->whitelist_file->len = value[1].len;
+    return (NGX_CONF_OK);
+  }
+
   else
     return NGX_CONF_ERROR;
   
@@ -887,6 +924,7 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
   static ngx_str_t enable_flag = ngx_string(RT_ENABLE);
   static ngx_str_t post_action_flag = ngx_string(RT_POST_ACTION);
   static ngx_str_t extensive_log_flag = ngx_string(RT_EXTENSIVE_LOG);
+  static ngx_str_t json_log_flag = ngx_string(RT_JSON_LOG);
   static ngx_str_t libinjection_sql_flag = ngx_string(RT_LIBINJECTION_SQL);
   static ngx_str_t libinjection_xss_flag = ngx_string(RT_LIBINJECTION_XSS);
 
@@ -1061,6 +1099,23 @@ static ngx_int_t ngx_http_dummy_access_handler(ngx_http_request_t *r)
     NX_DEBUG( _debug_modifier, 
     NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
 		  "XX-dummy : [final] extensive_log : %d", ctx->extensive_log ? 1 : 0);
+
+    NX_DEBUG( _debug_modifier    ,
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+          "XX-dummy : orig json_log : %d", ctx->json_log ? 1 : 0);
+
+    lookup = ngx_http_get_variable(r, &json_log_flag, cf->flag_json_log_h);
+    if (lookup && !lookup->not_found && lookup->len > 0) {
+      ctx->json_log = lookup->data[0] - '0';
+      NX_DEBUG( _debug_modifier,
+      NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            "XX-dummy : override json_log : %d", ctx->json_log ? 1 : 0);
+
+    }
+    NX_DEBUG( _debug_modifier,
+    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+          "XX-dummy : [final] json_log : %d", ctx->json_log ? 1 : 0);
+
 
 
     /* the module is not enabled here */

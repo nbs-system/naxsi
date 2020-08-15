@@ -648,7 +648,11 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
   }
 
   FILE *file;
-  char *fname = "/etc/nginx/whitelist.txt";
+  char fname[100];
+  if(dlc->whitelist_file)
+  {
+    memcpy(fname,dlc->whitelist_file->data,dlc->whitelist_file->len);
+  }
   file = fopen(fname, "r");
 
   if (!(file == NULL)) {

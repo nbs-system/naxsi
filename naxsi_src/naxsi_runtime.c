@@ -972,14 +972,18 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   ostr = ngx_array_create(r->pool, 1, sizeof(ngx_str_t));
   if (ngx_http_nx_log(ctx, r, ostr, &tmp_uri) != NGX_HTTP_OK)
     return (NGX_ERROR);
+
+
+  if(!ctx->json_log)
+  {
+    for (i = 0; i < ostr->nelts; i++) {
+
+      ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "NAXSI_FMT: %s",
+                    ((ngx_str_t *)ostr->elts)[i].data);
+    }
   
-  for (i = 0; i < ostr->nelts; i++) {
-
-    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "NAXSI_FMT: %s",
-                  ((ngx_str_t *)ostr->elts)[i].data);
-  }
-
-  for (i = 0; i < ostr->nelts; i++) {
+  }else{
+    for (i = 0; i < ostr->nelts; i++) {
 
     char *line = (char *)((ngx_str_t *)ostr->elts)[i].data;
     char key[512] = "";
@@ -1057,6 +1061,8 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   strcat(json, " }");
   
   ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s", json); 
+
+  }
 
   }
 

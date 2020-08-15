@@ -985,84 +985,80 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
   }else{
     for (i = 0; i < ostr->nelts; i++) {
 
-    char *line = (char *)((ngx_str_t *)ostr->elts)[i].data;
-    char key[512] = "";
-    char value[512] = "";
-    char *item = line; // set pointer to start of line
-    size_t span = 0;
-    char json[NGX_MAX_ERROR_STR-100] = "{ ";
-    int items_cnt = 0;
+      char *line = (char *)((ngx_str_t *)ostr->elts)[i].data;
+      char key[512] = "";
+      char value[512] = "";
+      char *item = line; // set pointer to start of line
+      size_t span = 0;
+      char json[NGX_MAX_ERROR_STR-100] = "{ ";
+      int items_cnt = 0;
 
-
-
-    while(*item)
-    {
-      
-      span = strcspn(item, "="); // count characters to next =
-      if (span >= sizeof key) {
-        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s",
-                      "key sub-string too long");
-        skip=1;
-      }
-      if(!skip)
+      while(*item)
       {
-        strncpy(key, item, span); // copy those characters to key
-        key[span] = 0;            // zero terminate
-        if(strlen(json)+strlen(key)>NGX_MAX_ERROR_STR-100-3 || !(strcmp(key,"seed_end")))
-        {
-          json[0] = '{';
-          json[1] = ' ';
-          json[2] = '\0';
-          
-          break;
+      
+        span = strcspn(item, "="); // count characters to next =
+        if (span >= sizeof key) {
+          ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s",
+                      "key sub-string too long");
+          skip=1;
         }
-        strcat(json, "\"");
-        strcat(json, key);
-        strcat(json, "\":\"");
-      }
+        if(!skip)
+        {
+          strncpy(key, item, span); // copy those characters to key
+          key[span] = 0;            // zero terminate
+          if(strlen(json)+strlen(key)>NGX_MAX_ERROR_STR-100-3 || !(strcmp(key,"seed_end")))
+          {
+            json[0] = '{';
+            json[1] = ' ';
+            json[2] = '\0';
+            break;
+          }
+          strcat(json, "\"");
+          strcat(json, key);
+          strcat(json, "\":\"");
+        }
 
-      item += span;    // advance pointer by count of characters
-      item += !!*item; //!!*item add one if not terminating zero, count does not
+        item += span;    // advance pointer by count of characters
+        item += !!*item; //!!*item add one if not terminating zero, count does not
                        //! include =
-      span = strcspn(item, "&");
+        span = strcspn(item, "&");
 
         
-      if (span >= sizeof value) {
+        if(span >= sizeof value) 
+        {
           ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s",
                       "value sub-string too long");
           skip=1;
-          
-      }
-   
-      if(!skip)
-      { 
-        strncpy(value, item, span);
-      
-        value[span] = 0;
-        if(strlen(json)+strlen(value)>NGX_MAX_ERROR_STR-100-3) 
-        {
-          json[0] = '{';
-          json[1] = ' ';
-          json[2] = '\0';
-          
-          break;
         }
-        strcat(json, value);
-        strcat(json, "\",");
-      }
+   
+        if(!skip)
+        { 
+          strncpy(value, item, span);
+      
+          value[span] = 0;
+          if(strlen(json)+strlen(value)>NGX_MAX_ERROR_STR-100-3) 
+          {
+            json[0] = '{';
+            json[1] = ' ';
+            json[2] = '\0';
+            break;
+          }
+          strcat(json, value);
+          strcat(json, "\",");
+        }
  
-      item += span;
-      item += !!*item;
-      items_cnt = items_cnt + 1;
-    }
+        item += span;
+        item += !!*item;
+        items_cnt = items_cnt + 1;
+      }
   
-  int len = strlen(json);
-  json[len - 1] = '\0';
-  strcat(json, " }");
+    int len = strlen(json);
+    json[len - 1] = '\0';
+    strcat(json, " }");
   
-  ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s", json); 
+    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s", json); 
 
-  }
+    }
 
   }
 

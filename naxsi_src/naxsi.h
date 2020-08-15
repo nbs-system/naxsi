@@ -52,7 +52,7 @@ extern ngx_module_t ngx_http_naxsi_module;
 #define _debug_score 0
 #define _debug_spliturl_ruleset 0
 #define _debug_whitelist_compat 0
-#define _debug_whitelist 0 
+#define _debug_whitelist 0
 #define _debug_whitelist_heavy 0
 #define _debug_whitelist_light 0
 #define wl_debug_rx 0

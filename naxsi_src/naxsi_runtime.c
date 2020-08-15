@@ -2359,7 +2359,8 @@ void ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx,
   ngx_str_t tag;
   tag.len = 15;
   tag.data = ngx_pcalloc(r->pool, tag.len + 1);
-  memcpy(tag.data, "x-forwarded-for", 15);
+  if(tag.data)
+    memcpy(tag.data, "x-forwarded-for", 15);
   unsigned int n = 0;
   ngx_table_elt_t **h=NULL;
   ngx_array_t a;

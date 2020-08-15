@@ -603,8 +603,11 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
     if (uri_ar) {
       dlc->wlr_url_hash =
           (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
-      hash_init.hash = dlc->wlr_url_hash;
-      hash_init.name = "wlr_url_hash";
+      if(dlc->wlr_url_hash)
+      {
+        hash_init.hash = dlc->wlr_url_hash;
+        hash_init.name = "wlr_url_hash";
+      }
       if (ngx_hash_init(&hash_init, (ngx_hash_key_t *)uri_ar->elts,
                         uri_ar->nelts) != NGX_OK) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
@@ -632,8 +635,11 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
     if (headers_ar) {
       dlc->wlr_headers_hash =
           (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
-      hash_init.hash = dlc->wlr_headers_hash;
-      hash_init.name = "wlr_headers_hash";
+      if(dlc->wlr_headers_hash)
+      {
+        hash_init.hash = dlc->wlr_headers_hash;
+        hash_init.name = "wlr_headers_hash";
+      }
       if (ngx_hash_init(&hash_init, (ngx_hash_key_t *)headers_ar->elts,
                         headers_ar->nelts) != NGX_OK) {
         ngx_conf_log_error(
@@ -651,8 +657,11 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
   char fname[1024];
   if(dlc->whitelist_file)
   {
-    if(dlc->whitelist_file->len<1024)
-      memcpy(fname,dlc->whitelist_file->data,dlc->whitelist_file->len);
+    size_t fname_size = dlc->whitelist_file->len;
+    if (fname_size >= sizeof(fname)) {
+      fname_size = sizeof(fname);
+    }
+    memcpy(fname, dlc->whitelist_file->data, fname_size);
   }
   file = fopen(fname, "r");
 
@@ -700,8 +709,10 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
 
         string.len = strlen(buff);
         string.data = ngx_pcalloc(cf->pool, string.len + 1);
-        memcpy(string.data, buff, string.len);
-
+        if(string.data)
+        {
+          memcpy(string.data, buff, string.len);
+        }
         names[i] = string;
         strcpy(&descs[i], (char *)buff);
         i++;
@@ -713,24 +724,28 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
       ngx_array_t *elements;
 
       hash = (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(hash));
-      hash_init.hash = hash;
-      hash_init.key = &ngx_hash_key_lc;
-      hash_init.max_size = 1024 * 10;
-      hash_init.bucket_size = 4096;
-      hash_init.name = "passr_headers_hash";
-      hash_init.pool = cf->pool;
-      hash_init.temp_pool = NULL;
-
+      if(hash)
+      {
+        hash_init.hash = hash;
+        hash_init.key = &ngx_hash_key_lc;
+        hash_init.max_size = 1024 * 10;
+        hash_init.bucket_size = 4096;
+        hash_init.name = "passr_headers_hash";
+        hash_init.pool = cf->pool;
+        hash_init.temp_pool = NULL;
+      }
       NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0,
                    "Found %i whitelisted IPs", nlines);
 
       elements = ngx_array_create(cf->pool, nlines, sizeof(ngx_hash_key_t));
-      for (i = 0; i < nlines; i++) {
-        arr_node = (ngx_hash_key_t *)ngx_array_push(elements);
-        arr_node->key = (names[i]);
-        arr_node->key_hash =
-            ngx_hash_key_lc(arr_node->key.data, arr_node->key.len);
-        arr_node->value = &descs[i];
+      if(elements)
+      {
+        for (i = 0; i < nlines; i++) {
+          arr_node = (ngx_hash_key_t *)ngx_array_push(elements);
+          arr_node->key = (names[i]);
+          arr_node->key_hash =  ngx_hash_key_lc(arr_node->key.data, arr_node->key.len);
+          arr_node->value = &descs[i];
+        }
       }
 
       if (ngx_hash_init(&hash_init, (ngx_hash_key_t *)elements->elts,
@@ -850,13 +865,16 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
               .target_rx = ngx_pcalloc(cf->pool, sizeof(ngx_regex_compile_t));
           rgc = custloc_array(curr_r->br->custom_locations->elts)[name_idx]
                     .target_rx;
-          rgc->options = PCRE_CASELESS | PCRE_MULTILINE;
-          rgc->pattern =
+          if(rgc)
+          {
+            rgc->options = PCRE_CASELESS | PCRE_MULTILINE;
+            rgc->pattern =
               custloc_array(curr_r->br->custom_locations->elts)[name_idx]
                   .target;
-          rgc->pool = cf->pool;
-          rgc->err.len = 0;
-          rgc->err.data = NULL;
+            rgc->pool = cf->pool;
+            rgc->err.len = 0;
+            rgc->err.data = NULL;
+          }
           // custloc_array(curr_r->br->custom_locations->elts)[name_idx].target;
           if (ngx_regex_compile(rgc) != NGX_OK)
             return (NGX_ERROR);
@@ -868,12 +886,15 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
               ngx_pcalloc(cf->pool, sizeof(ngx_regex_compile_t));
           rgc = custloc_array(curr_r->br->custom_locations->elts)[uri_idx]
                     .target_rx;
-          rgc->options = PCRE_CASELESS | PCRE_MULTILINE;
-          rgc->pattern =
+          if(rgc)
+          {
+            rgc->options = PCRE_CASELESS | PCRE_MULTILINE;
+            rgc->pattern =
               custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target;
-          rgc->pool = cf->pool;
-          rgc->err.len = 0;
-          rgc->err.data = NULL;
+            rgc->pool = cf->pool;
+            rgc->err.len = 0;
+            rgc->err.data = NULL;
+          }
           // custloc_array(curr_r->br->custom_locations->elts)[name_idx].target;
           if (ngx_regex_compile(rgc) != NGX_OK)
             return (NGX_ERROR);

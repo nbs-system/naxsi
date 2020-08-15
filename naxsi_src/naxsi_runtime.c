@@ -120,9 +120,11 @@ ngx_http_rule_t nx_int__bad_utf8 = {/*type*/ 0, /*whitelist flag*/ 0,
 
 
 
-void			ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx, 
-								 ngx_http_dummy_loc_conf_t *cf, 
-								 ngx_http_request_t *r);
+void ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t *ctx,
+                                              ngx_http_dummy_loc_conf_t *cf,
+                                              ngx_http_request_t *r,
+                                              ngx_str_t *name,
+                                              ngx_str_t *value);
 int			ngx_http_process_basic_rule_buffer(ngx_str_t *str, ngx_http_rule_t *rl, 
 							   ngx_int_t *match);
 void			ngx_http_dummy_payload_handler(ngx_http_request_t *r);
@@ -372,6 +374,31 @@ nx_find_wl_in_hash(
 						   (u_char*) scratch.data, 
 						   scratch.len);
   return (b);
+}
+
+int nx_find_pass_in_hash(ngx_http_request_t *req,
+                                           ngx_str_t *mstr,
+                                           ngx_http_dummy_loc_conf_t *cf,
+                                           enum DUMMY_MATCH_ZONE zone) {
+  char *find;
+
+  ngx_uint_t k;
+
+  ngx_str_t scratch = {.data = mstr->data, .len = mstr->len};
+  scratch.data = ngx_pcalloc(req->pool, scratch.len);
+  memcpy(scratch.data, mstr->data, scratch.len);
+
+
+  k = ngx_hash_key_lc(scratch.data, scratch.len);
+
+  find = (char *) ngx_hash_find(
+      cf->passr_headers_hash, k, (u_char *)scratch.data, scratch.len);
+
+  if(find)
+    return 1;
+  else
+    return 0;
+
 }
 
 
@@ -932,23 +959,109 @@ ngx_int_t
 ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
 			       ngx_http_request_t *r)
 {
-  u_int		i;
   ngx_str_t	*tmp_uri, denied_args;
   ngx_str_t	 empty = ngx_string("");
   ngx_http_dummy_loc_conf_t	*cf;
   ngx_array_t	*ostr;
   ngx_table_elt_t	    *h;
+  unsigned int i=0;
+  int skip=0;
   
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   /* get array of signatures strings */
   ostr = ngx_array_create(r->pool, 1, sizeof(ngx_str_t));
   if (ngx_http_nx_log(ctx, r, ostr, &tmp_uri) != NGX_HTTP_OK)
     return (NGX_ERROR);
-  for (i = 0; i < ostr->nelts; i++) {
 
-    ngx_log_error(NGX_LOG_ERR, r->connection->log,
-		  0, "NAXSI_FMT: %s", ((ngx_str_t *)ostr->elts)[i].data);
+
+  if(!ctx->json_log)
+  {
+    for (i = 0; i < ostr->nelts; i++) {
+
+      ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "NAXSI_FMT: %s",
+                    ((ngx_str_t *)ostr->elts)[i].data);
+    }
+  
+  }else{
+    for (i = 0; i < ostr->nelts; i++) {
+
+      char *line = (char *)((ngx_str_t *)ostr->elts)[i].data;
+      char key[512] = "";
+      char value[512] = "";
+      char *item = line; // set pointer to start of line
+      size_t span = 0;
+      char json[NGX_MAX_ERROR_STR-100] = "{ ";
+      int items_cnt = 0;
+
+      while(*item)
+      {
+      
+        span = strcspn(item, "="); // count characters to next =
+        if (span >= sizeof key) {
+          ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s",
+                      "key sub-string too long");
+          skip=1;
+        }
+        if(!skip)
+        {
+          strncpy(key, item, span); // copy those characters to key
+          key[span] = 0;            // zero terminate
+          if(strlen(json)+strlen(key)>NGX_MAX_ERROR_STR-100-3 || !(strcmp(key,"seed_end")))
+          {
+            json[0] = '{';
+            json[1] = ' ';
+            json[2] = '\0';
+            break;
+          }
+          strcat(json, "\"");
+          strcat(json, key);
+          strcat(json, "\":\"");
+        }
+
+        item += span;    // advance pointer by count of characters
+        item += !!*item; //!!*item add one if not terminating zero, count does not
+                       //! include =
+        span = strcspn(item, "&");
+
+        
+        if(span >= sizeof value) 
+        {
+          ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s",
+                      "value sub-string too long");
+          skip=1;
+        }
+   
+        if(!skip)
+        { 
+          strncpy(value, item, span);
+      
+          value[span] = 0;
+          if(strlen(json)+strlen(value)>NGX_MAX_ERROR_STR-100-3) 
+          {
+            json[0] = '{';
+            json[1] = ' ';
+            json[2] = '\0';
+            break;
+          }
+          strcat(json, value);
+          strcat(json, "\",");
+        }
+ 
+        item += span;
+        item += !!*item;
+        items_cnt = items_cnt + 1;
+      }
+  
+    int len = strlen(json);
+    json[len - 1] = '\0';
+    strcat(json, " }");
+  
+    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s", json); 
+
+    }
+
   }
+
   if (ostr->nelts >= 1) {
     denied_args.data = ((ngx_str_t *)ostr->elts)[0].data; 
     denied_args.len = ((ngx_str_t *)ostr->elts)[0].len; 
@@ -1172,7 +1285,7 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t *r, ngx_http_request_ctx_t *ctx,
     ctx->drop = 1;
   if (r->log)
     ctx->log = 1;
-  ngx_http_dummy_update_current_ctx_status(ctx, cf, req);
+  ngx_http_dummy_update_current_ctx_status(ctx, cf, req, name, value);
   return (1);
 }
 
@@ -2215,21 +2328,19 @@ ngx_http_dummy_headers_parse(ngx_http_dummy_main_conf_t *main_cf,
   return ;
 }
 
-void	
-ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx, 
-			  ngx_http_request_t	 *r)
-{
-  ngx_http_dummy_loc_conf_t	*cf;
-  ngx_http_dummy_main_conf_t	*main_cf;
-  ngx_http_core_main_conf_t  *cmcf;
+void ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx,
+                               ngx_http_request_t *r) {
+  ngx_http_dummy_loc_conf_t *cf;
+  ngx_http_dummy_main_conf_t *main_cf;
+  ngx_http_core_main_conf_t *cmcf;
 
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
   main_cf = ngx_http_get_module_main_conf(r, ngx_http_naxsi_module);
   if (!cf || !ctx || !cmcf) {
     ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		  "naxsi: unable to parse data.");
-    return ;
+                  "naxsi: unable to parse data.");
+    return;
   }
   /* process rules only if request is not already blocked or if
      the learning mode is enabled */
@@ -2239,80 +2350,127 @@ ngx_http_dummy_data_parse(ngx_http_request_ctx_t *ctx,
   /* check args */
   ngx_http_dummy_args_parse(main_cf, cf, ctx, r);
   /* check method */
-  if ((r->method == NGX_HTTP_PATCH || r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) &&
+  if ((r->method == NGX_HTTP_POST || r->method == NGX_HTTP_PUT) &&
       /* presence of body rules (POST/PUT rules) */
-      (cf->body_rules || main_cf->body_rules) && 
+      (cf->body_rules || main_cf->body_rules) &&
       /* and the presence of data to parse */
-      r->request_body && ( (!ctx->block || ctx->learning) && !ctx->drop)) 
+      r->request_body && ((!ctx->block || ctx->learning) && !ctx->drop))
     ngx_http_dummy_body_parse(ctx, r, cf, main_cf);
-  ngx_http_dummy_update_current_ctx_status(ctx, cf, r);
+  ngx_str_t tag;
+  tag.len = 15;
+  tag.data = ngx_pcalloc(r->pool, tag.len + 1);
+  if(tag.data)
+    memcpy(tag.data, "x-forwarded-for", 15);
+  unsigned int n = 0;
+  ngx_table_elt_t **h=NULL;
+  ngx_array_t a;
+  if (r->headers_in.x_forwarded_for.nelts >= 1) {
+    a = r->headers_in.x_forwarded_for;
+    n = a.nelts;
+  }
+  if (n >= 1)
+    h = a.elts;
+  if (n >= 1) {
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "xfor %s",
+                  h[0]->value.data);
+
+    ngx_http_dummy_update_current_ctx_status(ctx, cf, r, &tag,
+                                             (ngx_str_t *)h[0]->value.data);
+  }
 }
 
 
 
-void	
-ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx, 
-					 ngx_http_dummy_loc_conf_t	*cf, 
-					 ngx_http_request_t *r)
-{
-  unsigned int	i, z, matched;
-  ngx_http_check_rule_t		*cr;
-  ngx_http_special_score_t	*sc;
+void ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t *ctx,
+                                              ngx_http_dummy_loc_conf_t *cf,
+                                              ngx_http_request_t *r,
+                                              ngx_str_t *name,
+                                              ngx_str_t *value) {
+  unsigned int i, z;
+  unsigned int matched;
+  ngx_http_check_rule_t *cr;
+
+  ngx_http_special_score_t *sc;
+  enum DUMMY_MATCH_ZONE zone;
+  unsigned int n = 0;
+  zone = HEADERS;
 
   NX_DEBUG(_debug_custom_score, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		"XX-custom check rules");
+           "XX-custom check rules");
 
+  int b = 0;
+  ngx_table_elt_t **h;
+  ngx_array_t a;
+  if (r->headers_in.x_forwarded_for.nelts >= 1) {
+    a = r->headers_in.x_forwarded_for;
+    n = a.nelts;
+    if (n >= 1) {
+      h = a.elts;
+      NX_DEBUG(_debug_custom_score, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+               "value:%s", h[0]->value.data);
+      ngx_str_t xforwardedfor;
+      xforwardedfor.len = strlen((char *)h[0]->value.data);
+      xforwardedfor.data = ngx_pcalloc(r->pool, xforwardedfor.len + 1);
+      memcpy(xforwardedfor.data, h[0]->value.data, xforwardedfor.len);
+      b = nx_find_pass_in_hash(r, &xforwardedfor, cf, zone);
+    }
+  }
   /*cr, sc, cf, ctx*/
   if (cf->check_rules && ctx->special_scores) {
-    NX_DEBUG(_debug_custom_score,   NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		  "XX-we have custom check rules and CTX got special score :)");
+    NX_DEBUG(_debug_custom_score, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+             "XX-we have custom check rules and CTX got special score :)");
 
     cr = cf->check_rules->elts;
     sc = ctx->special_scores->elts;
     for (z = 0; z < ctx->special_scores->nelts; z++)
       for (i = 0; i < cf->check_rules->nelts; i++) {
-	NX_DEBUG(_debug_custom_score, 	NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-		      "XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
-		      cr[i].sc_tag.data, cr[i].sc_score,
-		      sc[z].sc_tag->data, sc[z].sc_score, cr[i].cmp);
+        NX_DEBUG(_debug_custom_score, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                 "XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
+                 cr[i].sc_tag.data, cr[i].sc_score, sc[z].sc_tag->data,
+                 sc[z].sc_score, cr[i].cmp);
 
-	if (!ngx_strcmp(sc[z].sc_tag->data, cr[i].sc_tag.data)) {
-	  NX_DEBUG(_debug_custom_score, 	  NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-			"XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
-			cr[i].sc_tag.data, cr[i].sc_score,
-			sc[z].sc_tag->data, sc[z].sc_score, cr[i].cmp);
+        if (!ngx_strcmp(sc[z].sc_tag->data, cr[i].sc_tag.data)) {
+          NX_DEBUG(
+              _debug_custom_score, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+              "XX- rule says :(%s:%d) vs current context:(%s:%d) (flag=%d)",
+              cr[i].sc_tag.data, cr[i].sc_score, sc[z].sc_tag->data,
+              sc[z].sc_score, cr[i].cmp);
 
-	  matched=0;
-	  // huglier than your mom :)
-	  switch (cr[i].cmp) {
-	  case SUP:
-	    matched = sc[z].sc_score > cr[i].sc_score ? 1 : 0;
-	    break;
-	  case SUP_OR_EQUAL:
-	    matched = sc[z].sc_score >= cr[i].sc_score ? 1 : 0;
-	    break;
-	  case INF:
-	    matched = sc[z].sc_score < cr[i].sc_score ? 1 : 0;
-	    break;
-	  case INF_OR_EQUAL:
-	    matched = sc[z].sc_score <= cr[i].sc_score ? 1 : 0;
-	    break;
-	  }
-	  if (matched) {
-	    NX_DEBUG(_debug_custom_score, 	    NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-			  "XX- custom score rule triggered ..");
+          matched = 0;
+          // huglier than your mom :)
+          switch (cr[i].cmp) {
+          case SUP:
+            matched = sc[z].sc_score > cr[i].sc_score ? 1 : 0;
+            break;
+          case SUP_OR_EQUAL:
+            matched = sc[z].sc_score >= cr[i].sc_score ? 1 : 0;
+            break;
+          case INF:
+            matched = sc[z].sc_score < cr[i].sc_score ? 1 : 0;
+            break;
+          case INF_OR_EQUAL:
+            matched = sc[z].sc_score <= cr[i].sc_score ? 1 : 0;
+            break;
+          }
+          if (matched) {
+            NX_DEBUG(_debug_custom_score, NGX_LOG_DEBUG_HTTP,
+                     r->connection->log, 0,
+                     "XX- custom score rule triggered ..");
 
-
-	    if (cr[i].block)
-	      ctx->block = 1;
-	    if (cr[i].drop)
-	      ctx->drop = 1;
-	    if (cr[i].allow)
-	      ctx->allow = 1;
-	    if (cr[i].log)
-	      ctx->log = 1;
-	  }
-	}
+            if (cr[i].block) {
+              if (b)
+                ctx->block = 0;
+              else
+                ctx->block = 1;
+            }
+            if (cr[i].drop)
+              ctx->drop = 1;
+            if (cr[i].allow)
+              ctx->allow = 1;
+            if (cr[i].log)
+              ctx->log = 1;
+          }
+        }
       }
   }
 }

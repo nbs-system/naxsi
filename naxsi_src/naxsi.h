@@ -205,7 +205,6 @@ typedef struct
 
 
 
-
 /* basic rule */
 typedef struct
 {
@@ -357,6 +356,8 @@ typedef struct
   ngx_hash_t	*wlr_body_hash;
   /* hash table of whitelisted HEADERS rules */
   ngx_hash_t	*wlr_headers_hash;
+  /* hash table of pass HEADERS rules */
+  ngx_hash_t  *passr_headers_hash;
   /* rules that are globally disabled in one location */
   ngx_array_t	*disabled_rules;
   /* counters for both processed requests and
@@ -373,12 +374,14 @@ typedef struct
   ngx_flag_t	libinjection_sql_enabled:1;
   ngx_flag_t	libinjection_xss_enabled:1;
   ngx_str_t	*denied_url;
+  ngx_str_t *whitelist_file;
   /* precomputed hash for dynamic variable lookup, 
      variable themselves are boolean */
   ngx_uint_t	flag_enable_h;
   ngx_uint_t	flag_learning_h;
   ngx_uint_t	flag_post_action_h;
   ngx_uint_t	flag_extensive_log_h;
+  ngx_uint_t    flag_json_log_h;
   /* precomputed hash for 
      libinjection dynamic flags */
   ngx_uint_t	flag_libinjection_xss_h;
@@ -432,6 +435,7 @@ typedef struct
   ngx_flag_t	enabled:1;
   ngx_flag_t	post_action:1;
   ngx_flag_t	extensive_log:1;
+  ngx_flag_t    json_log:1;
   /* did libinjection sql/xss matched ? */
   ngx_flag_t	libinjection_sql:1;
   ngx_flag_t	libinjection_xss:1;
@@ -456,6 +460,7 @@ typedef struct ngx_http_nx_json_s {
 
 
 #define TOP_DENIED_URL_T	"DeniedUrl"
+#define TOP_WHITELIST_FILE_T    "WhitelistFile"
 #define TOP_LEARNING_FLAG_T	"LearningMode"
 #define TOP_ENABLED_FLAG_T	"SecRulesEnabled"
 #define TOP_DISABLED_FLAG_T	"SecRulesDisabled"
@@ -467,6 +472,7 @@ typedef struct ngx_http_nx_json_s {
 
 /* nginx-style names */
 #define TOP_DENIED_URL_N	"denied_url"
+#define TOP_WHITELIST_FILE_N    "whitelist_file"
 #define TOP_LEARNING_FLAG_N	"learning_mode"
 #define TOP_ENABLED_FLAG_N	"rules_enabled"
 #define TOP_DISABLED_FLAG_N	"rules_disabled"
@@ -494,6 +500,7 @@ typedef struct ngx_http_nx_json_s {
 ** change behavior of naxsi at runtime 
 */
 #define RT_EXTENSIVE_LOG "naxsi_extensive_log"
+#define RT_JSON_LOG "naxsi_json_log"
 #define RT_ENABLE "naxsi_flag_enable"
 #define RT_LEARNING "naxsi_flag_learning"
 #define RT_POST_ACTION "naxsi_flag_post_action"
@@ -554,7 +561,9 @@ ngx_int_t		ngx_http_nx_json_obj(ngx_json_t *js);
 
 void			ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t	*ctx, 
 								 ngx_http_dummy_loc_conf_t *cf, 
-								 ngx_http_request_t *r);
+								 ngx_http_request_t *r,
+								 ngx_str_t *name,
+								 ngx_str_t *value);
 int			ngx_http_process_basic_rule_buffer(ngx_str_t *str, ngx_http_rule_t *rl, 
 							   ngx_int_t *match);
 void			ngx_http_dummy_payload_handler(ngx_http_request_t *r);

@@ -497,143 +497,272 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
   ngx_hash_key_t *arr_node;
   ngx_hash_init_t hash_init;
   uint i;
-  
-  NX_LOG_DEBUG(_debug_whitelist_heavy,
-  NGX_LOG_EMERG, cf, 0, 
-	       "finalizing hashtables");
 
-  
-  for (i = 0; i < dlc->tmp_wlr->nelts; i++) {
-    switch (((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].zone) {
-    case FILE_EXT:
-    case BODY:
-      body_sz++;
-      break;
-    case HEADERS:
-      headers_sz++;
-      break;
-    case URL:
-      uri_sz++;
-      break;
-    case ARGS:
-      get_sz++;
-      break;
-    case UNKNOWN:
-    default:
-      return (NGX_ERROR);
-    }
-  }
-  NX_LOG_DEBUG(_debug_whitelist_heavy,
-	       NGX_LOG_EMERG, cf, 0, 
-	       "nb items : body:%d headers:%d uri:%d get:%d",
-	       body_sz, headers_sz, uri_sz, get_sz);
-  
+  NX_LOG_DEBUG(_debug_whitelist_heavy, NGX_LOG_EMERG, cf, 0,
+               "finalizing hashtables");
 
-  if (get_sz)
-    get_ar = ngx_array_create(cf->pool, get_sz, sizeof(ngx_hash_key_t));
-  if (headers_sz)
-    headers_ar = ngx_array_create(cf->pool, headers_sz, sizeof(ngx_hash_key_t));
-  if (body_sz)
-    body_ar = ngx_array_create(cf->pool, body_sz, sizeof(ngx_hash_key_t));
-  if (uri_sz)
-    uri_ar = ngx_array_create(cf->pool, uri_sz, sizeof(ngx_hash_key_t));
-  for (i = 0; i < dlc->tmp_wlr->nelts; i++) {
-    switch (((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].zone) {
-    case FILE_EXT:
-    case BODY:
-      arr_node = (ngx_hash_key_t*) ngx_array_push(body_ar);
-      break;
-    case HEADERS:
-      arr_node = (ngx_hash_key_t*) ngx_array_push(headers_ar);
-      break;
-    case URL:
-      arr_node = (ngx_hash_key_t*) ngx_array_push(uri_ar);
-      break;
-    case ARGS:
-      arr_node = (ngx_hash_key_t*) ngx_array_push(get_ar);
-      break;
-    default:
-      return (NGX_ERROR);
+  if (dlc->whitelist_rules) {
+
+    for (i = 0; i < dlc->tmp_wlr->nelts; i++) {
+      switch (((ngx_http_whitelist_rule_t *)dlc->tmp_wlr->elts)[i].zone) {
+      case FILE_EXT:
+      case BODY:
+        body_sz++;
+        break;
+      case HEADERS:
+        headers_sz++;
+        break;
+      case URL:
+        uri_sz++;
+        break;
+      case ARGS:
+        get_sz++;
+        break;
+      case UNKNOWN:
+      default:
+        return (NGX_ERROR);
+      }
     }
-    if (!arr_node)
-      return (NGX_ERROR);
-    ngx_memset(arr_node, 0, sizeof(ngx_hash_key_t));
-    arr_node->key = *(((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].name);
-    arr_node->key_hash = ngx_hash_key_lc(((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].name->data, 
-					 ((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].name->len);
-    arr_node->value = (void *) &(((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i]);
+    NX_LOG_DEBUG(_debug_whitelist_heavy, NGX_LOG_EMERG, cf, 0,
+                 "nb items : body:%d headers:%d uri:%d get:%d", body_sz,
+                 headers_sz, uri_sz, get_sz);
+
+    if (get_sz)
+      get_ar = ngx_array_create(cf->pool, get_sz, sizeof(ngx_hash_key_t));
+    if (headers_sz)
+      headers_ar =
+          ngx_array_create(cf->pool, headers_sz, sizeof(ngx_hash_key_t));
+    if (body_sz)
+      body_ar = ngx_array_create(cf->pool, body_sz, sizeof(ngx_hash_key_t));
+    if (uri_sz)
+      uri_ar = ngx_array_create(cf->pool, uri_sz, sizeof(ngx_hash_key_t));
+    for (i = 0; i < dlc->tmp_wlr->nelts; i++) {
+      switch (((ngx_http_whitelist_rule_t *)dlc->tmp_wlr->elts)[i].zone) {
+      case FILE_EXT:
+      case BODY:
+        arr_node = (ngx_hash_key_t *)ngx_array_push(body_ar);
+        break;
+      case HEADERS:
+        arr_node = (ngx_hash_key_t *)ngx_array_push(headers_ar);
+        break;
+      case URL:
+        arr_node = (ngx_hash_key_t *)ngx_array_push(uri_ar);
+        break;
+      case ARGS:
+        arr_node = (ngx_hash_key_t *)ngx_array_push(get_ar);
+        break;
+      default:
+        return (NGX_ERROR);
+      }
+      if (!arr_node)
+        return (NGX_ERROR);
+      ngx_memset(arr_node, 0, sizeof(ngx_hash_key_t));
+      arr_node->key =
+          *(((ngx_http_whitelist_rule_t *)dlc->tmp_wlr->elts)[i].name);
+      arr_node->key_hash = ngx_hash_key_lc(
+          ((ngx_http_whitelist_rule_t *)dlc->tmp_wlr->elts)[i].name->data,
+          ((ngx_http_whitelist_rule_t *)dlc->tmp_wlr->elts)[i].name->len);
+      arr_node->value =
+          (void *)&(((ngx_http_whitelist_rule_t *)dlc->tmp_wlr->elts)[i]);
 #ifdef SPECIAL__debug_whitelist_heavy
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "pushing new WL, zone:%d, target:%V, %d IDs",
-		       ((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].zone ,  ((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].name,
-		       ((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].ids->nelts);
-    unsigned int z;
-    for (z = 0; z < ((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].ids->nelts; z++)
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "id:%d",
-    			 ((int *)((ngx_http_whitelist_rule_t *) dlc->tmp_wlr->elts)[i].ids->elts)[z]);
-#endif    
-  }
-  hash_init.key = &ngx_hash_key_lc;
-  hash_init.pool = cf->pool;
-  hash_init.temp_pool = NULL;
-  hash_init.max_size  = 1024;
-  hash_init.bucket_size = 512;
-  
-  if (body_ar) {
-    dlc->wlr_body_hash =  (ngx_hash_t*) ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
-    hash_init.hash = dlc->wlr_body_hash;
-    hash_init.name = "wlr_body_hash";
-    if (ngx_hash_init(&hash_init, (ngx_hash_key_t*) body_ar->elts, 
-		      body_ar->nelts) != NGX_OK) { 
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$BODY hashtable init failed"); /* LCOV_EXCL_LINE */
-      return (NGX_ERROR); /* LCOV_EXCL_LINE */
+      ngx_conf_log_error(
+          NGX_LOG_EMERG, cf, 0, "pushing new WL, zone:%d, target:%V, %d IDs",
+          ((ngx_http_whitelist_rule_t *)dlc->tmp_wlr->elts)[i].zone,
+          ((ngx_http_whitelist_rule_t *)dlc->tmp_wlr->elts)[i].name,
+          ((ngx_http_whitelist_rule_t *)dlc->tmp_wlr->elts)[i].ids->nelts);
+      unsigned int z;
+      for (z = 0;
+           z < ((ngx_http_whitelist_rule_t *)dlc->tmp_wlr->elts)[i].ids->nelts;
+           z++)
+        ngx_conf_log_error(
+            NGX_LOG_EMERG, cf, 0, "id:%d",
+            ((int *)((ngx_http_whitelist_rule_t *)dlc->tmp_wlr->elts)[i]
+                 .ids->elts)[z]);
+#endif
     }
-    else
-      NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0, "$BODY hashtable init successed !");
-  }
-  if (uri_ar) {
-    dlc->wlr_url_hash =  (ngx_hash_t*) ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
-    hash_init.hash = dlc->wlr_url_hash;
-    hash_init.name = "wlr_url_hash";
-    if (ngx_hash_init(&hash_init, (ngx_hash_key_t*) uri_ar->elts, 
-		      uri_ar->nelts) != NGX_OK) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$URL hashtable init failed"); /* LCOV_EXCL_LINE */
-      return (NGX_ERROR); /* LCOV_EXCL_LINE */
-    }
-    else
-      NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0, "$URL hashtable init successed !");
+    hash_init.key = &ngx_hash_key_lc;
+    hash_init.pool = cf->pool;
+    hash_init.temp_pool = NULL;
+    hash_init.max_size = 1024;
+    hash_init.bucket_size = 512;
 
+    if (body_ar) {
+      dlc->wlr_body_hash =
+          (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
+      hash_init.hash = dlc->wlr_body_hash;
+      hash_init.name = "wlr_body_hash";
+      if (ngx_hash_init(&hash_init, (ngx_hash_key_t *)body_ar->elts,
+                        body_ar->nelts) != NGX_OK) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                           "$BODY hashtable init failed"); /* LCOV_EXCL_LINE */
+        return (NGX_ERROR);                                /* LCOV_EXCL_LINE */
+      } else
+        NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0,
+                     "$BODY hashtable init successed !");
+    }
+    if (uri_ar) {
+      dlc->wlr_url_hash =
+          (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
+      if(dlc->wlr_url_hash)
+      {
+        hash_init.hash = dlc->wlr_url_hash;
+        hash_init.name = "wlr_url_hash";
+      }
+      if (ngx_hash_init(&hash_init, (ngx_hash_key_t *)uri_ar->elts,
+                        uri_ar->nelts) != NGX_OK) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                           "$URL hashtable init failed"); /* LCOV_EXCL_LINE */
+        return (NGX_ERROR);                               /* LCOV_EXCL_LINE */
+      } else
+        NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0,
+                     "$URL hashtable init successed !");
+    }
+    if (get_ar) {
+      dlc->wlr_args_hash =
+          (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
+      hash_init.hash = dlc->wlr_args_hash;
+      hash_init.name = "wlr_args_hash";
+      if (ngx_hash_init(&hash_init, (ngx_hash_key_t *)get_ar->elts,
+                        get_ar->nelts) != NGX_OK) { /* LCOV_EXCL_LINE */
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                           "$ARGS hashtable init failed"); /* LCOV_EXCL_LINE */
+        return (NGX_ERROR);
+      } else
+        NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0,
+                     "$ARGS hashtable init successed %d !",
+                     dlc->wlr_args_hash->size);
+    }
+    if (headers_ar) {
+      dlc->wlr_headers_hash =
+          (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
+      if(dlc->wlr_headers_hash)
+      {
+        hash_init.hash = dlc->wlr_headers_hash;
+        hash_init.name = "wlr_headers_hash";
+      }
+      if (ngx_hash_init(&hash_init, (ngx_hash_key_t *)headers_ar->elts,
+                        headers_ar->nelts) != NGX_OK) {
+        ngx_conf_log_error(
+            NGX_LOG_EMERG, cf, 0,
+            "$HEADERS hashtable init failed"); /* LCOV_EXCL_LINE */
+        return (NGX_ERROR);                    /* LCOV_EXCL_LINE */
+      } else
+        NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0,
+                     "$HEADERS hashtable init successed %d !",
+                     dlc->wlr_headers_hash->size);
+    }
   }
-  if (get_ar) {
-    dlc->wlr_args_hash =  (ngx_hash_t*) ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
-    hash_init.hash = dlc->wlr_args_hash;
-    hash_init.name = "wlr_args_hash";
-    if (ngx_hash_init(&hash_init, (ngx_hash_key_t*) get_ar->elts, 
-		      get_ar->nelts) != NGX_OK) { /* LCOV_EXCL_LINE */
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$ARGS hashtable init failed"); /* LCOV_EXCL_LINE */
+
+  FILE *file;
+  char fname[1024];
+  if(dlc->whitelist_file)
+  {
+    size_t fname_size = dlc->whitelist_file->len;
+    if (fname_size >= sizeof(fname)) {
+      fname_size = sizeof(fname);
+    }
+    memcpy(fname, dlc->whitelist_file->data, fname_size);
+  }
+  file = fopen(fname, "r");
+
+  if (!(file == NULL)) {
+
+    char cbuff;
+
+    unsigned int nlines = 0; // counter of new lines
+    int chr = 0;             // counter of chars (except new line char)
+    int netmask = 0;
+
+    int maxlen = 0;
+    while ((cbuff = fgetc(file) - 0) != EOF) {
+      if (cbuff == '\n') {
+        if (chr > maxlen) {
+          maxlen = chr + 1;
+        }
+
+        chr = 0;
+        nlines++;
+      } else {
+        chr++;
+      }
+
+      if (cbuff == '/') {
+        netmask = 1;
+        break;
+      }
+    }
+    if (!netmask) {
+
+      rewind(file);
+
+      ngx_str_t names[nlines];
+      char descs[nlines];
+
+      char buff[100];
+
+      ngx_str_t string;
+
+      i = 0;
+      while (fgets(buff, 100, file)) {
+
+        buff[strcspn(buff, "\n")] = 0;
+
+        string.len = strlen(buff);
+        string.data = ngx_pcalloc(cf->pool, string.len + 1);
+        if(string.data)
+        {
+          memcpy(string.data, buff, string.len);
+        }
+        names[i] = string;
+        strcpy(&descs[i], (char *)buff);
+        i++;
+      }
+
+      fclose(file);
+
+      ngx_hash_t *hash;
+      ngx_array_t *elements;
+
+      hash = (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(hash));
+      if(hash)
+      {
+        hash_init.hash = hash;
+        hash_init.key = &ngx_hash_key_lc;
+        hash_init.max_size = 1024 * 10;
+        hash_init.bucket_size = 4096;
+        hash_init.name = "passr_headers_hash";
+        hash_init.pool = cf->pool;
+        hash_init.temp_pool = NULL;
+      }
+      NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0,
+                   "Found %i whitelisted IPs", nlines);
+
+      elements = ngx_array_create(cf->pool, nlines, sizeof(ngx_hash_key_t));
+      if(elements)
+      {
+        for (i = 0; i < nlines; i++) {
+          arr_node = (ngx_hash_key_t *)ngx_array_push(elements);
+          arr_node->key = (names[i]);
+          arr_node->key_hash =  ngx_hash_key_lc(arr_node->key.data, arr_node->key.len);
+          arr_node->value = &descs[i];
+        }
+      }
+
+      if (ngx_hash_init(&hash_init, (ngx_hash_key_t *)elements->elts,
+                        elements->nelts) != NGX_OK) {
+        return 1;
+      }
+
+      dlc->passr_headers_hash = hash;
+    } else {
+      NX_LOG_DEBUG(
+          _debug_whitelist, NGX_LOG_EMERG, cf, 0,
+          "No netmask/CIDR allowed. Please specify each IP individually !");
       return (NGX_ERROR);
     }
-    else
-      NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0, "$ARGS hashtable init successed %d !",
-			 dlc->wlr_args_hash->size);
-
-  }
-  if (headers_ar) {
-    dlc->wlr_headers_hash =  (ngx_hash_t*) ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
-    hash_init.hash = dlc->wlr_headers_hash;
-    hash_init.name = "wlr_headers_hash";
-    if (ngx_hash_init(&hash_init, (ngx_hash_key_t*) headers_ar->elts, 
-		      headers_ar->nelts) != NGX_OK) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$HEADERS hashtable init failed"); /* LCOV_EXCL_LINE */
-      return (NGX_ERROR); /* LCOV_EXCL_LINE */
-    }
-    else
-      NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0, "$HEADERS hashtable init successed %d !",
-			 dlc->wlr_headers_hash->size);
-
   }
   return (NGX_OK);
 }
-
 
 /*
 ** This function will take the whitelist basicrules generated during the configuration
@@ -665,132 +794,154 @@ ngx_http_dummy_create_hashtables_n(ngx_http_dummy_loc_conf_t *dlc,
     NX_LOG_DEBUG(_debug_whitelist_heavy    ,
 		 NGX_LOG_EMERG, cf, 0, 
 		 "No whitelist registred, but it's your call.");    
+  }
 
-    return (NGX_OK);
-  }
-  NX_LOG_DEBUG(_debug_whitelist_heavy,
-  NGX_LOG_EMERG, cf, 0, 
-	       "Building whitelist hashtables, %d items in list",
-	       dlc->whitelist_rules->nelts);
-  
-  dlc->tmp_wlr = ngx_array_create(cf->pool, dlc->whitelist_rules->nelts,
-  				  sizeof(ngx_http_whitelist_rule_t));
-  /* iterate through each stored whitelist rule. */
-  for (i = 0; i < dlc->whitelist_rules->nelts; i++) {
-    uri_idx = name_idx = zone = -1;
-    /*a whitelist is in fact just another basic_rule_t */
-    curr_r = &(((ngx_http_rule_t*)(dlc->whitelist_rules->elts))[i]);
-    NX_LOG_DEBUG(_debug_whitelist_heavy,
-		 NGX_LOG_EMERG, cf, 0,
-		 "Processing wl %d/%p", i, curr_r);
-    
-    /*no custom location at all means that the rule is disabled */
-    if (!curr_r->br->custom_locations) {
-      NX_LOG_DEBUG(_debug_whitelist_heavy,
-		   NGX_LOG_EMERG, cf, 0,
-		   "WL %d is a disable rule.", i);
-      
-      if (ngx_http_wlr_push_disabled(cf, dlc, curr_r) == NGX_ERROR)
-	return (NGX_ERROR);
-      continue;
-    }
-    ret = ngx_http_wlr_identify(cf, dlc, curr_r, &zone, &uri_idx, &name_idx);
-    if (ret != NGX_OK) /* LCOV_EXCL_START */
+  if (dlc->whitelist_rules) {
+
+    NX_LOG_DEBUG(_debug_whitelist_heavy, NGX_LOG_EMERG, cf, 0,
+                 "Building whitelist hashtables, %d items in list",
+                 dlc->whitelist_rules->nelts);
+
+    dlc->tmp_wlr = ngx_array_create(cf->pool, dlc->whitelist_rules->nelts,
+                                    sizeof(ngx_http_whitelist_rule_t));
+    /* iterate through each stored whitelist rule. */
+    for (i = 0; i < dlc->whitelist_rules->nelts; i++) {
+      uri_idx = name_idx = zone = -1;
+      /*a whitelist is in fact just another basic_rule_t */
+      curr_r = &(((ngx_http_rule_t *)(dlc->whitelist_rules->elts))[i]);
+      NX_LOG_DEBUG(_debug_whitelist_heavy, NGX_LOG_EMERG, cf, 0,
+                   "Processing wl %d/%p", i, curr_r);
+
+      /*no custom location at all means that the rule is disabled */
+      if (!curr_r->br->custom_locations) {
+        NX_LOG_DEBUG(_debug_whitelist_heavy, NGX_LOG_EMERG, cf, 0,
+                     "WL %d is a disable rule.", i);
+
+        if (ngx_http_wlr_push_disabled(cf, dlc, curr_r) == NGX_ERROR)
+          return (NGX_ERROR);
+        continue;
+      }
+      ret = ngx_http_wlr_identify(cf, dlc, curr_r, &zone, &uri_idx, &name_idx);
+      if (ret != NGX_OK) /* LCOV_EXCL_START */
       {
-	ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, 
-			   "Following whitelist doesn't target any zone or is incorrect :");
-	if (name_idx != -1)
-	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist target name : %V", 
-			     &(custloc_array(curr_r->br->custom_locations->elts)[name_idx].target));
-	else
-	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist has no target name.");
-	if (uri_idx != -1)
-	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelist target uri : %V", 
-			     &(custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target));
-	else
-	  ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "whitelists has no target uri.");
-	return (NGX_ERROR);
+        ngx_conf_log_error(
+            NGX_LOG_EMERG, cf, 0,
+            "Following whitelist doesn't target any zone or is incorrect :");
+        if (name_idx != -1)
+          ngx_conf_log_error(
+              NGX_LOG_EMERG, cf, 0, "whitelist target name : %V",
+              &(custloc_array(curr_r->br->custom_locations->elts)[name_idx]
+                    .target));
+        else
+          ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                             "whitelist has no target name.");
+        if (uri_idx != -1)
+          ngx_conf_log_error(
+              NGX_LOG_EMERG, cf, 0, "whitelist target uri : %V",
+              &(custloc_array(curr_r->br->custom_locations->elts)[uri_idx]
+                    .target));
+        else
+          ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                             "whitelists has no target uri.");
+        return (NGX_ERROR);
       } /* LCOV_EXCL_STOP */
-    curr_r->br->zone = zone;
-    /*
-    ** Handle regular-expression-matchzone rules :
-    ** Store them in a separate linked list, parsed
-    ** at runtime.
-    */
-    if (curr_r->br->rx_mz == 1) {
-      if (!dlc->rxmz_wlr) {
-	dlc->rxmz_wlr = ngx_array_create(cf->pool, 1,
-					 sizeof(ngx_http_rule_t *));
-	if (!dlc->rxmz_wlr) return (NGX_ERROR); /* LCOV_EXCL_LINE */
+      curr_r->br->zone = zone;
+      /*
+      ** Handle regular-expression-matchzone rules :
+      ** Store them in a separate linked list, parsed
+      ** at runtime.
+      */
+      if (curr_r->br->rx_mz == 1) {
+        if (!dlc->rxmz_wlr) {
+          dlc->rxmz_wlr =
+              ngx_array_create(cf->pool, 1, sizeof(ngx_http_rule_t *));
+          if (!dlc->rxmz_wlr)
+            return (NGX_ERROR); /* LCOV_EXCL_LINE */
+        }
+        if (name_idx != -1 &&
+            !custloc_array(curr_r->br->custom_locations->elts)[name_idx]
+                 .target_rx) {
+          custloc_array(curr_r->br->custom_locations->elts)[name_idx]
+              .target_rx = ngx_pcalloc(cf->pool, sizeof(ngx_regex_compile_t));
+          rgc = custloc_array(curr_r->br->custom_locations->elts)[name_idx]
+                    .target_rx;
+          if(rgc)
+          {
+            rgc->options = PCRE_CASELESS | PCRE_MULTILINE;
+            rgc->pattern =
+              custloc_array(curr_r->br->custom_locations->elts)[name_idx]
+                  .target;
+            rgc->pool = cf->pool;
+            rgc->err.len = 0;
+            rgc->err.data = NULL;
+          }
+          // custloc_array(curr_r->br->custom_locations->elts)[name_idx].target;
+          if (ngx_regex_compile(rgc) != NGX_OK)
+            return (NGX_ERROR);
+        }
+        if (uri_idx != -1 &&
+            !custloc_array(curr_r->br->custom_locations->elts)[uri_idx]
+                 .target_rx) {
+          custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target_rx =
+              ngx_pcalloc(cf->pool, sizeof(ngx_regex_compile_t));
+          rgc = custloc_array(curr_r->br->custom_locations->elts)[uri_idx]
+                    .target_rx;
+          if(rgc)
+          {
+            rgc->options = PCRE_CASELESS | PCRE_MULTILINE;
+            rgc->pattern =
+              custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target;
+            rgc->pool = cf->pool;
+            rgc->err.len = 0;
+            rgc->err.data = NULL;
+          }
+          // custloc_array(curr_r->br->custom_locations->elts)[name_idx].target;
+          if (ngx_regex_compile(rgc) != NGX_OK)
+            return (NGX_ERROR);
+        }
+
+        rptr = ngx_array_push(dlc->rxmz_wlr);
+        if (!rptr)
+          return (NGX_ERROR);
+        *rptr = curr_r;
+        continue;
       }
-      if (name_idx != -1 && !custloc_array(curr_r->br->custom_locations->elts)[name_idx].target_rx) {
-	custloc_array(curr_r->br->custom_locations->elts)[name_idx].target_rx = 
-	  ngx_pcalloc(cf->pool, sizeof(ngx_regex_compile_t));
-	rgc = custloc_array(curr_r->br->custom_locations->elts)[name_idx].target_rx;
-	rgc->options = PCRE_CASELESS|PCRE_MULTILINE;
-	rgc->pattern = custloc_array(curr_r->br->custom_locations->elts)[name_idx].target;
-	rgc->pool = cf->pool;
-	rgc->err.len = 0;
-	rgc->err.data = NULL;
-	//custloc_array(curr_r->br->custom_locations->elts)[name_idx].target;
-	if (ngx_regex_compile(rgc) != NGX_OK)
-	  return (NGX_ERROR);
+      /*
+      ** Handle static match-zones for hashtables
+      */
+      father_wlr = ngx_http_wlr_find(cf, dlc, curr_r, zone, uri_idx, name_idx,
+                                     (char **)&fullname);
+      if (!father_wlr) {
+        NX_LOG_DEBUG(_debug_whitelist_heavy, NGX_LOG_EMERG, cf, 0,
+                     "creating fresh WL [%s].", fullname);
+
+        /* creates a new whitelist rule in the right place.
+           setup name and zone, create a new (empty) whitelist_location, as well
+           as a new (empty) id aray. */
+        father_wlr = ngx_array_push(dlc->tmp_wlr);
+        if (!father_wlr)
+          return (NGX_ERROR);
+        memset(father_wlr, 0, sizeof(ngx_http_whitelist_rule_t));
+        father_wlr->name = ngx_pcalloc(cf->pool, sizeof(ngx_str_t));
+        if (!father_wlr->name)
+          return (NGX_ERROR);
+        father_wlr->name->len = strlen((const char *)fullname);
+        father_wlr->name->data = (unsigned char *)fullname;
+        father_wlr->zone = zone;
+        /* If there is URI and no name idx, specify it,
+           so that WL system won't get fooled by an argname like an URL */
+        if (uri_idx != -1 && name_idx == -1)
+          father_wlr->uri_only = 1;
+        /* If target_name is present in son, report it. */
+        if (curr_r->br->target_name)
+          father_wlr->target_name = curr_r->br->target_name;
       }
-      if (uri_idx != -1 && !custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target_rx) {
-	custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target_rx = 
-	  ngx_pcalloc(cf->pool, sizeof(ngx_regex_compile_t));
-	rgc = custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target_rx;
-	rgc->options = PCRE_CASELESS|PCRE_MULTILINE;
-	rgc->pattern = custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target;
-	rgc->pool = cf->pool;
-	rgc->err.len = 0;
-	rgc->err.data = NULL;
-	//custloc_array(curr_r->br->custom_locations->elts)[name_idx].target;
-	if (ngx_regex_compile(rgc) != NGX_OK)
-	  return (NGX_ERROR);
-      }
-      
-      rptr = ngx_array_push(dlc->rxmz_wlr);
-      if (!rptr)
-	return (NGX_ERROR);
-      *rptr = curr_r;
-      continue;
+      /*merges the two whitelist rules together, including custom_locations. */
+      if (ngx_http_wlr_merge(cf, father_wlr, curr_r) != NGX_OK)
+        return (NGX_ERROR);
     }
-    /*
-    ** Handle static match-zones for hashtables
-    */
-    father_wlr = ngx_http_wlr_find(cf, dlc, curr_r, zone, uri_idx, name_idx, (char **) &fullname);
-    if (!father_wlr) {
-      NX_LOG_DEBUG(_debug_whitelist_heavy,
-		   NGX_LOG_EMERG, cf, 0, 
-		   "creating fresh WL [%s].", fullname);
-      
-      /* creates a new whitelist rule in the right place.
-	 setup name and zone, create a new (empty) whitelist_location, as well
-	 as a new (empty) id aray. */
-      father_wlr = ngx_array_push(dlc->tmp_wlr);
-      if (!father_wlr)
-	return (NGX_ERROR);
-      memset(father_wlr, 0, sizeof(ngx_http_whitelist_rule_t));
-      father_wlr->name = ngx_pcalloc(cf->pool, sizeof(ngx_str_t));
-      if (!father_wlr->name)
-	return (NGX_ERROR);
-      father_wlr->name->len = strlen((const char *) fullname);
-      father_wlr->name->data = (unsigned char *) fullname;
-      father_wlr->zone = zone;
-      /* If there is URI and no name idx, specify it,
-	 so that WL system won't get fooled by an argname like an URL */
-      if (uri_idx != -1 && name_idx == -1)
-	father_wlr->uri_only = 1;
-      /* If target_name is present in son, report it. */
-      if (curr_r->br->target_name)
-        father_wlr->target_name = curr_r->br->target_name; 
-    }
-    /*merges the two whitelist rules together, including custom_locations. */
-    if (ngx_http_wlr_merge(cf, father_wlr, curr_r) != NGX_OK)
-      return (NGX_ERROR);
   }
-  
+
   /* and finally, build the hashtables for various zones. */
   if (ngx_http_wlr_finalize_hashtables(cf, dlc) != NGX_OK)
     return (NGX_ERROR);

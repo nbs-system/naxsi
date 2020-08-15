@@ -648,10 +648,11 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
   }
 
   FILE *file;
-  char fname[100];
+  char fname[1024];
   if(dlc->whitelist_file)
   {
-    memcpy(fname,dlc->whitelist_file->data,dlc->whitelist_file->len);
+    if(dlc->whitelist_file->len<1024)
+      memcpy(fname,dlc->whitelist_file->data,dlc->whitelist_file->len);
   }
   file = fopen(fname, "r");
 

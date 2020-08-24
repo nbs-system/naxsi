@@ -426,15 +426,16 @@ int nx_find_pass_in_array(ngx_http_request_t *req,
   uint32_t netmask;
   uint i = 0;
   for (i = 0; i < cf->passr_headers_array->nelts; i++) {
-   
     if(cidr_to_ip_and_mask(((char *)((ngx_str_t *)cf->passr_headers_array->elts)[i].data),&netip, &netmask) < 0) {
+      return 0;
     }   
     u_char a, b, c, d;
     
     char *ipstr= (char *) mstr->data; // value to check
     uint32_t ip = 0;
     if (sscanf(ipstr, "%hhu.%hhu.%hhu.%hhu", &a, &b, &c, &d) < 4) {
-        }
+      return 0; 
+    }
        
     ip = (a << 24UL) |
       (b << 16UL) |

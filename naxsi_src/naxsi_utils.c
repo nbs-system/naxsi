@@ -653,12 +653,15 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
     }
   }
 
-  FILE *file=NULL;
-  char *fname=NULL;
+  FILE *file = NULL;
+  char *fname = NULL;
   if(dlc->whitelist_file)
   {
-    fname=malloc(strlen((char *)dlc->whitelist_file->data)*sizeof(char)+1);
-    strncpy(fname, (char *)dlc->whitelist_file->data, strlen((char *)dlc->whitelist_file->data));
+    fname = calloc(1024, sizeof(char));
+    if(fname !== NULL)
+    {
+      strncpy(fname, (char *)dlc->whitelist_file->data, strlen((char *)dlc->whitelist_file->data));
+    }
   }
 
   file = fopen(fname, "r");
@@ -747,8 +750,8 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
       if(!strstr(&descs[i],"/"))
       {
         ips_cnt++;
-        ips[j++]=descs[i];
-      }else{
+        ips[j++] = descs[i];
+      } else {
         cidr_cnt++;
       }
     }

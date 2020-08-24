@@ -658,7 +658,7 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
   if(dlc->whitelist_file)
   {
     fname = calloc(1024, sizeof(char));
-    if(fname !== NULL)
+    if(fname != NULL)
     {
       strncpy(fname, (char *)dlc->whitelist_file->data, strlen((char *)dlc->whitelist_file->data));
     }

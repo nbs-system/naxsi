@@ -401,6 +401,60 @@ int nx_find_pass_in_hash(ngx_http_request_t *req,
 
 }
 
+int cidr_to_ip_and_mask(const char *cidr, uint32_t *ip, uint32_t *mask) {
+        u_char a, b, c, d, bits;
+        if (sscanf(cidr, "%hhu.%hhu.%hhu.%hhu/%hhu", &a, &b, &c, &d, &bits) < 5) {
+            return -1; /* didn't convert enough of CIDR */
+        }
+        if (bits > 32) {
+            return -1; /* Invalid bit count */
+        }
+        *ip =
+            (a << 24UL) |
+            (b << 16UL) |
+            (c << 8UL) |
+            (d);
+        *mask = (0xFFFFFFFFUL << (32 - bits)) & 0xFFFFFFFFUL;
+
+return 1;
+}
+
+
+int nx_find_pass_in_array(ngx_http_request_t *req,
+                                           ngx_str_t *mstr,
+                                           ngx_http_dummy_loc_conf_t *cf,
+                                           enum DUMMY_MATCH_ZONE zone) {
+  uint32_t netip;
+  uint32_t netmask;
+  uint i = 0;
+  for (i = 0; i < cf->passr_headers_array->nelts; i++) {
+   
+    if(cidr_to_ip_and_mask(((char *)((ngx_str_t *)cf->passr_headers_array->elts)[i].data),&netip, &netmask) < 0) {
+    }   
+    u_char a, b, c, d;
+    
+    char *ipstr= (char *) mstr->data; // value to check
+    uint32_t ip = 0;
+    if (sscanf(ipstr, "%hhu.%hhu.%hhu.%hhu", &a, &b, &c, &d) < 4) {
+        }
+       
+    ip = (a << 24UL) |
+      (b << 16UL) |
+      (c << 8UL) |
+      (d);
+
+    uint32_t netstart = (netip & netmask); // first ip in subnet
+    uint32_t netend = (netstart | ~netmask); // last ip in subnet
+    if ((ip >= netstart) && (ip <= netend))
+      return 1;
+  }
+  
+  return 0;
+
+}
+
+
+
 
 #define custloc_array(x) ((ngx_http_custom_rule_location_t *) x)
 
@@ -2398,7 +2452,8 @@ void ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t *ctx,
   NX_DEBUG(_debug_custom_score, NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
            "XX-custom check rules");
 
-  int b = 0;
+  int hashfind = 0;
+  int arrayfind = 0;
   ngx_table_elt_t **h;
   ngx_array_t a;
   if (r->headers_in.x_forwarded_for.nelts >= 1) {
@@ -2412,7 +2467,8 @@ void ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t *ctx,
       xforwardedfor.len = strlen((char *)h[0]->value.data);
       xforwardedfor.data = ngx_pcalloc(r->pool, xforwardedfor.len + 1);
       memcpy(xforwardedfor.data, h[0]->value.data, xforwardedfor.len);
-      b = nx_find_pass_in_hash(r, &xforwardedfor, cf, zone);
+      hashfind = nx_find_pass_in_hash(r, &xforwardedfor, cf, zone);
+      arrayfind = nx_find_pass_in_array(r, &xforwardedfor, cf, zone);
     }
   }
   /*cr, sc, cf, ctx*/
@@ -2458,7 +2514,7 @@ void ngx_http_dummy_update_current_ctx_status(ngx_http_request_ctx_t *ctx,
                      "XX- custom score rule triggered ..");
 
             if (cr[i].block) {
-              if (b)
+              if (hashfind || arrayfind)
                 ctx->block = 0;
               else
                 ctx->block = 1;

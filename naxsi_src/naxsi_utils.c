@@ -653,25 +653,27 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
     }
   }
 
-  FILE *file;
-  char fname[1024];
+  FILE *file = NULL;
+  char *fname = NULL;
   if(dlc->whitelist_file)
   {
-    size_t fname_size = dlc->whitelist_file->len;
-    if (fname_size >= sizeof(fname)) {
-      fname_size = sizeof(fname);
+    fname = calloc(1024, sizeof(char));
+    if(fname != NULL)
+    {
+      size_t fname_size = strlen((char *)dlc->whitelist_file->data);
+      if(fname_size <= 1024) {
+        strncpy(fname, (char *)dlc->whitelist_file->data, strlen((char *)dlc->whitelist_file->data));
+      }
     }
-    memcpy(fname, dlc->whitelist_file->data, fname_size);
   }
+
   file = fopen(fname, "r");
 
   if (!(file == NULL)) {
-
     char cbuff;
 
     unsigned int nlines = 0; // counter of new lines
     int chr = 0;             // counter of chars (except new line char)
-    int netmask = 0;
 
     int maxlen = 0;
     while ((cbuff = fgetc(file) - 0) != EOF) {
@@ -686,24 +688,27 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
         chr++;
       }
 
-      if (cbuff == '/') {
-        netmask = 1;
-        break;
-      }
     }
-    if (!netmask) {
+    
+    rewind(file);    
 
-      rewind(file);
 
-      ngx_str_t names[nlines];
-      char descs[nlines];
 
-      char buff[100];
+    ngx_str_t ngx_ips[nlines];
+    ngx_str_t ngx_cidr[nlines];
 
-      ngx_str_t string;
+    char descs[nlines];
+    char ips[nlines];
 
-      i = 0;
-      while (fgets(buff, 100, file)) {
+    char buff[100];
+
+    ngx_str_t string;
+
+    u_int i = 0;
+    u_int j = 0;
+    u_int k = 0;
+
+    while (fgets(buff, 100, file)) {
 
         buff[strcspn(buff, "\n")] = 0;
 
@@ -713,19 +718,24 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
         {
           memcpy(string.data, buff, string.len);
         }
-        names[i] = string;
+        if(!strstr(buff,"/"))
+         ngx_ips[j++] = string;
+        else
+         ngx_cidr[k++] = string;
+ 
         strcpy(&descs[i], (char *)buff);
         i++;
-      }
+    }
+    fclose(file);
 
-      fclose(file);
 
-      ngx_hash_t *hash;
-      ngx_array_t *elements;
+    ngx_hash_t *hash;
+    ngx_array_t *elements_ips;
+    ngx_array_t *elements_cidr;
 
-      hash = (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(hash));
-      if(hash)
-      {
+    hash = (ngx_hash_t *)ngx_pcalloc(cf->pool, sizeof(hash));
+    if(hash)
+    {
         hash_init.hash = hash;
         hash_init.key = &ngx_hash_key_lc;
         hash_init.max_size = 1024 * 10;
@@ -733,33 +743,54 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
         hash_init.name = "passr_headers_hash";
         hash_init.pool = cf->pool;
         hash_init.temp_pool = NULL;
-      }
-      NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0,
-                   "Found %i whitelisted IPs", nlines);
-
-      elements = ngx_array_create(cf->pool, nlines, sizeof(ngx_hash_key_t));
-      if(elements)
-      {
-        for (i = 0; i < nlines; i++) {
-          arr_node = (ngx_hash_key_t *)ngx_array_push(elements);
-          arr_node->key = (names[i]);
-          arr_node->key_hash =  ngx_hash_key_lc(arr_node->key.data, arr_node->key.len);
-          arr_node->value = &descs[i];
-        }
-      }
-
-      if (ngx_hash_init(&hash_init, (ngx_hash_key_t *)elements->elts,
-                        elements->nelts) != NGX_OK) {
-        return 1;
-      }
-
-      dlc->passr_headers_hash = hash;
-    } else {
-      NX_LOG_DEBUG(
-          _debug_whitelist, NGX_LOG_EMERG, cf, 0,
-          "No netmask/CIDR allowed. Please specify each IP individually !");
-      return (NGX_ERROR);
     }
+    NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0,
+                   "Found %i whitelisted IPs/CIDRs", nlines);
+       
+    u_int ips_cnt = 0, cidr_cnt=0; 
+
+    for (i = 0, j = 0, k = 0; i < nlines; i++) {
+      if(!strstr(&descs[i],"/"))
+      {
+        ips_cnt++;
+        ips[j++] = descs[i];
+      } else {
+        cidr_cnt++;
+      }
+    }
+
+    elements_ips = ngx_array_create(cf->pool, ips_cnt, sizeof(ngx_hash_key_t));
+    if(elements_ips)
+    {
+      for (i = 0; i < ips_cnt; i++) {
+        arr_node = (ngx_hash_key_t *)ngx_array_push(elements_ips);
+        arr_node->key = (ngx_ips[i]);
+        arr_node->key_hash =  ngx_hash_key_lc(arr_node->key.data, arr_node->key.len);
+        arr_node->value = &ips[i];
+      }
+    }
+
+    if (ngx_hash_init(&hash_init, (ngx_hash_key_t *)elements_ips->elts,
+                      elements_ips->nelts) != NGX_OK) {
+      return 1;
+    }
+
+    dlc->passr_headers_hash = hash;
+
+    ngx_str_t *str;
+    elements_cidr = ngx_array_create(cf->pool, cidr_cnt, sizeof(ngx_str_t));
+    if(elements_cidr)
+    {
+      for (i = 0; i < cidr_cnt; i++) {
+        str = (ngx_str_t *) ngx_array_push(elements_cidr);
+        *str = (ngx_str_t ) ngx_cidr[i];
+      }
+    }
+
+
+    dlc->passr_headers_array = elements_cidr;
+   
+   
   }
   return (NGX_OK);
 }

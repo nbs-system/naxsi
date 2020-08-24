@@ -662,7 +662,7 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t *cf, ngx_http_dummy_loc_conf_t  *dlc
     {
       size_t fname_size = strlen((char *)dlc->whitelist_file->data);
       if(fname_size <= 1024) {
-      strncpy(fname, (char *)dlc->whitelist_file->data, strlen((char *)dlc->whitelist_file->data));
+        strncpy(fname, (char *)dlc->whitelist_file->data, strlen((char *)dlc->whitelist_file->data));
       }
     }
   }

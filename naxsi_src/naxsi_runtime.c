@@ -1145,10 +1145,8 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
             if(!result)
               empty = 1;  
 
-            if(!empty && strlen(json)+strlen(result)<NGX_MAX_ERROR_STR-100-3)
+            if(empty && strlen(json)+strlen(result)>NGX_MAX_ERROR_STR-100-3)
             {
-              strcat(json, result);
-            }else{
               json[0] = '{';
               json[1] = ' ';
               json[2] = '\0';
@@ -1160,10 +1158,14 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
           }
 
 
-          if(strstr(value,"\""))
+          if((escaped == 1 && strstr(result,"\"")) || strstr(value,"\""))
           {
             //escaping JSON
-            result = replace_str(value,"\"","\\\"");
+            if(escaped)
+              result = replace_str(result,"\"","\\\"");
+            else
+              result = replace_str(value,"\"","\\\"");
+
             if(!result)
               empty = 1;
 

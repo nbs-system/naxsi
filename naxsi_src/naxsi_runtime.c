@@ -1145,11 +1145,9 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
               result = replace_str(result,"\"","\\\"");
               if(!result)
               {
-                strcat(json,"");
                 empty = 1;
               }
             }else{
-              strcat(json,"");
               empty = 1;  
             } 
 

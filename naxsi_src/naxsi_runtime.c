@@ -1145,7 +1145,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
             if(!result)
               empty = 1;  
 
-            if(empty && strlen(json)+strlen(result)>NGX_MAX_ERROR_STR-100-3)
+            if(empty || strlen(json)+strlen(result)>NGX_MAX_ERROR_STR-100-3)
             {
               json[0] = '{';
               json[1] = ' ';

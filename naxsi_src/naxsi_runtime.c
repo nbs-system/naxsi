@@ -1007,6 +1007,43 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   return (NGX_HTTP_OK);
 }
 
+char* escapeJSON(const char* s, const char* oldW, 
+                  const char* newW) 
+{ 
+  char* result; 
+  int i, cnt = 0; 
+  int newWlen = strlen(newW); 
+  int oldWlen = strlen(oldW); 
+  
+  // Counting the number of times old word 
+  // occur in the string 
+  for (i = 0; s[i] != '\0'; i++) { 
+      if (strstr(&s[i], oldW) == &s[i]) { 
+          cnt++; 
+
+          // Jumping to index after the old word. 
+          i += oldWlen - 1; 
+      } 
+  } 
+
+  // Making new string of enough length 
+  result = (char*)malloc(i + cnt * (newWlen - oldWlen) + 1); 
+
+  i = 0; 
+  while (*s) { 
+      // compare the substring with the result 
+      if (strstr(s, oldW) == s) { 
+          strcpy(&result[i], newW); 
+          i += newWlen; 
+          s += oldWlen; 
+      } 
+      else
+          result[i++] = *s++; 
+  } 
+  
+  result[i] = '\0'; 
+  return result; 
+} 
 
 ngx_int_t  
 ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
@@ -1096,7 +1133,17 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
             json[2] = '\0';
             break;
           }
-          strcat(json, value);
+          // Escape it according to the RFC. JSON is pretty liberal: The only characters you must escape are \, ", and control codes (anything less than U+0020)
+          // Control codes should not be here
+          char* result = NULL;
+          if(strstr(value,"\"") || strstr(value,"\\"))
+          { 
+            result = escpaeJSON(value,"\\","\\\\");
+            result = escapeJSON(result,"\"","\\\"");
+            strcat(json, result);
+          }else{
+            strcat(json, value);
+          }
           strcat(json, "\",");
         }
  

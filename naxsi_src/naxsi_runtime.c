@@ -1136,20 +1136,14 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
           // Control codes should not be here
           char* result = NULL;
           int empty = 0;
-          if(strstr(value,"\"") || strstr(value,"\\"))
+          int escaped = 0;
+
+          if(strstr(value,"\\"))
           { 
             //escaping JSON
             result = replace_str(value,"\\","\\\\");
-            if(result)
-            {
-              result = replace_str(result,"\"","\\\"");
-              if(!result)
-              {
-                empty = 1;
-              }
-            }else{
+            if(!result)
               empty = 1;  
-            } 
 
             if(!empty && strlen(json)+strlen(result)<NGX_MAX_ERROR_STR-100-3)
             {
@@ -1160,9 +1154,36 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
               json[2] = '\0';
               break;
             }
+            escaped = 1;
           }else{
-            strcat(json, value);
+            escaped = 0;
           }
+
+
+          if(strstr(value,"\""))
+          {
+            //escaping JSON
+            result = replace_str(value,"\"","\\\"");
+            if(!result)
+              empty = 1;
+
+            if(!empty && strlen(json)+strlen(result)<NGX_MAX_ERROR_STR-100-3)
+            {
+              strcat(json, result);
+            }else{
+              json[0] = '{';
+              json[1] = ' ';
+              json[2] = '\0';
+              break;
+            }
+            escaped = 1;
+          }else{
+            escaped = 0;
+          }
+
+          if(!escaped)
+            strcat(json, value);
+
           strcat(json, "\",");
         }
  

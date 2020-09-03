@@ -1138,7 +1138,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
           char* result = NULL;
           if(strstr(value,"\"") || strstr(value,"\\"))
           { 
-            result = escpaeJSON(value,"\\","\\\\");
+            result = escapeJSON(value,"\\","\\\\");
             result = escapeJSON(result,"\"","\\\"");
             strcat(json, result);
           }else{

@@ -1007,7 +1007,7 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   return (NGX_HTTP_OK);
 }
 
-char* escapeJSON(const char* s, const char* oldW, 
+char* replace_str(const char* s, const char* oldW, 
                   const char* newW) 
 { 
   char* result; 
@@ -1136,11 +1136,26 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
           // Escape it according to the RFC. JSON is pretty liberal: The only characters you must escape are \, ", and control codes (anything less than U+0020)
           // Control codes should not be here
           char* result = NULL;
+          int empty = 0;
           if(strstr(value,"\"") || strstr(value,"\\"))
           { 
-            result = escapeJSON(value,"\\","\\\\");
-            result = escapeJSON(result,"\"","\\\"");
-            strcat(json, result);
+            //escaping JSON
+            result = replace_str(value,"\\","\\\\");
+            if(result)
+            {
+              result = replace_str(result,"\"","\\\"");
+              if(!result)
+              {
+                strcat(json,"");
+                empty = 1;
+              }
+            }else{
+              strcat(json,"");
+              empty = 1;  
+            } 
+
+            if(!empty)
+              strcat(json, result);
           }else{
             strcat(json, value);
           }

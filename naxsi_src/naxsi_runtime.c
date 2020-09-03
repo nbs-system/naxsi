@@ -1153,8 +1153,15 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
               empty = 1;  
             } 
 
-            if(!empty)
+            if(!empty && strlen(json)+strlen(result)<NGX_MAX_ERROR_STR-100-3)
+            {
               strcat(json, result);
+            }else{
+              json[0] = '{';
+              json[1] = ' ';
+              json[2] = '\0';
+              break;
+            }
           }else{
             strcat(json, value);
           }

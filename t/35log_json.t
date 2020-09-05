@@ -41,7 +41,6 @@ location /RequestDenied {
 --- error_code: 412
 --- error_log eval
 qr@"uri"\:"\/\\"a"@
-
 === TEST 1.1: JSON log backslash escape
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
@@ -68,7 +67,6 @@ location /RequestDenied {
 --- error_code: 412
 --- error_log eval
 qr@"uri"\:"\/\\\\a"@
-
 === TEST 1.2: JSON log backslash and quote escape
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;

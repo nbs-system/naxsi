@@ -7,7 +7,7 @@ log_level('error');
 
 repeat_each(1);
 
-plan tests => repeat_each(1) * blocks();
+plan tests => repeat_each(1) * blocks() * 2;
 no_root_location();
 no_long_string();
 $ENV{TEST_NGINX_SERVROOT} = server_root();

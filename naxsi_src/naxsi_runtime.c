@@ -456,6 +456,8 @@ int nx_find_pass_in_array(ngx_http_request_t *req,
 
 
 #define custloc_array(x) ((ngx_http_custom_rule_location_t *) x)
+#define max_json(json,result) ((strlen(json) + strlen(result)) > (NGX_MAX_ERROR_STR-100-3))
+
 
 /*
 ** wrapper used for regex matchzones. Should be used by classic basestr* as well.
@@ -1027,6 +1029,9 @@ char* replace_str(const char* s, const char* oldW,
 
   // Making new string of enough length 
   result = (char*)malloc(i + cnt * (newWlen - oldWlen) + 1); 
+  
+  if(!result)
+    return 0;
 
   i = 0; 
   while (*s) { 
@@ -1145,7 +1150,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
             if(!result)
               empty = 1;  
 
-            if(empty || strlen(json)+strlen(result)>NGX_MAX_ERROR_STR-100-3)
+            if(empty || max_json(json,result))
             {
               json[0] = '{';
               json[1] = ' ';
@@ -1169,7 +1174,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
             if(!result)
               empty = 1;
 
-            if(!empty && strlen(json)+strlen(result)<NGX_MAX_ERROR_STR-100-3)
+            if(!empty && !max_json(json,result))
             {
               strcat(json, result);
             }else{

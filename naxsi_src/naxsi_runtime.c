@@ -380,7 +380,7 @@ int nx_find_pass_in_hash(ngx_http_request_t *req,
                                            ngx_str_t *mstr,
                                            ngx_http_dummy_loc_conf_t *cf,
                                            enum DUMMY_MATCH_ZONE zone) {
-  char *find;
+  char *find = NULL;
 
   ngx_uint_t k;
 
@@ -390,9 +390,12 @@ int nx_find_pass_in_hash(ngx_http_request_t *req,
 
 
   k = ngx_hash_key_lc(scratch.data, scratch.len);
-
-  find = (char *) ngx_hash_find(
+  
+  if(cf->passr_headers_hash)
+  {
+    find = (char *) ngx_hash_find(
       cf->passr_headers_hash, k, (u_char *)scratch.data, scratch.len);
+  }
 
   if(find)
     return 1;
@@ -425,10 +428,13 @@ int nx_find_pass_in_array(ngx_http_request_t *req,
   uint32_t netip;
   uint32_t netmask;
   uint i = 0;
-  for (i = 0; i < cf->passr_headers_array->nelts; i++) {
-    if(cidr_to_ip_and_mask(((char *)((ngx_str_t *)cf->passr_headers_array->elts)[i].data),&netip, &netmask) < 0) {
-      return 0;
-    }   
+
+  if(cf->passr_headers_array)
+  {
+    for (i = 0; i < cf->passr_headers_array->nelts; i++) {
+      if(cidr_to_ip_and_mask(((char *)((ngx_str_t *)cf->passr_headers_array->elts)[i].data),&netip, &netmask) < 0) {
+        return 0;
+      }     
     u_char a, b, c, d;
     
     char *ipstr= (char *) mstr->data; // value to check
@@ -446,6 +452,7 @@ int nx_find_pass_in_array(ngx_http_request_t *req,
     uint32_t netend = (netstart | ~netmask); // last ip in subnet
     if ((ip >= netstart) && (ip <= netend))
       return 1;
+    }
   }
   
   return 0;

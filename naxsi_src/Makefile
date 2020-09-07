@@ -119,7 +119,10 @@ endif
 	if [ ! $(TEST) ] ; then TEST="*.t" ; fi
 	export PATH="$(TMP_DIR)/objs/:"$(PATH) ; \
 	export PERL5LIB="~/perl5/lib/perl5/" ;\
-	cd .. ; prove -r "t/$(TEST)"
+    echo "1.1.1.1" > /tmp/naxsi_ut/whitelist.txt; \
+	cd .. ; prove -r "t/$(TEST)" \
+    rm /tmp/naxsi_ut/whitelist.txt; \
+    prove -r "t/34whitelistfile.t"
 ifeq ($(COV),1)
 	lcov --directory $(TMP_DIR)/objs/addon/naxsi_src/ --capture --output-file naxsi.info --base-directory $(TMP_DIR)
 	genhtml -s -o /tmp/naxsicov.html naxsi.info

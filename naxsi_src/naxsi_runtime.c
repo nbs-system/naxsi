@@ -463,6 +463,8 @@ int nx_find_pass_in_array(ngx_http_request_t *req,
 
 
 #define custloc_array(x) ((ngx_http_custom_rule_location_t *) x)
+#define max_json(json,result) ((strlen(json) + strlen(result)) > (NGX_MAX_ERROR_STR-100-3))
+
 
 /*
 ** wrapper used for regex matchzones. Should be used by classic basestr* as well.
@@ -1014,6 +1016,45 @@ ngx_int_t ngx_http_nx_log(ngx_http_request_ctx_t *ctx,
   return (NGX_HTTP_OK);
 }
 
+char* replace_str(const char* s, const char* oldW, 
+                  const char* newW) 
+{ 
+  char* result; 
+  int i, cnt = 0; 
+  int newWlen = strlen(newW); 
+  int oldWlen = strlen(oldW); 
+  
+  // Counting the number of times old word 
+  // occur in the string 
+  for (i = 0; s[i] != '\0'; i++) { 
+    if (strstr(&s[i], oldW) == &s[i]) { 
+      cnt++; 
+      // Jumping to index after the old word. 
+      i += oldWlen - 1; 
+    } 
+  } 
+
+  // Making new string of enough length 
+  result = (char*)malloc(i + cnt * (newWlen - oldWlen) + 1); 
+  
+  if(!result)
+    return 0;
+
+  i = 0; 
+  while (*s) { 
+    // compare the substring with the result 
+    if (strstr(s, oldW) == s) { 
+      strcpy(&result[i], newW); 
+      i += newWlen; 
+      s += oldWlen; 
+    }else{
+      result[i++] = *s++; 
+    }
+  } 
+  
+  result[i] = '\0'; 
+  return result; 
+} 
 
 ngx_int_t  
 ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx, 
@@ -1103,7 +1144,60 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t *ctx,
             json[2] = '\0';
             break;
           }
-          strcat(json, value);
+          // Escape it according to the RFC. JSON is pretty liberal: The only characters you must escape are \, ", and control codes (anything less than U+0020)
+          // Control codes should not be here
+          char* result = NULL;
+          int empty = 0;
+          int escaped = 0;
+
+          if(strstr(value,"\\"))
+          { 
+            //escaping JSON
+            result = replace_str(value,"\\","\\\\");
+            if(!result)
+              empty = 1;  
+
+            if(empty || max_json(json,result))
+            {
+              json[0] = '{';
+              json[1] = ' ';
+              json[2] = '\0';
+              break;
+            }
+            escaped = 1;
+          }else{
+            escaped = 0;
+          }
+
+
+          if((escaped == 1 && strstr(result,"\"")) || strstr(value,"\""))
+          {
+            //escaping JSON
+            if(escaped)
+              result = replace_str(result,"\"","\\\"");
+            else
+              result = replace_str(value,"\"","\\\"");
+
+            if(!result)
+              empty = 1;
+
+            if(!empty && !max_json(json,result))
+            {
+              strcat(json, result);
+            }else{
+              json[0] = '{';
+              json[1] = ' ';
+              json[2] = '\0';
+              break;
+            }
+            escaped = 1;
+          }else{
+            escaped = 0;
+          }
+
+          if(!escaped)
+            strcat(json, value);
+
           strcat(json, "\",");
         }
  

@@ -3,7 +3,7 @@
 int
 parse_ipv6(const char* addr, ip_t* ip, char* ip_str)
 {
-  struct in6_addr ipv6 = { 0 };
+  struct in6_addr ipv6 = { .s6_addr = { 0 } };
   if (inet_pton(AF_INET6, addr, &ipv6) != 1) {
     return 0;
   }
@@ -39,7 +39,7 @@ parse_ipv6(const char* addr, ip_t* ip, char* ip_str)
 int
 parse_ipv4(const char* addr, ip_t* ip, char* ip_str)
 {
-  struct in_addr ipv4 = { 0 };
+  struct in_addr ipv4 = { .s_addr = 0 };
   if (inet_pton(AF_INET, addr, &ipv4) != 1) {
     return 0;
   }

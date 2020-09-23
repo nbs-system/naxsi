@@ -6,6 +6,7 @@
 
 #include "assert.h"
 #include "naxsi.h"
+#include "naxsi_macros.h"
 #include "naxsi_net.h"
 
 /* used to store locations during the configuration time.
@@ -438,7 +439,7 @@ nx_can_ignore_ip(ngx_http_request_t*        req,
                  ngx_http_naxsi_loc_conf_t* cf,
                  naxsi_match_zone_t         zone)
 {
-  if (!cf->ignore_ips || !cf->ignore_ips_ha.keys.nelts) {
+  if (!cf->ignore_ips || cf->ignore_ips_ha.keys.nelts < 1) {
     return 0;
   }
   char ip_str[INET6_ADDRSTRLEN] = { 0 };
@@ -490,8 +491,7 @@ nx_can_ignore_cidr(ngx_http_request_t*        req,
   return 0;
 }
 
-#define custloc_array(x)       ((ngx_http_custom_rule_location_t*)x)
-#define max_json(json, result) ((strlen(json) + strlen(result)) > (NGX_MAX_ERROR_STR - 100 - 3))
+#define custloc_array(x) ((ngx_http_custom_rule_location_t*)x)
 
 /*
 ** wrapper used for regex matchzones. Should be used by classic basestr* as
@@ -1250,8 +1250,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t* ctx, ngx_http_request_t* 
   ngx_http_naxsi_loc_conf_t* cf;
   ngx_array_t*               ostr;
   ngx_table_elt_t*           h;
-  unsigned int               i    = 0;
-  int                        skip = 0;
+  unsigned int               i = 0;
 
   cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
   /* get array of signatures strings */
@@ -1261,125 +1260,110 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t* ctx, ngx_http_request_t* 
 
   if (!ctx->json_log) {
     for (i = 0; i < ostr->nelts; i++) {
-
       ngx_log_error(
         NGX_LOG_ERR, r->connection->log, 0, "NAXSI_FMT: %s", ((ngx_str_t*)ostr->elts)[i].data);
     }
-
   } else {
+    const char* hex  = "0123456789abcdef";
+    ngx_str_t*  elts = (ngx_str_t*)ostr->elts;
     for (i = 0; i < ostr->nelts; i++) {
+      char json[NGX_MAX_ERROR_STR - 100] = { 0 };
+      // line only
+      const char* line = (const char*)elts[i].data;
+      char*       curr = json + 2;
+      char*       end  = (curr + sizeof(json)) - 4;
 
-      char*  line                          = (char*)((ngx_str_t*)ostr->elts)[i].data;
-      char   key[512]                      = "";
-      char   value[512]                    = "";
-      char*  item                          = line; // set pointer to start of line
-      size_t span                          = 0;
-      char   json[NGX_MAX_ERROR_STR - 100] = "{ ";
-      int    items_cnt                     = 0;
+      json[0] = '{';
+      json[1] = '"';
 
-      while (*item) {
-
-        span = strcspn(item, "="); // count characters to next =
-        if (span >= sizeof key) {
-          ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s", "key sub-string too long");
-          skip = 1;
+      int escaped = 0;
+      for (size_t i = 0; line[i] && curr < end; i++) {
+        if (line[i] == '\\' && (line[i + 1] == '&' || line[i + 1] == '=')) {
+          escaped = 1;
+          continue;
+        } else if (!escaped && line[i] == '=') {
+          *curr = '"';
+          curr++;
+          break_if(curr >= end);
+          *curr = ':';
+          curr++;
+          break_if(curr >= end);
+          *curr = '"';
+        } else if (!escaped && line[i] == '&') {
+          *curr = '"';
+          curr++;
+          break_if(curr >= end);
+          *curr = ',';
+          curr++;
+          break_if(curr >= end);
+          *curr = '"';
+        } else if (line[i] == '"' || line[i] == '\\' /* || line[i] == '/'*/) {
+          *curr = '\\';
+          curr++;
+          break_if(curr >= end);
+          *curr = line[i];
+        } else if (line[i] == '\b') {
+          *curr = '\\';
+          curr++;
+          break_if(curr >= end);
+          *curr = 'b';
+        } else if (line[i] == '\f') {
+          *curr = '\\';
+          curr++;
+          break_if(curr >= end);
+          *curr = 'f';
+        } else if (line[i] == '\n') {
+          *curr = '\\';
+          curr++;
+          break_if(curr >= end);
+          *curr = 'n';
+        } else if (line[i] == '\r') {
+          *curr = '\\';
+          curr++;
+          break_if(curr >= end);
+          *curr = 'r';
+        } else if (line[i] == '\t') {
+          *curr = '\\';
+          curr++;
+          break_if(curr >= end);
+          *curr = 't';
+        } else if (is_printable(line[i])) {
+          *curr = line[i];
+        } else {
+          *curr = '\\';
+          curr++;
+          break_if(curr >= end);
+          *curr = 'u';
+          curr++;
+          break_if(curr >= end);
+          *curr = '0';
+          curr++;
+          break_if(curr >= end);
+          *curr = '0';
+          curr++;
+          break_if(curr >= end);
+          *curr = hex[line[i] >> 8];
+          curr++;
+          break_if(curr >= end);
+          *curr = hex[line[i] & 0x0F];
         }
-        if (!skip) {
-          strncpy(key, item, span); // copy those characters to key
-          key[span] = 0;            // zero terminate
-          if (strlen(json) + strlen(key) > NGX_MAX_ERROR_STR - 100 - 3 ||
-              !(strcmp(key, "seed_end"))) {
-            json[0] = '{';
-            json[1] = ' ';
-            json[2] = '\0';
-            break;
-          }
-          strcat(json, "\"");
-          strcat(json, key);
-          strcat(json, "\":\"");
-        }
-
-        item += span;    // advance pointer by count of characters
-        item += !!*item; //!!*item add one if not terminating zero, count does not
-                         //! include =
-        span = strcspn(item, "&");
-
-        if (span >= sizeof value) {
-          ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s", "value sub-string too long");
-          skip = 1;
-        }
-
-        if (!skip) {
-          strncpy(value, item, span);
-
-          value[span] = 0;
-          if (strlen(json) + strlen(value) > NGX_MAX_ERROR_STR - 100 - 3) {
-            json[0] = '{';
-            json[1] = ' ';
-            json[2] = '\0';
-            break;
-          }
-          // Escape it according to the RFC. JSON is pretty liberal: The only
-          // characters you must escape are \, ", and control codes (anything
-          // less than U+0020) Control codes should not be here
-          char* result  = NULL;
-          int   empty   = 0;
-          int   escaped = 0;
-
-          if (strstr(value, "\\")) {
-            // escaping JSON
-            result = replace_str(value, "\\", "\\\\");
-            if (!result)
-              empty = 1;
-
-            if (empty || max_json(json, result)) {
-              json[0] = '{';
-              json[1] = ' ';
-              json[2] = '\0';
-              break;
-            }
-            escaped = 1;
-          } else {
-            escaped = 0;
-          }
-
-          if ((escaped == 1 && strstr(result, "\"")) || strstr(value, "\"")) {
-            // escaping JSON
-            if (escaped)
-              result = replace_str(result, "\"", "\\\"");
-            else
-              result = replace_str(value, "\"", "\\\"");
-
-            if (!result)
-              empty = 1;
-
-            if (!empty && !max_json(json, result)) {
-              strcat(json, result);
-            } else {
-              json[0] = '{';
-              json[1] = ' ';
-              json[2] = '\0';
-              break;
-            }
-            escaped = 1;
-          } else {
-            escaped = 0;
-          }
-
-          if (!escaped)
-            strcat(json, value);
-
-          strcat(json, "\",");
-        }
-
-        item += span;
-        item += !!*item;
-        items_cnt = items_cnt + 1;
+        curr++;
+        escaped = 0;
       }
 
-      int len       = strlen(json);
-      json[len - 1] = '\0';
-      strcat(json, " }");
+      if (curr >= end) {
+        ngx_log_error(NGX_LOG_ERR,
+                      r->connection->log,
+                      0,
+                      "cannot generate json structure due NGX_MAX_ERROR_STR size.");
+        continue;
+      }
+
+      *curr = '"';
+      curr++;
+      *curr = '}';
+      curr++;
+      *curr = 0;
 
       ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "%s", json);
     }

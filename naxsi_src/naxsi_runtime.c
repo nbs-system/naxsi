@@ -1276,12 +1276,8 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t* ctx, ngx_http_request_t* 
       json[0] = '{';
       json[1] = '"';
 
-      int escaped = 0;
       for (size_t i = 0; line[i] && curr < end; i++) {
-        if (line[i] == '\\' && (line[i + 1] == '&' || line[i + 1] == '=')) {
-          escaped = 1;
-          continue;
-        } else if (!escaped && line[i] == '=') {
+        if (line[i] == '=') {
           *curr = '"';
           curr++;
           break_if(curr >= end);
@@ -1289,7 +1285,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t* ctx, ngx_http_request_t* 
           curr++;
           break_if(curr >= end);
           *curr = '"';
-        } else if (!escaped && line[i] == '&') {
+        } else if (line[i] == '&') {
           *curr = '"';
           curr++;
           break_if(curr >= end);
@@ -1348,7 +1344,6 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t* ctx, ngx_http_request_t* 
           *curr = hex[line[i] & 0x0F];
         }
         curr++;
-        escaped = 0;
       }
 
       if (curr >= end) {

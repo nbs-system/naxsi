@@ -55,7 +55,7 @@ parse_ipv4(const char* addr, ip_t* ip, char* ip_str)
 }
 
 int
-is_in_net(const cidr_t* cidr, const ip_t* ip, int is_ipv6)
+is_in_subnet(const cidr_t* cidr, const ip_t* ip, int is_ipv6)
 {
   if ((cidr->version == IPv6 && !is_ipv6) || (cidr->version == IPv4 && is_ipv6)) {
     return 0;

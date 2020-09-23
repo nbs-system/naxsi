@@ -645,6 +645,7 @@ ngx_http_naxsi_read_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
       }
       tmp->version = is_ipv6 ? IPv6 : IPv4;
       tmp->subnet  = ip;
+      /* Generate IPv[46] mask (optimized) */
       if (is_ipv6) {
         if (mask > 63) {
           tmp->mask.v6[0] = 0xffffffffffffffff;

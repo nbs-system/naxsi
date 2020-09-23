@@ -36,6 +36,6 @@ int
 parse_ipv4(const char* addr, ip_t* ip, char* ip_str);
 
 int
-is_in_net(const cidr_t* cidr, const ip_t* ip, int is_ipv6);
+is_in_subnet(const cidr_t* cidr, const ip_t* ip, int is_ipv6);
 
 #endif /* __NAXSI_NET_H__ */

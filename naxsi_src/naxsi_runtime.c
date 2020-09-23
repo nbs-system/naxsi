@@ -438,7 +438,7 @@ nx_can_ignore_ip(ngx_http_request_t*        req,
                  ngx_http_naxsi_loc_conf_t* cf,
                  naxsi_match_zone_t         zone)
 {
-  if (!cf->ignore_ips) {
+  if (!cf->ignore_ips || !cf->ignore_ips_ha.keys.nelts) {
     return 0;
   }
   char ip_str[INET6_ADDRSTRLEN] = { 0 };
@@ -464,25 +464,26 @@ nx_can_ignore_cidr(ngx_http_request_t*        req,
                    ngx_http_naxsi_loc_conf_t* cf,
                    naxsi_match_zone_t         zone)
 {
-  if (cf->ignore_cidrs) {
-    uint        i;
-    ip_t        ip;
-    const char* ipstr   = (const char*)mstr->data;
-    int         is_ipv6 = strchr(ipstr, ':') != NULL;
-    if (is_ipv6) {
-      if (parse_ipv6(ipstr, &ip, NULL)) {
-        return 0;
-      }
-    } else {
-      if (parse_ipv4(ipstr, &ip, NULL)) {
-        return 0;
-      }
+  if (!cf->ignore_cidrs) {
+    return 0;
+  }
+  uint        i;
+  ip_t        ip;
+  const char* ipstr   = (const char*)mstr->data;
+  int         is_ipv6 = strchr(ipstr, ':') != NULL;
+  if (is_ipv6) {
+    if (parse_ipv6(ipstr, &ip, NULL)) {
+      return 0;
     }
-    for (i = 0; i < cf->ignore_cidrs->nelts; i++) {
-      cidr_t* cidr = &((cidr_t*)cf->ignore_cidrs->elts)[i];
-      if (is_in_net(cidr, &ip, is_ipv6)) {
-        return 1;
-      }
+  } else {
+    if (parse_ipv4(ipstr, &ip, NULL)) {
+      return 0;
+    }
+  }
+  for (i = 0; i < cf->ignore_cidrs->nelts; i++) {
+    cidr_t* cidr = &((cidr_t*)cf->ignore_cidrs->elts)[i];
+    if (is_in_subnet(cidr, &ip, is_ipv6)) {
+      return 1;
     }
   }
 

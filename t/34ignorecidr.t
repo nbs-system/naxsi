@@ -12,7 +12,7 @@ $ENV{TEST_NGINX_SERVROOT} = server_root();
 run_tests();
 
 __DATA__
-=== TEST 1: whitelistFile defined (no file)
+=== TEST 1: IgnoreCIDR defined (no file)
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
@@ -20,7 +20,7 @@ include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
      SecRulesEnabled;
-     WhitelistFile "/tmp/naxsi_ut/whitelist.txt";
+     IgnoreCIDR "1.1.1.0/24";
      DeniedUrl "/RequestDenied";
      CheckRule "$SQL >= 8" BLOCK;
      CheckRule "$RFI >= 8" BLOCK;
@@ -36,7 +36,7 @@ location /RequestDenied {
 GET /?a=buibui
 --- error_code: 200
 
-=== TEST 1.1: whitelistFile request (no file)
+=== TEST 1.1: IgnoreCIDR request (no file)
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
@@ -44,7 +44,7 @@ include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
      SecRulesEnabled;
-     WhitelistFile "/tmp/naxsi_ut/whitelist.txt";
+     IgnoreCIDR "1.1.1.0/24";
      DeniedUrl "/RequestDenied";
      CheckRule "$SQL >= 8" BLOCK;
      CheckRule "$RFI >= 8" BLOCK;
@@ -60,7 +60,7 @@ location /RequestDenied {
 GET /?a=buibui
 --- error_code: 200
 
-=== TEST 1.2: whitelistFile request with X-Forwarded-For allow (no file) 
+=== TEST 1.2: IgnoreCIDR request with X-Forwarded-For allow (no file) 
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
@@ -68,7 +68,7 @@ include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
      SecRulesEnabled;
-     WhitelistFile "/tmp/naxsi_ut/whitelist.txt";
+     IgnoreCIDR "1.1.1.0/24";
      DeniedUrl "/RequestDenied";
      CheckRule "$SQL >= 8" BLOCK;
      CheckRule "$RFI >= 8" BLOCK;
@@ -86,7 +86,7 @@ X-Forwarded-For: 1.1.1.1
 GET /?a=buibui
 --- error_code: 200
 
-=== TEST 1.3: whitelistFile request with X-Forwarded-For deny (no file)
+=== TEST 1.3: IgnoreCIDR request with X-Forwarded-For deny (no file)
 --- main_config
 load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
 --- http_config
@@ -94,7 +94,7 @@ include /tmp/naxsi_ut/naxsi_core.rules;
 --- config
 location / {
      SecRulesEnabled;
-     WhitelistFile "/tmp/naxsi_ut/whitelist.txt";
+     IgnoreCIDR "1.1.1.0/24";
      DeniedUrl "/RequestDenied";
      CheckRule "$SQL >= 8" BLOCK;
      CheckRule "$RFI >= 8" BLOCK;

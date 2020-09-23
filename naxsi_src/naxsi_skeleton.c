@@ -597,7 +597,7 @@ ngx_http_naxsi_read_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
       return (NGX_CONF_ERROR);                                                 /* LCOV_EXCL_LINE */
     }
 
-    ip_t ip                       = { 0 };
+    ip_t ip                       = { { 0 } };
     char ip_str[INET6_ADDRSTRLEN] = { 0 };
     int  is_ipv6                  = strchr((const char*)value[1].data, ':') != NULL;
     smask[0]                      = 0;

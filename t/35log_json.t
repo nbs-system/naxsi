@@ -38,10 +38,10 @@ location /RequestDenied {
     # return 412;
 }
 --- request eval
-"GET /\"a?b=<>\\"
+"GET /%2F%22a?b=<>\\"
 --- error_code: 412
 --- error_log eval
-qr@"uri"\:"\/\\"a"@
+qr@"uri\":\"/\\\"a"@
 
 === TEST 1.1: JSON log backslash escape
 --- main_config
@@ -68,7 +68,7 @@ location /RequestDenied {
 "GET /\\\\a?b=<>\\"
 --- error_code: 412
 --- error_log eval
-qr@"uri"\:"\/\\\\a"@
+qr@"uri\":\"/\\\\\\\\a"@
 
 === TEST 1.2: JSON log backslash and quote escape
 --- main_config
@@ -92,7 +92,7 @@ location /RequestDenied {
     # return 412;
 }
 --- request eval
-"GET /\"\\a?b=<>\\"
+"GET /%2F%22\\a?b=<>\\"
 --- error_code: 412
 --- error_log eval
 qr@"uri"\:"\/\\"\\\\a"@

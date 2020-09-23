@@ -12,8 +12,8 @@ FUZZ		?= 0
 STOCK		?= 1
 
 #Allows to force for specific UT only
-#TEST 		:= ""
-NGINX_VERS := "1.15.5"
+#TEST		:= ""
+NGINX_VERS	:= "1.19.2"
 
 
 NGINX_OPTIONS="--with-select_module"
@@ -119,10 +119,7 @@ endif
 	if [ ! $(TEST) ] ; then TEST="*.t" ; fi
 	export PATH="$(TMP_DIR)/objs/:"$(PATH) ; \
 	export PERL5LIB="~/perl5/lib/perl5/" ;\
-    echo "1.1.1.1" > /tmp/naxsi_ut/whitelist.txt; \
-	cd .. ; prove -r "t/$(TEST)" \
-    rm /tmp/naxsi_ut/whitelist.txt; \
-    prove -r "t/34whitelistfile.t"
+	cd .. ; prove -r "t/$(TEST)"
 ifeq ($(COV),1)
 	lcov --directory $(TMP_DIR)/objs/addon/naxsi_src/ --capture --output-file naxsi.info --base-directory $(TMP_DIR)
 	genhtml -s -o /tmp/naxsicov.html naxsi.info

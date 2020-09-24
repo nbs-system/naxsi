@@ -92,6 +92,7 @@ const char* h5_type_to_string(enum html5_type x)
     default:
         assert(0);
     }
+    return "";
 }
 
 size_t print_html5_token(char* buf, size_t len, h5_state_t* hs)
@@ -187,7 +188,7 @@ int read_file(const char* fname, int flags, int testtype)
     g_actual[0] = '\0';
     if (testtype == 0) {
         /*
-         * print sqli tokenization only
+         * print SQLi tokenization only
          */
         libinjection_sqli_init(&sf, copy, slen, flags);
         libinjection_sqli_callback(&sf, NULL, NULL);
@@ -208,7 +209,7 @@ int read_file(const char* fname, int flags, int testtype)
         }
     } else if (testtype == 2) {
         /**
-         * test sqli detection
+         * test SQLi detection
          */
         char buf[100];
         issqli = libinjection_sqli(copy, slen, buf);
@@ -217,7 +218,7 @@ int read_file(const char* fname, int flags, int testtype)
         }
     } else if (testtype == 3) {
         /*
-         * test html5 tokenization only
+         * test HTML 5 tokenization only
          */
 
         h5_state_t hs;
@@ -232,7 +233,7 @@ int read_file(const char* fname, int flags, int testtype)
          */
         sprintf(g_actual, "%d", libinjection_xss(copy, slen));
     } else {
-        fprintf(stderr, "Got stange testtype value of %d\n", testtype);
+        fprintf(stderr, "Got strange testtype value of %d\n", testtype);
         assert(0);
     }
 
@@ -261,7 +262,7 @@ int main(int argc, char** argv)
     int quiet = 0;
 
     const char* fname;
-    while (1) {
+    while (argc > offset) {
         if (strcmp(argv[offset], "-q") == 0 || strcmp(argv[offset], "--quiet") == 0) {
             quiet = 1;
             offset += 1;

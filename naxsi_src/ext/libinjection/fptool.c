@@ -50,7 +50,7 @@ int main(int argc, const char* argv[])
 
     if (single) {
         libinjection_sqli_fingerprint(&sf, FLAG_QUOTE_NONE | FLAG_SQL_ANSI);
-        ok = libinjection_sqli_check_fingerprint(&sf);
+        libinjection_sqli_check_fingerprint(&sf);
         fprintf(stdout, "%s\n", sf.fingerprint);
         return 0;
     }

@@ -61,6 +61,22 @@ void print_token(stoken_t *t) {
     printf("%s", "\n");
 }
 
+void usage() {
+    printf("\n");
+    printf("libinjection sqli tester\n");
+    printf("\n");
+    printf(" -ca  parse as ANSI SQL\n");
+    printf(" -cm  parse as MySQL SQL\n");
+    printf(" -q0  parse as is\n");
+    printf(" -q1  parse in single-quote mode\n");
+    printf(" -q2  parse in doiuble-quote mode\n");
+    printf("\n");
+    printf(" -f --fold  fold results\n");
+    printf("\n");
+    printf(" -d --detect  detect SQLI.  empty reply = not detected\n");
+    printf("\n");
+}
+
 int main(int argc, const char* argv[])
 {
     size_t slen;
@@ -78,10 +94,14 @@ int main(int argc, const char* argv[])
     sfilter sf;
 
     if (argc < 2) {
-        fprintf(stderr, "need more args\n");
+        usage();
         return 1;
     }
     while (1) {
+	if (strcmp(argv[offset], "-h") == 0 || strcmp(argv[offset], "-?") == 0 || strcmp(argv[offset], "--help") == 0) {
+	    usage();
+            return 1;
+	}
         if (strcmp(argv[offset], "-m") == 0) {
             flags |= FLAG_SQL_MYSQL;
             offset += 1;

@@ -1,5 +1,5 @@
 /**
- * Copyright 2012, 2013 Nick Galbreath
+ * Copyright 2012-2016 Nick Galbreath
  * nickg@client9.com
  * BSD License -- see COPYING.txt for details
  *
@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef _LIBINJECTION_H
-#define _LIBINJECTION_H
+#ifndef LIBINJECTION_H
+#define LIBINJECTION_H
 
 #ifdef __cplusplus
 # define LIBINJECTION_BEGIN_DECLS    extern "C" {
@@ -47,19 +47,19 @@ const char* libinjection_version(void);
  * \param[out] fingerprint buffer of 8+ characters.  c-string,
  * \return 1 if SQLi, 0 if benign.  fingerprint will be set or set to empty string.
  */
-int libinjection_sqli(const char* s, size_t slen, char fingerprint[]);
+int libinjection_sqli(const char* input, size_t slen, char fingerprint[]);
 
-/** ALPHA version of xss detector. 
+/** ALPHA version of xss detector.
  *
- * NOT DONE. 
+ * NOT DONE.
  *
  * \param[in] s  input string, may contain nulls, does not need to be null-terminated
  * \param[in] slen input string length
  * \return 1 if XSS found, 0 if benign
  *
  */
-int libinjection_xss(const char* s, size_t slen);
+int libinjection_xss(const char* s, size_t len);
 
 LIBINJECTION_END_DECLS
 
-#endif /* _LIBINJECTION_H */
+#endif /* LIBINJECTION_H */

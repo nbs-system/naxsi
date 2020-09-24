@@ -118,7 +118,7 @@ void test_positive(FILE * fd, const char *fname, detect_mode_t mode,
                    int flag_invert, int flag_true, int flag_quiet)
 {
     char linebuf[8192];
-    int issqli;
+    int issqli = 0;
     int linenum = 0;
     size_t len;
     sfilter sf;
@@ -134,7 +134,6 @@ void test_positive(FILE * fd, const char *fname, detect_mode_t mode,
         }
 
         len =  modp_url_decode(linebuf, linebuf, len);
-        issqli = 0;
         switch (mode) {
         case MODE_SQLI: {
             libinjection_sqli_init(&sf, linebuf, len, 0);
@@ -225,7 +224,7 @@ int main(int argc, const char *argv[])
     int flag_quiet = FALSE;
 
     /*
-     * only print postive results
+     * only print positive results
      * with invert, only print negative results
      */
     int flag_true = FALSE;

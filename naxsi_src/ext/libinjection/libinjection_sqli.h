@@ -1,14 +1,14 @@
 /**
- * Copyright 2012, 2013 Nick Galbreath
+ * Copyright 2012-2016 Nick Galbreath
  * nickg@client9.com
- * BSD License -- see COPYING.txt for details
+ * BSD License -- see `COPYING.txt` for details
  *
  * https://libinjection.client9.com/
  *
  */
 
-#ifndef _LIBINJECTION_SQLI_H
-#define _LIBINJECTION_SQLI_H
+#ifndef LIBINJECTION_SQLI_H
+#define LIBINJECTION_SQLI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,10 +40,6 @@ struct libinjection_sqli_token {
 #ifdef SWIG
 %immutable;
 #endif
-    char type;
-    char str_open;
-    char str_close;
-
     /*
      * position and length of token
      * in original string
@@ -53,17 +49,20 @@ struct libinjection_sqli_token {
 
     /*  count:
      *  in type 'v', used for number of opening '@'
-     *  but maybe unsed in other contexts
+     *  but maybe used in other contexts
      */
     int  count;
 
+    char type;
+    char str_open;
+    char str_close;
     char val[32];
 };
 
 typedef struct libinjection_sqli_token stoken_t;
 
 /**
- * Pointer to function, takes cstr input,
+ * Pointer to function, takes c-string input,
  *  returns '\0' for no match, else a char
  */
 struct libinjection_sqli_state;
@@ -97,7 +96,7 @@ struct libinjection_sqli_state {
     int flags;
 
     /*
-     * pos is index in string we are at when tokenizing
+     * pos is the index in the string during tokenization
      */
     size_t pos;
 
@@ -118,7 +117,7 @@ struct libinjection_sqli_state {
     /*
      * fingerprint pattern c-string
      * +1 for ending null
-     * Mimimum of 8 bytes to add gcc's -fstack-protector to work
+     * Minimum of 8 bytes to add gcc's -fstack-protector to work
      */
     char fingerprint[8];
 
@@ -156,7 +155,7 @@ struct libinjection_sqli_state {
      */
     int stats_comment_c;
 
-    /* '#' operators or mysql EOL comments found
+    /* '#' operators or MySQL EOL comments found
      *
      */
     int stats_comment_hash;
@@ -176,7 +175,7 @@ struct libinjection_sqli_state {
 typedef struct libinjection_sqli_state sfilter;
 
 struct libinjection_sqli_token* libinjection_sqli_get_token(
-    struct libinjection_sqli_state* sqlistate, int i);
+    struct libinjection_sqli_state* sql_state, int i);
 
 /*
  * Version info.
@@ -194,8 +193,8 @@ const char* libinjection_version(void);
 /**
  *
  */
-void libinjection_sqli_init(struct libinjection_sqli_state* sql_state,
-                            const char* s, size_t slen,
+void libinjection_sqli_init(struct libinjection_sqli_state *sf,
+                            const char* s, size_t len,
                             int flags);
 
 /**
@@ -208,10 +207,10 @@ void libinjection_sqli_init(struct libinjection_sqli_state* sql_state,
  */
 int libinjection_is_sqli(struct libinjection_sqli_state* sql_state);
 
-/*  FOR H@CKERS ONLY
- *
+/*  FOR HACKERS ONLY
+ *   provides deep hooks into the decision making process
  */
-void libinjection_sqli_callback(struct libinjection_sqli_state*  sql_state,
+void libinjection_sqli_callback(struct libinjection_sqli_state *sf,
                                 ptr_lookup_fn fn,
                                 void* userdata);
 
@@ -219,7 +218,7 @@ void libinjection_sqli_callback(struct libinjection_sqli_state*  sql_state,
 /*
  * Resets state, but keeps initial string and callbacks
  */
-void libinjection_sqli_reset(struct libinjection_sqli_state* sql_state,
+void libinjection_sqli_reset(struct libinjection_sqli_state *sf,
                              int flags);
 
 /**
@@ -237,17 +236,17 @@ void libinjection_sqli_reset(struct libinjection_sqli_state* sql_state,
  *          do not free!
  *
  */
-const char* libinjection_sqli_fingerprint(struct libinjection_sqli_state* sql_state,
+const char* libinjection_sqli_fingerprint(struct libinjection_sqli_state *sql_state,
                                           int flags);
 
 /**
  * The default "word" to token-type or fingerprint function.  This
  * uses a ASCII case-insensitive binary tree.
  */
-char libinjection_sqli_lookup_word(struct libinjection_sqli_state* sql_state,
+char libinjection_sqli_lookup_word(struct libinjection_sqli_state *sql_state,
                                    int lookup_type,
-                                   const char* s,
-                                   size_t slen);
+                                   const char* str,
+                                   size_t len);
 
 /* Streaming tokenization interface.
  *
@@ -256,20 +255,20 @@ char libinjection_sqli_lookup_word(struct libinjection_sqli_state* sql_state,
  * \returns 1, has a token, keep going, or 0 no tokens
  *
  */
-int  libinjection_sqli_tokenize(struct libinjection_sqli_state * sql_state);
+int  libinjection_sqli_tokenize(struct libinjection_sqli_state *sf);
 
 /**
  * parses and folds input, up to 5 tokens
  *
  */
-int libinjection_sqli_fold(struct libinjection_sqli_state * sql_state);
+int libinjection_sqli_fold(struct libinjection_sqli_state *sf);
 
 /** The built-in default function to match fingerprints
  *  and do false negative/positive analysis.  This calls the following
  *  two functions.  With this, you over-ride one part or the other.
  *
  *     return libinjection_sqli_blacklist(sql_state) &&
- *        libinject_sqli_not_whitelist(sql_state);
+ *        libinjection_sqli_not_whitelist(sql_state);
  *
  * \param sql_state should be filled out after libinjection_sqli_fingerprint is called
  */
@@ -284,7 +283,7 @@ int libinjection_sqli_blacklist(struct libinjection_sqli_state* sql_state);
 /* Given a positive match for a pattern (i.e. pattern is SQLi), this function
  * does additional analysis to reduce false positives.
  *
- * \return TRUE if sqli, false otherwise
+ * \return TRUE if SQLi, false otherwise
  */
 int libinjection_sqli_not_whitelist(struct libinjection_sqli_state * sql_state);
 
@@ -292,4 +291,4 @@ int libinjection_sqli_not_whitelist(struct libinjection_sqli_state * sql_state);
 }
 #endif
 
-#endif /* _LIBINJECTION_SQLI_H */
+#endif /* LIBINJECTION_SQLI_H */

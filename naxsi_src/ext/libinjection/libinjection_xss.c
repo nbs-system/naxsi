@@ -20,7 +20,7 @@ static int is_black_tag(const char* s, size_t len);
 static int is_black_url(const char* s, size_t len);
 static int cstrcasecmp_with_null(const char *a, const char *b, size_t n);
 static int html_decode_char_at(const char* src, size_t len, size_t* consumed);
-static int htmlencode_startswith(const char* prefix, const char *src, size_t n);
+static int htmlencode_startswith(const char *a/* prefix */, const char *b /* src */, size_t n);
 
 
 typedef struct stringtype {
@@ -150,7 +150,7 @@ static stringtype_t BLACKATTR[] = {
     , { "DATASRC", TYPE_BLACK }       /* IE */
     , { "DYNSRC", TYPE_ATTR_URL }     /* Obsolete img attribute */
     , { "FILTER", TYPE_STYLE }        /* Opera, SVG inline style */
-    , { "FORMACTION", TYPE_ATTR_URL } /* HTML5 */
+    , { "FORMACTION", TYPE_ATTR_URL } /* HTML 5 */
     , { "FOLDER", TYPE_ATTR_URL }     /* Only on A tags, IE-only */
     , { "FROM", TYPE_ATTR_URL }       /* SVG */
     , { "HANDLER", TYPE_ATTR_URL }    /* SVG Tiny, Opera */
@@ -166,7 +166,7 @@ static stringtype_t BLACKATTR[] = {
 };
 
 /* xmlns */
-/* xml-stylesheet > <eval>, <if expr=> */
+/* `xml-stylesheet` > <eval>, <if expr=> */
 
 /*
   static const char* BLACKATTR[] = {
@@ -240,8 +240,8 @@ static int cstrcasecmp_with_null(const char *a, const char *b, size_t n)
 }
 
 /*
- * Does an HTML encoded  binary string (const char*, lenght) start with
- * a all uppercase c-string (null terminated), case insenstive!
+ * Does an HTML encoded  binary string (const char*, length) start with
+ * a all uppercase c-string (null terminated), case insensitive!
  *
  * also ignore any embedded nulls in the HTML string!
  *
@@ -275,7 +275,7 @@ static int htmlencode_startswith(const char *a, const char *b, size_t n)
         }
 
         if (cb == 10) {
-            /* always ignore vtab characters in user input */
+            /* always ignore vertical tab characters in user input */
             /* who allows this?? */
             continue;
         }
@@ -340,14 +340,15 @@ static attribute_t is_black_attr(const char* s, size_t len)
         return TYPE_NONE;
     }
 
-    /* javascript on.* */
-    if ((s[0] == 'o' || s[0] == 'O') && (s[1] == 'n' || s[1] == 'N')) {
-        /* printf("Got javascript on- attribute name\n"); */
-        return TYPE_BLACK;
-    }
-
-
     if (len >= 5) {
+        /* JavaScript on.* */
+        if ((s[0] == 'o' || s[0] == 'O') && (s[1] == 'n' || s[1] == 'N')) {
+            /* printf("Got JavaScript on- attribute name\n"); */
+            return TYPE_BLACK;
+        }
+
+
+
         /* XMLNS can be used to create arbitrary tags */
         if (cstrcasecmp_with_null("XMLNS", s, 5) == 0 || cstrcasecmp_with_null("XLINK", s, 5) == 0) {
             /*      printf("Got XMLNS and XLINK tags\n"); */
@@ -384,7 +385,7 @@ static int is_black_url(const char* s, size_t len)
         /*
          * HEY: this is a signed character.
          *  We are intentionally skipping high-bit characters too
-         *  since they are not ascii, and Opera sometimes uses UTF8 whitespace.
+         *  since they are not ASCII, and Opera sometimes uses UTF-8 whitespace.
          *
          * Also in EUC-JP some of the high bytes are just ignored.
          */
@@ -433,7 +434,7 @@ int libinjection_is_xss(const char* s, size_t len, int flags)
             /*
              * IE6,7,8 parsing works a bit differently so
              * a whole <script> or other black tag might be hiding
-             * inside an attribute value under HTML5 parsing
+             * inside an attribute value under HTML 5 parsing
              * See http://html5sec.org/#102
              * to avoid doing a full reparse of the value, just
              * look for "<".  This probably need adjusting to
@@ -482,7 +483,7 @@ int libinjection_is_xss(const char* s, size_t len, int flags)
                     (h5.token_start[2] == 'f' || h5.token_start[2] == 'F')) {
                     return 1;
                 }
-                if ((h5.token_start[0] == 'x' || h5.token_start[1] == 'X') &&
+                if ((h5.token_start[0] == 'x' || h5.token_start[0] == 'X') &&
                     (h5.token_start[1] == 'm' || h5.token_start[1] == 'M') &&
                     (h5.token_start[2] == 'l' || h5.token_start[2] == 'L')) {
                     return 1;
@@ -508,6 +509,15 @@ int libinjection_is_xss(const char* s, size_t len, int flags)
 
 /*
  * wrapper
+ *
+ *
+ * const char* s: is expected to be a null terminated string.
+ * size_t len: should represent the length of the string
+ *             without the null terminator - strlen(s). 
+ * 
+ * Further info:
+ *   - https://github.com/client9/libinjection/issues/150
+ *
  */
 int libinjection_xss(const char* s, size_t len)
 {

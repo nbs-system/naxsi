@@ -14,9 +14,11 @@ char*
 strnchr(const char* s, int c, int len)
 {
   int cpt;
-  for (cpt = 0; cpt < len && s[cpt]; cpt++)
-    if (s[cpt] == c)
+  for (cpt = 0; cpt < len && s[cpt]; cpt++) {
+    if (s[cpt] == c) {
       return ((char*)s + cpt);
+    }
+  }
   return (NULL);
 }
 
@@ -24,9 +26,11 @@ static char*
 strncasechr(const char* s, int c, int len)
 {
   int cpt;
-  for (cpt = 0; cpt < len && s[cpt]; cpt++)
-    if (tolower(s[cpt]) == c)
+  for (cpt = 0; cpt < len && s[cpt]; cpt++) {
+    if (tolower(s[cpt]) == c) {
       return ((char*)s + cpt);
+    }
+  }
   return (NULL);
 }
 
@@ -44,13 +48,15 @@ strfaststr(unsigned char* haystack, unsigned int hl, unsigned char* needle, unsi
   end = (char*)haystack + hl;
   while (cpt < end) {
     found = strncasechr((const char*)cpt, (int)needle[0], hl);
-    if (!found)
+    if (!found) {
       return (NULL);
-    if (nl == 1)
+    }
+    if (nl == 1) {
       return (found);
-    if (!strncasecmp((const char*)found + 1, (const char*)needle + 1, nl - 1))
+    }
+    if (!strncasecmp((const char*)found + 1, (const char*)needle + 1, nl - 1)) {
       return ((char*)found);
-    else {
+    } else {
       if (found + nl >= end)
         break;
       if (found + nl < end) {

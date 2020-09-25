@@ -276,20 +276,24 @@ ngx_http_nx_json_obj(ngx_json_t* js)
       case '{': /* sub-object */
         js->depth++;
         ngx_http_nx_json_obj(js);
-        if (js->c != '}')
+        if (js->c != '}') {
           return (NGX_ERROR);
+        }
         js->off++;
         js->depth--;
         break;
       case '"': /* key : value, extract and parse. */
-        if (ngx_http_nx_json_quoted(js, &(js->ckey)) != NGX_OK)
+        if (ngx_http_nx_json_quoted(js, &(js->ckey)) != NGX_OK) {
           return (NGX_ERROR);
-        if (ngx_http_nx_json_seek(js, ':'))
+        }
+        if (ngx_http_nx_json_seek(js, ':')) {
           return (NGX_ERROR);
+        }
         js->off++;
         ngx_http_nx_json_forward(js);
-        if (ngx_http_nx_json_val(js) != NGX_OK)
+        if (ngx_http_nx_json_val(js) != NGX_OK) {
           return (NGX_ERROR);
+        }
     }
     ngx_http_nx_json_forward(js);
     /* another element ? */
@@ -341,7 +345,8 @@ ngx_http_naxsi_json_parse(ngx_http_request_ctx_t* ctx,
              "nx_json_val returned error, apply invalid_json.");
   }
   ngx_http_nx_json_forward(js);
-  if (js->off != js->len)
+  if (js->off != js->len) {
     ngx_http_apply_rulematch_v_n(&nx_int__invalid_json, ctx, r, NULL, NULL, BODY, 1, 0);
+  }
   return;
 }

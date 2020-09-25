@@ -1836,6 +1836,8 @@ ngx_http_basestr_ruleset_n(ngx_pool_t*             pool,
   ngx_int_t                        nb_match = 0;
   ngx_http_custom_rule_location_t* location;
 
+  naxsi_escape_nullbytes(value);
+
   NX_DEBUG(_debug_basestr_ruleset,
            NGX_LOG_DEBUG_HTTP,
            req->connection->log,

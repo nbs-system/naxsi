@@ -1204,5 +1204,95 @@ GET /z?&yesonea
 --- error_code: 412
 
 
+=== TEST 37: multipart, MainRule BODY|FILE_EXT blocked
+--- user_files
+>>> foobar
+eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule "id:4241" "s:DROP" "str:matchme" "mz:BODY|FILE_EXT";
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$UPLOAD >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- raw_request eval
+"POST /foobar HTTP/1.1\r
+Host: 127.0.0.1\r
+Connection: Close\r
+User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
+Accept-Language: en-us,en;q=0.5\r
+Accept-Encoding: gzip, deflate\r
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
+Referer: http://127.0.0.1/\r
+Content-Type: application/x-www-form-urlencoded\r
+Content-Length: 38\r
+\r
+txtName=matchme&btnSign=Sign+Guestbook\r
+"
+--- error_code: 412
+
+
+=== TEST 37: multipart, BasicRule BODY|FILE_EXT blocked
+--- user_files
+>>> foobar
+eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$UPLOAD >= 8" BLOCK;
+	 BasicRule "id:4241" "s:DROP" "str:matchme" "mz:BODY|FILE_EXT";
+
+
+	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- raw_request eval
+"POST /foobar HTTP/1.1\r
+Host: 127.0.0.1\r
+Connection: Close\r
+User-Agent: Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10\r
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
+Accept-Language: en-us,en;q=0.5\r
+Accept-Encoding: gzip, deflate\r
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
+Referer: http://127.0.0.1/\r
+Content-Type: application/x-www-form-urlencoded\r
+Content-Length: 38\r
+\r
+txtName=matchme&btnSign=Sign+Guestbook\r
+"
+--- error_code: 412
+
+
 
 

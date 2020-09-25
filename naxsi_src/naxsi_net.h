@@ -8,9 +8,9 @@
 #define __NAXSI_NET_H__
 
 #if defined(__FreeBSD__)
-  #include <sys/types.h>
-  #include <sys/socket.h>
-  #include <netinet/in.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #endif
 
 #include <arpa/inet.h>

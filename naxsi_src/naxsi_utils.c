@@ -14,7 +14,7 @@ char*
 strnchr(const char* s, int c, int len)
 {
   int cpt;
-  for (cpt = 0; cpt < len && s[cpt]; cpt++) {
+  for (cpt = 0; cpt < len; cpt++) {
     if (s[cpt] == c) {
       return ((char*)s + cpt);
     }
@@ -26,7 +26,7 @@ static char*
 strncasechr(const char* s, int c, int len)
 {
   int cpt;
-  for (cpt = 0; cpt < len && s[cpt]; cpt++) {
+  for (cpt = 0; cpt < len; cpt++) {
     if (tolower(s[cpt]) == c) {
       return ((char*)s + cpt);
     }

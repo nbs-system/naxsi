@@ -519,7 +519,15 @@ ngx_http_naxsi_cfg_parse_one_rule(ngx_conf_t*      cf,
                                   ngx_int_t        nb_elem);
 
 char*
-strfaststr(unsigned char* haystack, unsigned int hl, unsigned char* needle, unsigned int nl);
+strfaststr(const unsigned char* haystack,
+           unsigned int         hl,
+           const unsigned char* needle,
+           unsigned int         nl);
+
+#define sstrfaststr(h, hl, n, nl)                                                                  \
+  strfaststr(                                                                                      \
+    (const unsigned char*)(h), (unsigned int)(hl), (const unsigned char*)(n), (unsigned int)(nl));
+
 char*
 strnchr(const char* s, int c, int len);
 

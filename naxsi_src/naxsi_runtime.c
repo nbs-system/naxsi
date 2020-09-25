@@ -121,7 +121,7 @@ ngx_http_rule_t nx_int__bad_utf8 = {
   /*br ptrs*/ NULL
 };
 
-#define dummy_error_fatal(ctx, r, ...)                                                             \
+#define naxsi_error_fatal(ctx, r, ...)                                                             \
   do {                                                                                             \
     if (ctx)                                                                                       \
       ctx->block = 1;                                                                              \
@@ -1472,10 +1472,12 @@ ngx_http_apply_rulematch_v_n(ngx_http_rule_t*        r,
   ngx_http_matched_rule_t*   mr;
   ngx_str_t                  empty = ngx_string("");
 
-  if (!name)
+  if (!name) {
     name = &empty;
-  if (!value)
+  }
+  if (!value) {
     value = &empty;
+  }
 
   cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
   if (!cf || !ctx)
@@ -1711,7 +1713,7 @@ ngx_http_spliturl_ruleset(ngx_pool_t*             pool,
       eq  = strnchr(str, '=', len);
       if (!eq) {
         if (ngx_http_apply_rulematch_v_n(&nx_int__uncommon_url, ctx, req, NULL, NULL, zone, 1, 0)) {
-          dummy_error_fatal(ctx, req, "malformed url, possible attack [%s]", str);
+          naxsi_error_fatal(ctx, req, "malformed url, possible attack [%s]", str);
         }
         return (1);
       }
@@ -2135,61 +2137,77 @@ nx_content_disposition_parse(unsigned char*      str,
 
   while (str < line_end) {
     /* rfc allow spaces and tabs inbetween */
-    while (str < line_end && *str && (*str == ' ' || *str == '\t'))
+    while (str < line_end && (*str == ' ' || *str == '\t')) {
       str++;
-    if (str < line_end && *str && *str == ';')
+    }
+    if (str < line_end && *str == ';') {
       str++;
-    while (str < line_end && *str && (*str == ' ' || *str == '\t'))
+    }
+    while (str < line_end && (*str == ' ' || *str == '\t')) {
       str++;
+    }
 
-    if (str >= line_end || !*str)
+    if (str >= line_end) {
       break;
+    }
 
     if (!ngx_strncmp(str, "name=\"", 6)) {
       /* we already successfully parsed a name, reject that. */
-      if (varn_end || varn_start)
+      if (varn_end || varn_start) {
         return (NGX_ERROR);
+      }
+
       varn_end = varn_start = str + 6;
       do {
-        varn_end = (unsigned char*)ngx_strchr(varn_end, '"');
-        if (!varn_end || (varn_end && *(varn_end - 1) != '\\'))
+        varn_end = (unsigned char*)strnchr((const char*)varn_end, '"', line_end - varn_start);
+        if (!varn_end || (varn_end && *(varn_end - 1) != '\\')) {
           break;
+        }
         varn_end++;
       } while (varn_end && varn_end < line_end);
-      if (!varn_end || !*varn_end)
+
+      if (!varn_end || !*varn_end) {
         return (NGX_ERROR);
+      }
+
       str = varn_end;
-      if (str < line_end + 1)
+      if (str < line_end + 1) {
         str++;
-      else
+      } else {
         return (NGX_ERROR);
+      }
       *fvarn_start = varn_start;
       *fvarn_end   = varn_end;
     } else if (!ngx_strncmp(str, "filename=\"", 10)) {
       /* we already successfully parsed a filename, reject that. */
-      if (filen_end || filen_start)
+      if (filen_end || filen_start) {
         return (NGX_ERROR);
+      }
       filen_end = filen_start = str + 10;
       do {
-        filen_end = (unsigned char*)ngx_strchr(filen_end, '"');
-        if (!filen_end)
+        filen_end = (unsigned char*)strnchr((const char*)filen_end, '"', line_end - filen_start);
+        if (!filen_end) {
           break;
-        if (filen_end && *(filen_end - 1) != '\\')
+        }
+        if (filen_end && *(filen_end - 1) != '\\') {
           break;
+        }
         filen_end++;
       } while (filen_end && filen_end < line_end);
-      if (!filen_end)
+      if (!filen_end) {
         return (NGX_ERROR);
+      }
       str = filen_end;
-      if (str < line_end + 1)
+      if (str < line_end + 1) {
         str++;
-      else
+      } else {
         return (NGX_ERROR);
+      }
       *ffilen_end   = filen_end;
       *ffilen_start = filen_start;
-    } else if (str == line_end - 1)
+    } else if (str == line_end - 1) {
       break;
-    else {
+    } else {
       /* gargabe is present ?*/
       NX_DEBUG(_debug_post_heavy,
                NGX_LOG_DEBUG_HTTP,
@@ -2204,8 +2222,9 @@ nx_content_disposition_parse(unsigned char*      str,
     }
   }
   /* tssk tssk */
-  if (filen_end > line_end || varn_end > line_end)
+  if (filen_end > line_end || varn_end > line_end) {
     return (NGX_ERROR);
+  }
   return (NGX_OK);
 }
 
@@ -2329,7 +2348,7 @@ ngx_http_naxsi_multipart_parse(ngx_http_request_ctx_t* ctx,
         NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "Unknown content-type: [%s]", src + idx);
       if (ngx_http_apply_rulematch_v_n(
             &nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
-        dummy_error_fatal(ctx, r, "POST data : unknown content-disposition");
+        naxsi_error_fatal(ctx, r, "POST data : unknown content-disposition");
       }
       return;
     }
@@ -2338,7 +2357,7 @@ ngx_http_naxsi_multipart_parse(ngx_http_request_ctx_t* ctx,
     if (!line_end) {
       if (ngx_http_apply_rulematch_v_n(
             &nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
-        dummy_error_fatal(ctx, r, "POST data : malformed boundary line");
+        naxsi_error_fatal(ctx, r, "POST data : malformed boundary line");
       }
       return;
     }
@@ -2353,7 +2372,7 @@ ngx_http_naxsi_multipart_parse(ngx_http_request_ctx_t* ctx,
     if (!varn_start || !varn_end || varn_end <= varn_start) {
       if (ngx_http_apply_rulematch_v_n(
             &nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
-        dummy_error_fatal(ctx, r, "POST data : no 'name' in POST var");
+        naxsi_error_fatal(ctx, r, "POST data : no 'name' in POST var");
       }
       return;
     }
@@ -2366,7 +2385,7 @@ ngx_http_naxsi_multipart_parse(ngx_http_request_ctx_t* ctx,
       if (!line_end) {
         if (ngx_http_apply_rulematch_v_n(
               &nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
-          dummy_error_fatal(ctx, r, "POST data : malformed filename (no content-type ?)");
+          naxsi_error_fatal(ctx, r, "POST data : malformed filename (no content-type ?)");
         }
         return;
       }
@@ -2379,7 +2398,7 @@ ngx_http_naxsi_multipart_parse(ngx_http_request_ctx_t* ctx,
     if (src[idx] != '\r' || src[idx + 1] != '\n') {
       if (ngx_http_apply_rulematch_v_n(
             &nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
-        dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
+        naxsi_error_fatal(ctx, r, "POST data : malformed content-disposition line");
       }
       return;
     }
@@ -2387,32 +2406,33 @@ ngx_http_naxsi_multipart_parse(ngx_http_request_ctx_t* ctx,
     /* seek the end of the data */
     end = NULL;
     while (idx < len) {
-      end = (u_char*)ngx_strstr(src + idx, "\r\n--");
+      end = (u_char*)sstrfaststr(src + idx, len - idx, "\r\n--", strlen("\r\n--"));
       /* file data can contain \x0 */
       while (!end) {
         idx += strlen((const char*)src + idx);
         if (idx < len - 2) {
           idx++;
-          end = (u_char*)ngx_strstr(src + idx, "\r\n--");
-        } else
+          end = (u_char*)sstrfaststr(src + idx, len - idx, "\r\n--", strlen("\r\n--"));
+        } else {
           break;
+        }
       }
-      if (!end) {
+      if (!end || ngx_strncmp(end + 4, boundary, boundary_len)) {
         if (ngx_http_apply_rulematch_v_n(
               &nx_int__uncommon_post_format, ctx, r, NULL, NULL, BODY, 1, 0)) {
-          dummy_error_fatal(ctx, r, "POST data : malformed content-disposition line");
+          naxsi_error_fatal(ctx, r, "POST data : malformed content-disposition line");
         }
         return;
       }
-      if (!ngx_strncmp(end + 4, boundary, boundary_len))
+      if (!ngx_strncmp(end + 4, boundary, boundary_len)) {
         break;
-      else {
+      } else {
         idx += ((u_char*)end - (src + idx)) + 1;
         end = NULL;
       }
     }
     if (!end) {
-      dummy_error_fatal(ctx, r, "POST data : malformed line");
+      naxsi_error_fatal(ctx, r, "POST data : malformed line");
       return;
     }
     if (filen_start) {
@@ -2440,27 +2460,29 @@ ngx_http_naxsi_multipart_parse(ngx_http_request_ctx_t* ctx,
                &final_data);
 
       /* here we got val name + val content !*/
-      if (cf->body_rules)
+      if (cf->body_rules) {
         ngx_http_basestr_ruleset_n(
           r->pool, &final_var, &final_data, cf->body_rules, r, ctx, FILE_EXT);
-      else
+      } else {
         NX_DEBUG(_debug_post_heavy,
                  /* here we got val name + val content !*/
                  NGX_LOG_DEBUG_HTTP,
                  r->connection->log,
                  0,
                  "[POST] No local body rules");
+      }
 
-      if (main_cf->body_rules)
+      if (main_cf->body_rules) {
         ngx_http_basestr_ruleset_n(
           r->pool, &final_var, &final_data, main_cf->body_rules, r, ctx, FILE_EXT);
-      else
+      } else {
         NX_DEBUG(_debug_post_heavy,
                  /* here we got val name + val content !*/
                  NGX_LOG_DEBUG_HTTP,
                  r->connection->log,
                  0,
                  "[POST] No main body rules");
+      }
 
       idx += (u_char*)end - (src + idx);
     } else if (varn_start) {
@@ -2684,7 +2706,7 @@ ngx_http_naxsi_uri_parse(ngx_http_naxsi_main_conf_t* main_cf,
   tmp.len  = r->uri.len;
   tmp.data = ngx_pcalloc(r->pool, r->uri.len + 1);
   if (!tmp.data) {
-    dummy_error_fatal(ctx, r, "failed alloc of %d", r->uri.len + 1);
+    naxsi_error_fatal(ctx, r, "failed alloc of %d", r->uri.len + 1);
     return;
   }
   memcpy(tmp.data, r->uri.data, r->uri.len);
@@ -2721,13 +2743,13 @@ ngx_http_naxsi_args_parse(ngx_http_naxsi_main_conf_t* main_cf,
   tmp.len  = r->args.len;
   tmp.data = ngx_pcalloc(r->pool, r->args.len + 1);
   if (!tmp.data) {
-    dummy_error_fatal(ctx, r, "failed alloc");
+    naxsi_error_fatal(ctx, r, "failed alloc");
     return;
   }
   memcpy(tmp.data, r->args.data, r->args.len);
 
   if (ngx_http_spliturl_ruleset(r->pool, &tmp, cf->get_rules, main_cf->get_rules, r, ctx, ARGS)) {
-    dummy_error_fatal(ctx, r, "spliturl error : malformed url, possible attack");
+    naxsi_error_fatal(ctx, r, "spliturl error : malformed url, possible attack");
     return;
   }
   ngx_pfree(r->pool, tmp.data);

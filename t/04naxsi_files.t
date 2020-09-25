@@ -999,5 +999,326 @@ buibuibuib
 --- error_code: 412
 
 
+=== TEST 15: multipart, XSS in name
+--- user_files
+>>> foobar
+eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$UPLOAD >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- raw_request eval
+"POST /foobar HTTP/1.1\r
+Host: 127.0.0.1\r
+Connection: Close\r
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
+Accept-Language: en-us,en;q=0.5\r
+Accept-Encoding: gzip, deflate\r
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
+Referer: http://127.0.0.1/\r
+Content-Type: multipart/form-data; boundary=---------------------------1919886344942015258287623957\r
+Content-Length: 377\r
+\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"textline\"\r
+\r
+<script>alert(1)<script>\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"datafile\"; filename=\"bla.txt\"\r
+Content-Type: text/plain\r
+\r
+buibuibubi
+buibuibuib
+\r
+-----------------------------1919886344942015258287623957--\r
+"
+--- error_code: 412
+
+
+=== TEST 16: multipart, null char before XSS in name
+--- user_files
+>>> foobar
+eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$UPLOAD >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- raw_request eval
+"POST /foobar HTTP/1.1\r
+Host: 127.0.0.1\r
+Connection: Close\r
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
+Accept-Language: en-us,en;q=0.5\r
+Accept-Encoding: gzip, deflate\r
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
+Referer: http://127.0.0.1/\r
+Content-Type: multipart/form-data; boundary=---------------------------1919886344942015258287623957\r
+Content-Length: 382\r
+\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"textline\"\r
+\r
+aaaa\0<script>alert(1)<script>\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"datafile\"; filename=\"bla.txt\"\r
+Content-Type: text/plain\r
+\r
+buibuibubi
+buibuibuib
+\r
+-----------------------------1919886344942015258287623957--\r
+"
+--- error_code: 412
+
+
+
+=== TEST 17: multipart, XSS in name with invalid boundary
+--- user_files
+>>> foobar
+eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$UPLOAD >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- raw_request eval
+"POST /foobar HTTP/1.1\r
+Host: 127.0.0.1\r
+Connection: Close\r
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
+Accept-Language: en-us,en;q=0.5\r
+Accept-Encoding: gzip, deflate\r
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
+Referer: http://127.0.0.1/\r
+Content-Type: multipart/form-data; boundary=---------------------------1919886344942015258287623957\r
+Content-Length: 385\r
+\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"textline\"\r
+\r
+<script>alert(1)<script>\r
+--aaaa\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"datafile\"; filename=\"bla.txt\"\r
+Content-Type: text/plain\r
+\r
+buibuibubi
+buibuibuib
+\r
+-----------------------------1919886344942015258287623957--\r
+"
+--- error_code: 412
+
+
+=== TEST 18: multipart, null char after XSS in name
+--- user_files
+>>> foobar
+eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$UPLOAD >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- raw_request eval
+"POST /foobar HTTP/1.1\r
+Host: 127.0.0.1\r
+Connection: Close\r
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
+Accept-Language: en-us,en;q=0.5\r
+Accept-Encoding: gzip, deflate\r
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
+Referer: http://127.0.0.1/\r
+Content-Type: multipart/form-data; boundary=---------------------------1919886344942015258287623957\r
+Content-Length: 384\r
+\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"textline\"\r
+\r
+<script>alert(1)<script> \0 aaaa\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"datafile\"; filename=\"bla.txt\"\r
+Content-Type: text/plain\r
+\r
+buibuibubi
+buibuibuib
+\r
+-----------------------------1919886344942015258287623957--\r
+"
+--- error_code: 412
+
+
+
+=== TEST 19: multipart, null char after XSS in name and invalid boundary
+--- user_files
+>>> foobar
+eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$UPLOAD >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- raw_request eval
+"POST /foobar HTTP/1.1\r
+Host: 127.0.0.1\r
+Connection: Close\r
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
+Accept-Language: en-us,en;q=0.5\r
+Accept-Encoding: gzip, deflate\r
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
+Referer: http://127.0.0.1/\r
+Content-Type: multipart/form-data; boundary=---------------------------1919886344942015258287623957\r
+Content-Length: 387\r
+\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"textline\"\r
+\r
+<script>alert(1)<script> \0\r
+--aaaa\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"datafile\"; filename=\"bla.txt\"\r
+Content-Type: text/plain\r
+\r
+buibuibubi
+buibuibuib
+\r
+-----------------------------1919886344942015258287623957--\r
+"
+--- error_code: 412
+
+
+=== TEST 20: multipart, null char in name
+--- user_files
+>>> foobar
+eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+	 #LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$UPLOAD >= 8" BLOCK;
+  	 root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+	 error_page 405 = $uri;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- raw_request eval
+"POST /foobar HTTP/1.1\r
+Host: 127.0.0.1\r
+Connection: Close\r
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r
+Accept-Language: en-us,en;q=0.5\r
+Accept-Encoding: gzip, deflate\r
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r
+Referer: http://127.0.0.1/\r
+Content-Type: multipart/form-data; boundary=---------------------------1919886344942015258287623957\r
+Content-Length: 384\r
+\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"textline\"\r
+\r
+totally\0 normal name that is ok\r
+-----------------------------1919886344942015258287623957\r
+Content-Disposition: form-data; name=\"datafile\"; filename=\"bla.txt\"\r
+Content-Type: text/plain\r
+\r
+buibuibubi
+buibuibuib
+\r
+-----------------------------1919886344942015258287623957--\r
+"
+--- error_code: 412
+
 
 

@@ -39,7 +39,10 @@ strncasechr(const char* s, int c, int len)
 ** (because strstr from libc is very slow)
 */
 char*
-strfaststr(unsigned char* haystack, unsigned int hl, unsigned char* needle, unsigned int nl)
+strfaststr(const unsigned char* haystack,
+           unsigned int         hl,
+           const unsigned char* needle,
+           unsigned int         nl)
 {
   char *cpt, *found, *end;
   if (hl < nl || !haystack || !needle || !nl || !hl)
@@ -57,8 +60,9 @@ strfaststr(unsigned char* haystack, unsigned int hl, unsigned char* needle, unsi
     if (!strncasecmp((const char*)found + 1, (const char*)needle + 1, nl - 1)) {
       return ((char*)found);
     } else {
-      if (found + nl >= end)
+      if (found + nl >= end) {
         break;
+      }
       if (found + nl < end) {
         /* the haystack is shrinking */
         cpt = found + 1;
@@ -164,11 +168,12 @@ naxsi_unescape(ngx_str_t* str)
   bad      = naxsi_unescape_uri(&src, &dst, str->len, 0);
   str->len = src - str->data;
   // tmp hack fix, avoid %00 & co (null byte) encoding :p
-  for (i = 0; i < str->len; i++)
+  for (i = 0; i < str->len; i++) {
     if (str->data[i] == 0x0) {
       nullbytes++;
       str->data[i] = '0';
     }
+  }
   return (nullbytes + bad);
 }
 
@@ -195,7 +200,7 @@ naxsi_unescape_uri(u_char** dst, u_char** src, size_t size, ngx_uint_t type)
   d = *dst;
   s = *src;
 
-  state   = 0;
+  state   = sw_usual;
   decoded = 0;
 
   while (size--) {

@@ -7,7 +7,7 @@
 #ifndef __NAXSI_H__
 #define __NAXSI_H__
 
-#define NAXSI_VERSION "1.1"
+#define NAXSI_VERSION "1.1a"
 
 #include "ext/libinjection/libinjection_sqli.h"
 #include "ext/libinjection/libinjection_xss.h"

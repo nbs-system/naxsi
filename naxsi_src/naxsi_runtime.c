@@ -1276,7 +1276,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t* ctx, ngx_http_request_t* 
       json[0] = '{';
       json[1] = '"';
 
-      size_t i
+      size_t i;
       for (i = 0; line[i] && curr < end; i++) {
         if (line[i] == '=') {
           *curr = '"';

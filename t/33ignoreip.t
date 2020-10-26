@@ -27,7 +27,7 @@ location / {
      CheckRule "$TRAVERSAL >= 4" BLOCK;
      CheckRule "$XSS >= 8" BLOCK;
      root $TEST_NGINX_SERVROOT/html/;
-         index index.html index.htm;
+     index index.html index.htm;
 }
 location /RequestDenied {
      return 412;
@@ -51,7 +51,7 @@ location / {
      CheckRule "$TRAVERSAL >= 4" BLOCK;
      CheckRule "$XSS >= 8" BLOCK;
      root $TEST_NGINX_SERVROOT/html/;
-         index index.html index.htm;
+     index index.html index.htm;
 }
 location /RequestDenied {
      return 412;
@@ -75,7 +75,7 @@ location / {
      CheckRule "$TRAVERSAL >= 4" BLOCK;
      CheckRule "$XSS >= 8" BLOCK;
      root $TEST_NGINX_SERVROOT/html/;
-         index index.html index.htm;
+     index index.html index.htm;
 }
 location /RequestDenied {
      return 412;
@@ -101,7 +101,7 @@ location / {
      CheckRule "$TRAVERSAL >= 4" BLOCK;
      CheckRule "$XSS >= 8" BLOCK;
      root $TEST_NGINX_SERVROOT/html/;
-         index index.html index.htm;
+     index index.html index.htm;
 }
 location /RequestDenied {
      return 412;
@@ -127,7 +127,7 @@ location / {
      CheckRule "$TRAVERSAL >= 4" BLOCK;
      CheckRule "$XSS >= 8" BLOCK;
      root $TEST_NGINX_SERVROOT/html/;
-         index index.html index.htm;
+     index index.html index.htm;
 }
 location /RequestDenied {
      return 412;
@@ -153,7 +153,7 @@ location / {
      CheckRule "$TRAVERSAL >= 4" BLOCK;
      CheckRule "$XSS >= 8" BLOCK;
      root $TEST_NGINX_SERVROOT/html/;
-         index index.html index.htm;
+     index index.html index.htm;
 }
 location /RequestDenied {
      return 412;
@@ -183,11 +183,37 @@ location / {
      CheckRule "$TRAVERSAL >= 4" BLOCK;
      CheckRule "$XSS >= 8" BLOCK;
      root $TEST_NGINX_SERVROOT/html/;
-         index index.html index.htm;
+     index index.html index.htm;
 }
 location /RequestDenied {
      return 412;
 }
 --- request
 GET /?a=buibui
+--- error_code: 200
+
+=== TEST 1.7: Verify IgnoreIP (IPv4) works
+--- user_files
+>>> foobar
+foobar text
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule "str:/foobar" "mz:URL" "s:$TRAVERSAL:4" id:123456;
+--- config
+location / {
+     SecRulesEnabled;
+     IgnoreIP  "127.0.0.1";
+     #IgnoreIP  "2606:4700:4700::1001"; # IPv6 can't be tested.
+     DeniedUrl "/RequestDenied";
+     CheckRule "$TRAVERSAL >= 4" BLOCK;
+     root $TEST_NGINX_SERVROOT/html/;
+     index index.html index.htm;
+}
+location /RequestDenied {
+     return 412;
+}
+--- request
+GET /foobar
 --- error_code: 200

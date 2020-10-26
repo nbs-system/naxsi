@@ -575,7 +575,7 @@ ngx_http_naxsi_read_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
         NGX_LOG_EMERG, cf, 0, "invalid IPv4: %s", value[1].data); /* LCOV_EXCL_LINE */
       return (NGX_CONF_ERROR);                                    /* LCOV_EXCL_LINE */
     }
-    ngx_str_t key = { .data = NULL, .len = strlen(ip_str) + 1 };
+    ngx_str_t key = { .data = NULL, .len = strlen(ip_str) };
     key.data      = (unsigned char*)ngx_pcalloc(cf->pool, key.len);
     if (!key.data) {
       ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "cannot allocate memory"); /* LCOV_EXCL_LINE */
@@ -1302,13 +1302,17 @@ ngx_http_naxsi_access_handler(ngx_http_request_t* r)
   }
   if (ctx && ctx->ready && !ctx->over) {
 
-    if ((start = times(&tmsstart)) == (clock_t)-1)
+    if ((start = times(&tmsstart)) == (clock_t)-1) {
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "XX-dummy : Failed to get time");
+    }
+
     ngx_http_naxsi_data_parse(ctx, r);
     cf->request_processed++;
-    if ((end = times(&tmsend)) == (clock_t)-1)
+    if ((end = times(&tmsend)) == (clock_t)-1) {
       ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "XX-dummy : Failed to get time");
-    if (end - start > 10)
+    }
+
+    if (end - start > 10) {
       ngx_log_debug(NGX_LOG_DEBUG_HTTP,
                     r->connection->log,
                     0,
@@ -1316,6 +1320,8 @@ ngx_http_naxsi_access_handler(ngx_http_request_t* r)
                     start,
                     end,
                     (end - start));
+    }
+
     ctx->over = 1;
     if (ctx->block || ctx->drop) {
       cf->request_blocked++;
@@ -1323,8 +1329,9 @@ ngx_http_naxsi_access_handler(ngx_http_request_t* r)
       // nothing:      return (NGX_OK);
       // redirect : return (NGX_HTTP_OK);
       return rc;
-    } else if (ctx->log)
+    } else if (ctx->log) {
       rc = ngx_http_output_forbidden_page(ctx, r);
+    }
   }
   NX_DEBUG(_debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "NGX_FINISHED !");
 

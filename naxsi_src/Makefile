@@ -40,6 +40,8 @@ all: nginx_download configure build install deploy
 
 re: clean all test
 
+format_code:
+	clang-format --verbose -i $(MOD_PATH)/*.c
 
 FUZZ_PATH := "../fuzz"
 AFL_PATH  := $(PWD)"/"$(FUZZ_PATH)"/afl/"

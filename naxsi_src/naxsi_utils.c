@@ -680,14 +680,13 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t* cf, ngx_http_naxsi_loc_conf_t* dlc)
   }
 
   if (dlc->ignore_ips) {
-    ngx_hash_init_t hash_init = { 0 };
-    hash_init.hash            = dlc->ignore_ips;
-    hash_init.key             = &ngx_hash_key_lc;
-    hash_init.max_size        = 1024 * 10;
-    hash_init.bucket_size     = 4096;
-    hash_init.name            = "passr_headers_hash";
-    hash_init.pool            = cf->pool;
-    hash_init.temp_pool       = NULL;
+    hash_init.key         = &ngx_hash_key;
+    hash_init.pool        = cf->pool;
+    hash_init.temp_pool   = NULL;
+    hash_init.max_size    = 1024 * 128;
+    hash_init.bucket_size = 4096;
+    hash_init.name        = "ignore_ips";
+    hash_init.hash        = dlc->ignore_ips;
     if (ngx_hash_init(&hash_init, dlc->ignore_ips_ha.keys.elts, dlc->ignore_ips_ha.keys.nelts) !=
         NGX_OK) {
       ngx_conf_log_error(

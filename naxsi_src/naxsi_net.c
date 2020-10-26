@@ -45,7 +45,7 @@ parse_ipv4(const char* addr, ip_t* ip, char* ip_str)
   }
 
   if (ip) {
-    ip->v4 = ipv4.s_addr;
+    ip->v4 = htonl(ipv4.s_addr);
   }
 
   if (ip_str) {

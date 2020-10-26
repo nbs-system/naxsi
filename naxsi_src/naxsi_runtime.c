@@ -434,10 +434,7 @@ nx_find_wl_in_hash(ngx_http_request_t*        req,
 }
 
 int
-nx_can_ignore_ip(ngx_http_request_t*        req,
-                 const ngx_str_t*           mstr,
-                 ngx_http_naxsi_loc_conf_t* cf,
-                 naxsi_match_zone_t         zone)
+nx_can_ignore_ip(const ngx_str_t* mstr, ngx_http_naxsi_loc_conf_t* cf)
 {
   if (!cf->ignore_ips || cf->ignore_ips_ha.keys.nelts < 1) {
     return 0;
@@ -454,16 +451,12 @@ nx_can_ignore_ip(ngx_http_request_t*        req,
   }
 
   ngx_str_t  scratch = { .data = (unsigned char*)ip_str, .len = strlen(ip_str) };
-  ngx_uint_t k       = ngx_hash_key_lc(scratch.data, scratch.len);
-  return (char*)ngx_hash_find(cf->ignore_ips, k, (u_char*)scratch.data, scratch.len) != NULL ? 1
-                                                                                             : 0;
+  ngx_uint_t k       = ngx_hash_key(scratch.data, scratch.len);
+  return ngx_hash_find(cf->ignore_ips, k, (u_char*)scratch.data, scratch.len) != NULL ? 1 : 0;
 }
 
 int
-nx_can_ignore_cidr(ngx_http_request_t*        req,
-                   const ngx_str_t*           mstr,
-                   ngx_http_naxsi_loc_conf_t* cf,
-                   naxsi_match_zone_t         zone)
+nx_can_ignore_cidr(const ngx_str_t* mstr, ngx_http_naxsi_loc_conf_t* cf)
 {
   if (!cf->ignore_cidrs) {
     return 0;
@@ -473,11 +466,11 @@ nx_can_ignore_cidr(ngx_http_request_t*        req,
   const char* ipstr   = (const char*)mstr->data;
   int         is_ipv6 = strchr(ipstr, ':') != NULL;
   if (is_ipv6) {
-    if (parse_ipv6(ipstr, &ip, NULL)) {
+    if (!parse_ipv6(ipstr, &ip, NULL)) {
       return 0;
     }
   } else {
-    if (parse_ipv4(ipstr, &ip, NULL)) {
+    if (!parse_ipv4(ipstr, &ip, NULL)) {
       return 0;
     }
   }
@@ -1035,8 +1028,17 @@ ngx_http_nx_log(ngx_http_request_ctx_t* ctx,
                          "processed=%zu&total_blocked=%zu&config=%.*s";
   const char* fmt_score  = "&cscore%d=%.*s&score%d=%zu";
   const char* fmt_rm     = "&zone%d=%s&id%d=%d&var_name%d=%.*s";
-  const char* fmt_config = ctx->learning ? (ctx->drop ? "learning-drop" : "learning")
-                                         : (ctx->drop ? "drop" : (ctx->block ? "block" : ""));
+  const char* fmt_config = "";
+
+  if (ctx->learning) {
+    fmt_config = ctx->drop ? "learning-drop" : "learning";
+  } else if (ctx->drop) {
+    fmt_config = "drop";
+  } else if (ctx->block) {
+    fmt_config = "block";
+  } else if (ctx->ignore) {
+    fmt_config = "ignore";
+  }
 
   ngx_http_naxsi_loc_conf_t* cf;
   ngx_http_matched_rule_t*   mr;
@@ -1377,19 +1379,22 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t* ctx, ngx_http_request_t* 
   ** If we shouldn't block the request,
   ** but a log score was reached, stop.
   */
-  if (ctx->log && (!ctx->block && !ctx->drop))
+  if (ctx->log && (!ctx->block && !ctx->drop)) {
     return (NGX_DECLINED);
+  }
+
   /*
   ** If we are in learning without post_action and without drop
   ** stop here as well.
   */
-  if (ctx->learning && !ctx->post_action && !ctx->drop)
+  if (ctx->learning && !ctx->post_action && !ctx->drop) {
     return (NGX_DECLINED);
-    /*
-    ** add headers with original url
-    ** and arguments, as well as
-    ** the first fragment of log
-    */
+  }
+  /*
+  ** add headers with original url
+  ** and arguments, as well as
+  ** the first fragment of log
+  */
 
 #define NAXSI_HEADER_ORIG_URL  "x-orig_url"
 #define NAXSI_HEADER_ORIG_ARGS "x-orig_args"
@@ -2863,15 +2868,16 @@ ngx_http_naxsi_update_current_ctx_status(ngx_http_request_ctx_t*    ctx,
   ngx_http_check_rule_t* cr;
 
   ngx_http_special_score_t* sc;
-  naxsi_match_zone_t        zone;
   unsigned int              n = 0;
-  zone                        = HEADERS;
 
   NX_DEBUG(_debug_custom_score, NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "XX-custom check rules");
 
-  int               block = 1;
+  int               ignore = 0;
   ngx_table_elt_t** h;
   ngx_array_t       a;
+
+  ctx->ignore = 0;
+
   /*cr, sc, cf, ctx*/
   if (cf->check_rules && ctx->special_scores) {
     if (r->headers_in.x_forwarded_for.nelts >= 1) {
@@ -2879,23 +2885,29 @@ ngx_http_naxsi_update_current_ctx_status(ngx_http_request_ctx_t*    ctx,
       n = a.nelts;
       if (n >= 1) {
         h = a.elts;
-        NX_DEBUG(_debug_custom_score,
+        NX_DEBUG(_debug_whitelist_ignore,
                  NGX_LOG_DEBUG_HTTP,
                  r->connection->log,
                  0,
-                 "value:%s",
+                 "XX- lookup ignore X-Forwarded-For: %s",
                  h[0]->value.data);
-        ngx_str_t xforwardedfor;
-        xforwardedfor.len  = strlen((char*)h[0]->value.data);
-        xforwardedfor.data = ngx_pcalloc(r->pool, xforwardedfor.len + 1);
-        memcpy(xforwardedfor.data, h[0]->value.data, xforwardedfor.len);
-        block = !nx_can_ignore_ip(r, &xforwardedfor, cf, zone) &&
-                !nx_can_ignore_cidr(r, &xforwardedfor, cf, zone);
+        ngx_str_t ip;
+        ip.len  = strlen((char*)h[0]->value.data);
+        ip.data = ngx_pcalloc(r->pool, ip.len + 1);
+        memcpy(ip.data, h[0]->value.data, ip.len);
+        ignore = nx_can_ignore_ip(&ip, cf) || nx_can_ignore_cidr(&ip, cf);
       }
     } else {
       ngx_str_t* ip = &r->connection->addr_text;
-      block         = !nx_can_ignore_ip(r, ip, cf, zone) && !nx_can_ignore_cidr(r, ip, cf, zone);
+      NX_DEBUG(_debug_whitelist_ignore,
+               NGX_LOG_DEBUG_HTTP,
+               r->connection->log,
+               0,
+               "XX- lookup ignore client ip: %s",
+               ip->data);
+      ignore = nx_can_ignore_ip(ip, cf) || nx_can_ignore_cidr(ip, cf);
     }
+
     NX_DEBUG(_debug_custom_score,
              NGX_LOG_DEBUG_HTTP,
              r->connection->log,
@@ -2951,18 +2963,21 @@ ngx_http_naxsi_update_current_ctx_status(ngx_http_request_ctx_t*    ctx,
                      r->connection->log,
                      0,
                      "XX- custom score rule triggered ..");
-
-            if (cr[i].block && block) {
+            ctx->ignore = ignore;
+            if (cr[i].block && !ignore) {
               ctx->block = 1;
             } else {
               ctx->block = 0;
             }
-            if (cr[i].drop)
+            if (cr[i].drop && !ignore) {
               ctx->drop = 1;
-            if (cr[i].allow)
+            }
+            if (cr[i].allow) {
               ctx->allow = 1;
-            if (cr[i].log)
+            }
+            if (cr[i].log || ignore) {
               ctx->log = 1;
+            }
           }
         }
       }

@@ -55,6 +55,7 @@ extern ngx_module_t ngx_http_naxsi_module;
 #define _debug_whitelist          0
 #define _debug_whitelist_heavy    0
 #define _debug_whitelist_light    0
+#define _debug_whitelist_ignore   0
 #define wl_debug_rx               0
 
 #ifndef __NAXSI_DEBUG
@@ -423,6 +424,7 @@ typedef struct
   ngx_flag_t block : 1;
   ngx_flag_t allow : 1;
   ngx_flag_t drop : 1;
+  ngx_flag_t ignore : 1;
   /* state */
   ngx_flag_t wait_for_body : 1;
   ngx_flag_t ready : 1;

@@ -138,3 +138,29 @@ GET /foobar
 --- error_code: 200
 
 
+=== TEST 1.5: Verify IgnoreCIDR x.x.x.x./32 is converted to IgnoreIP
+--- user_files
+>>> foobar
+foobar text
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+MainRule "str:/foobar" "mz:URL" "s:$TRAVERSAL:4" id:123456;
+--- config
+location / {
+     SecRulesEnabled;
+     IgnoreCIDR  "127.0.0.1/32";
+     DeniedUrl "/RequestDenied";
+     CheckRule "$TRAVERSAL >= 4" BLOCK;
+     root $TEST_NGINX_SERVROOT/html/;
+     index index.html index.htm;
+}
+location /RequestDenied {
+     return 412;
+}
+--- request
+GET /foobar
+--- error_code: 200
+
+

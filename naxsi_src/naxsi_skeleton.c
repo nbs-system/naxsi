@@ -623,7 +623,7 @@ ngx_http_naxsi_read_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
       return (NGX_CONF_ERROR);                  /* LCOV_EXCL_LINE */
     }
     if ((is_ipv6 && mask == 128) || (!is_ipv6 && mask == 32)) {
-      ngx_str_t key = { .data = NULL, .len = strlen(ip_str) + 1 };
+      ngx_str_t key = { .data = NULL, .len = strlen(ip_str) };
       key.data      = (unsigned char*)ngx_pcalloc(cf->pool, key.len);
       if (!key.data) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "cannot allocate memory"); /* LCOV_EXCL_LINE */

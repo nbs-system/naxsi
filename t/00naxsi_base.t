@@ -1293,6 +1293,30 @@ txtName=matchme&btnSign=Sign+Guestbook\r
 "
 --- error_code: 412
 
-
-
-
+=== TEST 38: empty post
+--- user_files
+>>> foobar
+eh yo
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+	 LearningMode;
+	 SecRulesEnabled;
+	 DeniedUrl "/RequestDenied";
+	 CheckRule "$SQL >= 8" BLOCK;
+	 CheckRule "$RFI >= 8" BLOCK;
+	 CheckRule "$TRAVERSAL >= 4" BLOCK;
+	 CheckRule "$XSS >= 8" BLOCK;
+	 CheckRule "$TESTSCORE >= 42" BLOCK;
+	 root $TEST_NGINX_SERVROOT/html/;
+       index index.html index.htm;
+}
+location /RequestDenied {
+	 return 412;
+}
+--- request
+POST /?testhendrik
+--- error_code: 412

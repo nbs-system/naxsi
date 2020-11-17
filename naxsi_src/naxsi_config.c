@@ -198,6 +198,7 @@ naxsi_zone(ngx_conf_t* r, ngx_str_t* tmp, ngx_http_rule_t* rule)
       continue;
     } else if (!strncmp(tmp_ptr, "BODY", strlen("BODY"))) {
       rule->br->body = 1;
+      rule->br->body_rule = 1;
       tmp_ptr += strlen("BODY");
       has_zone = 1;
       continue;

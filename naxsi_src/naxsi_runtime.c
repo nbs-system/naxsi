@@ -2037,7 +2037,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t*             pool,
     */
     if ((zone == HEADERS && r[i].br->headers) || (zone == URL && r[i].br->url) ||
         (zone == ARGS && r[i].br->args) || (zone == BODY && r[i].br->raw_body) ||
-        (zone == BODY && r[i].br->body) || (zone == FILE_EXT && r[i].br->file_ext)) {
+        (zone == BODY && r[i].br->body_rule) || (zone == FILE_EXT && r[i].br->file_ext)) {
 
       /*
       ** If the Rule **specifically** targets name (ie. mz:BODY|NAME), only

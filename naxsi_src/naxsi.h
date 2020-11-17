@@ -7,7 +7,7 @@
 #ifndef __NAXSI_H__
 #define __NAXSI_H__
 
-#define NAXSI_VERSION "1.2"
+#define NAXSI_VERSION "1.3"
 
 #include "ext/libinjection/libinjection_sqli.h"
 #include "ext/libinjection/libinjection_xss.h"
@@ -222,6 +222,7 @@ typedef struct
   /* ~~~~~ match zones ~~~~~~ */
   ngx_int_t zone;
   /* match in full body (POST DATA) */
+  ngx_flag_t body_rule : 1;
   ngx_flag_t body : 1;
   ngx_flag_t raw_body : 1;
   ngx_flag_t body_var : 1;

@@ -12,6 +12,10 @@
 #@MainRule "msg:empty POST" id:16;
 #@MainRule "msg:libinjection_sql" id:17;
 #@MainRule "msg:libinjection_xss" id:18;
+#@MainRule "msg:no generic rules" id:19;
+#@MainRule "msg:bad utf8" id:20;
+
+
 
 ##################################
 ## SQL Injections IDs:1000-1099 ##

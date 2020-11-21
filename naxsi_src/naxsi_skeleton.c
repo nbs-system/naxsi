@@ -6,7 +6,7 @@
 
 /*
 ** This files contains skeleton functions,
-** such as registred handlers. Readers already
+** such as registered handlers. Readers already
 ** aware of nginx's modules can skip most of this.
 */
 
@@ -31,7 +31,7 @@
   } while (0)
 
 /*
-** Module's registred function/handlers.
+** Module's registered function/handlers.
 */
 static ngx_int_t
 ngx_http_naxsi_access_handler(ngx_http_request_t* r);
@@ -332,7 +332,7 @@ ngx_http_naxsi_init(ngx_conf_t* cf)
     return (NGX_ERROR); /*LCOV_EXCL_LINE*/
 
   *h = ngx_http_naxsi_access_handler;
-  /* Go with each locations registred in the srv_conf. */
+  /* Go with each locations registered in the srv_conf. */
   loc_cf = main_cf->locations->elts;
 
   for (i = 0; i < main_cf->locations->nelts; i++) {

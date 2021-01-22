@@ -7,7 +7,7 @@
 #ifndef __NAXSI_NET_H__
 #define __NAXSI_NET_H__
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>

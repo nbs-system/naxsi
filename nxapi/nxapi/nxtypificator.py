@@ -1,6 +1,7 @@
 '''
 This modules generate types for url parameters.
 '''
+from __future__ import print_function
 import re
 import sys
 import collections
@@ -75,7 +76,7 @@ class Typificator(object):
                 content = line['content']
                 var_name = line['var_name']
             except KeyError as e:
-                print 'Error with : {0} ({1})'.format(line, e)
+                print('Error with : {0} ({1})'.format(line, e))
                 continue
 
             if not var_name:  # No types for empty varnames.
@@ -98,4 +99,4 @@ if __name__ == '__main__':
     nb_samples = 1e6 if len(sys.argv) == 1 else int(sys.argv[1])
     
     for rule in Typificator().get_rules(nb_samples):
-        print 'TypeRule "rx:{0}" "msg:typed ({1}) parameter" "mz:${2}_VAR:{3}"'.format(rule[0], rule[1], rule[2], rule[3])
+        print('TypeRule "rx:{0}" "msg:typed ({1}) parameter" "mz:${2}_VAR:{3}"'.format(rule[0], rule[1], rule[2], rule[3]))

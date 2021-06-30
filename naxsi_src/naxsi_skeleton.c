@@ -60,6 +60,11 @@ ngx_http_naxsi_create_main_conf(ngx_conf_t* cf);
 void
 ngx_http_naxsi_payload_handler(ngx_http_request_t* r);
 
+static char *ngx_http_naxsi_log_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
+    ngx_http_naxsi_loc_conf_t *alcf = conf;
+    return ngx_log_set_log(cf, &alcf->log);
+}
+
 /* command handled by the module */
 static ngx_command_t ngx_http_naxsi_commands[] = {
   /* BasicRule (in main) */
@@ -225,6 +230,22 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
     0,
     NULL },
 
+  /* NaxsiLogfile */
+  { ngx_string(TOP_NAXSI_LOGFILE_T),
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    ngx_http_naxsi_log_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },
+
+  /* NaxsiLogfile - nginx style*/
+  { ngx_string(TOP_NAXSI_LOGFILE_N),
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    ngx_http_naxsi_log_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },
+
   ngx_null_command
 };
 
@@ -363,6 +384,8 @@ ngx_http_naxsi_merge_loc_conf(ngx_conf_t* cf, void* parent, void* child)
     conf->flag_libinjection_xss_h = prev->flag_libinjection_xss_h;
   if (conf->flag_libinjection_sql_h == 0)
     conf->flag_libinjection_sql_h = prev->flag_libinjection_sql_h;
+  if (conf->log == NULL)
+    conf->log = prev->log;
   return NGX_CONF_OK;
 }
 

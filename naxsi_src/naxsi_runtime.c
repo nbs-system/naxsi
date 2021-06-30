@@ -1262,7 +1262,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t* ctx, ngx_http_request_t* 
   if (!ctx->json_log) {
     for (i = 0; i < ostr->nelts; i++) {
       ngx_log_error(
-        NGX_LOG_ERR, r->connection->log, 0, "NAXSI_FMT: %s", ((ngx_str_t*)ostr->elts)[i].data);
+        NGX_LOG_ERR, cf->log ? cf->log : r->connection->log, 0, "NAXSI_FMT: %s", ((ngx_str_t*)ostr->elts)[i].data);
     }
   } else {
     const char* hex  = "0123456789abcdef";

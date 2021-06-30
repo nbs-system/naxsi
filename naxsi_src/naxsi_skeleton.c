@@ -60,6 +60,11 @@ ngx_http_naxsi_create_main_conf(ngx_conf_t* cf);
 void
 ngx_http_naxsi_payload_handler(ngx_http_request_t* r);
 
+static char *ngx_http_naxsi_log_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
+    ngx_http_naxsi_loc_conf_t *alcf = conf;
+    return ngx_log_set_log(cf, &alcf->log);
+}
+
 /* command handled by the module */
 static ngx_command_t ngx_http_naxsi_commands[] = {
   /* BasicRule (in main) */
@@ -80,7 +85,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* BasicRule (in loc) */
   { ngx_string(TOP_BASIC_RULE_T),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
     ngx_http_naxsi_read_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -88,7 +93,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* BasicRule (in loc) - nginx style */
   { ngx_string(TOP_BASIC_RULE_N),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
     ngx_http_naxsi_read_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -96,7 +101,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* DeniedUrl */
   { ngx_string(TOP_DENIED_URL_T),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
     ngx_http_naxsi_ud_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -104,7 +109,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* DeniedUrl - nginx style */
   { ngx_string(TOP_DENIED_URL_N),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
     ngx_http_naxsi_ud_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -112,7 +117,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* WhitelistIP */
   { ngx_string(TOP_IGNORE_IP_T),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
     ngx_http_naxsi_read_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -120,7 +125,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* WhitelistCIDR */
   { ngx_string(TOP_IGNORE_CIDR_T),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
     ngx_http_naxsi_read_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -128,7 +133,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* CheckRule */
   { ngx_string(TOP_CHECK_RULE_T),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
     ngx_http_naxsi_cr_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -136,7 +141,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* CheckRule  - nginx style*/
   { ngx_string(TOP_CHECK_RULE_N),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
     ngx_http_naxsi_cr_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -147,7 +152,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* Learning Flag */
   { ngx_string(TOP_LEARNING_FLAG_T),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -155,7 +160,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* Learning Flag (nginx style) */
   { ngx_string(TOP_LEARNING_FLAG_N),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -163,7 +168,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* EnableFlag */
   { ngx_string(TOP_ENABLED_FLAG_T),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -171,7 +176,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* EnableFlag (nginx style) */
   { ngx_string(TOP_ENABLED_FLAG_N),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -179,7 +184,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* DisableFlag */
   { ngx_string(TOP_DISABLED_FLAG_T),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -187,7 +192,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* DisableFlag (nginx style) */
   { ngx_string(TOP_DISABLED_FLAG_N),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -195,7 +200,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* LibInjectionSql */
   { ngx_string(TOP_LIBINJECTION_SQL_T),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -203,7 +208,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* LibInjectionSql (nginx style) */
   { ngx_string(TOP_LIBINJECTION_SQL_N),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -211,7 +216,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* LibInjectionXss */
   { ngx_string(TOP_LIBINJECTION_XSS_T),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -219,8 +224,24 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* LibInjectionXss (nginx style) */
   { ngx_string(TOP_LIBINJECTION_XSS_N),
-    NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },
+
+  /* NaxsiLogfile */
+  { ngx_string(TOP_NAXSI_LOGFILE_T),
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    ngx_http_naxsi_log_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },
+
+  /* NaxsiLogfile - nginx style*/
+  { ngx_string(TOP_NAXSI_LOGFILE_N),
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    ngx_http_naxsi_log_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
     NULL },
@@ -294,6 +315,10 @@ ngx_http_naxsi_merge_loc_conf(ngx_conf_t* cf, void* parent, void* child)
   ngx_http_naxsi_loc_conf_t* prev = parent;
   ngx_http_naxsi_loc_conf_t* conf = child;
 
+  if (conf->get_rules == NULL)
+    conf->get_rules = prev->get_rules;
+  if (conf->raw_body_rules == NULL)
+    conf->raw_body_rules = prev->raw_body_rules;
   if (conf->whitelist_rules == NULL)
     conf->whitelist_rules = prev->whitelist_rules;
   if (conf->check_rules == NULL)
@@ -304,6 +329,63 @@ ngx_http_naxsi_merge_loc_conf(ngx_conf_t* cf, void* parent, void* child)
     conf->header_rules = prev->header_rules;
   if (conf->generic_rules == NULL)
     conf->generic_rules = prev->generic_rules;
+  if (conf->tmp_wlr == NULL)
+    conf->tmp_wlr = prev->tmp_wlr;
+  if (conf->rxmz_wlr == NULL)
+    conf->rxmz_wlr = prev->rxmz_wlr;
+  if (conf->wlr_url_hash == NULL)
+    conf->wlr_url_hash = prev->wlr_url_hash;
+  if (conf->wlr_args_hash == NULL)
+    conf->wlr_args_hash = prev->wlr_args_hash;
+  if (conf->wlr_body_hash == NULL)
+    conf->wlr_body_hash = prev->wlr_body_hash;
+  if (conf->wlr_headers_hash == NULL)
+    conf->wlr_headers_hash = prev->wlr_headers_hash;
+  if (conf->ignore_ips == NULL)
+    conf->ignore_ips = prev->ignore_ips;
+  if (conf->ignore_ips_ha.hsize == 0)
+    conf->ignore_ips_ha = prev->ignore_ips_ha;
+  if (conf->ignore_cidrs == NULL)
+    conf->ignore_cidrs = prev->ignore_cidrs;
+  if (conf->disabled_rules == NULL)
+    conf->disabled_rules = prev->disabled_rules;
+
+  if (conf->error == 0)
+    conf->error = prev->error;
+  if (conf->persistant_data == NULL)
+    conf->persistant_data = prev->persistant_data;
+  if (conf->extensive == 0)
+    conf->extensive = prev->extensive;
+  if (conf->learning == 0)
+    conf->learning = prev->learning;
+  if (conf->enabled == 0)
+    conf->enabled = prev->enabled;
+  if (conf->force_disabled == 0)
+    conf->force_disabled = prev->force_disabled;
+  if (conf->pushed == 0)
+    conf->pushed = prev->pushed;
+  if (conf->libinjection_sql_enabled == 0)
+    conf->libinjection_sql_enabled = prev->libinjection_sql_enabled;
+  if (conf->libinjection_xss_enabled == 0)
+    conf->libinjection_xss_enabled = prev->libinjection_xss_enabled;
+  if (conf->denied_url == NULL)
+    conf->denied_url = prev->denied_url;
+  if (conf->flag_enable_h == 0)
+    conf->flag_enable_h = prev->flag_enable_h;
+  if (conf->flag_learning_h == 0)
+    conf->flag_learning_h = prev->flag_learning_h;
+  if (conf->flag_post_action_h == 0)
+    conf->flag_post_action_h = prev->flag_post_action_h;
+  if (conf->flag_extensive_log_h == 0)
+    conf->flag_extensive_log_h = prev->flag_extensive_log_h;
+  if (conf->flag_json_log_h == 0)
+    conf->flag_json_log_h = prev->flag_json_log_h;
+  if (conf->flag_libinjection_xss_h == 0)
+    conf->flag_libinjection_xss_h = prev->flag_libinjection_xss_h;
+  if (conf->flag_libinjection_sql_h == 0)
+    conf->flag_libinjection_sql_h = prev->flag_libinjection_sql_h;
+  if (conf->log == NULL)
+    conf->log = prev->log;
   return NGX_CONF_OK;
 }
 

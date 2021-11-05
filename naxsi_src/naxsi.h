@@ -326,7 +326,6 @@ typedef struct
   ngx_array_t* raw_body_rules;
 
   ngx_array_t* locations; /*ngx_http_naxsi_loc_conf_t*/
-  ngx_log_t*   log;
 
 } ngx_http_naxsi_main_conf_t;
 
@@ -388,6 +387,7 @@ typedef struct
      libinjection dynamic flags */
   ngx_uint_t flag_libinjection_xss_h;
   ngx_uint_t flag_libinjection_sql_h;
+  ngx_log_t* log;
 
 } ngx_http_naxsi_loc_conf_t;
 
@@ -471,6 +471,7 @@ typedef struct ngx_http_nx_json_s
 #define TOP_MAIN_BASIC_RULE_T  "MainRule"
 #define TOP_LIBINJECTION_SQL_T "LibInjectionSql"
 #define TOP_LIBINJECTION_XSS_T "LibInjectionXss"
+#define TOP_NAXSI_LOGFILE_T    "NaxsiLogFile"
 
 /* nginx-style names */
 #define TOP_DENIED_URL_N       "denied_url"
@@ -484,6 +485,7 @@ typedef struct ngx_http_nx_json_s
 #define TOP_MAIN_BASIC_RULE_N  "main_rule"
 #define TOP_LIBINJECTION_SQL_N "libinjection_sql"
 #define TOP_LIBINJECTION_XSS_N "libinjection_xss"
+#define TOP_NAXSI_LOGFILE_N    "naxsi_log"
 
 /*possible 'tokens' in rule */
 #define ID_T         "id:"

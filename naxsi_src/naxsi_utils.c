@@ -892,6 +892,7 @@ naxsi_log_offending(ngx_str_t*          name,
                     naxsi_match_zone_t  zone,
                     ngx_int_t           target_name)
 {
+  ngx_http_naxsi_loc_conf_t* cf;
   ngx_str_t tmp_uri, tmp_val, tmp_name;
   ngx_str_t empty = ngx_string("");
 
@@ -925,8 +926,9 @@ naxsi_log_offending(ngx_str_t*          name,
     ngx_escape_uri(tmp_name.data, name->data, name->len, NGX_ESCAPE_URI_COMPONENT);
   }
 
+  cf = ngx_http_get_module_loc_conf(req, ngx_http_naxsi_module);
   ngx_log_error(NGX_LOG_ERR,
-                req->connection->log,
+                cf->log ? cf->log : req->connection->log,
                 0,
                 "NAXSI_EXLOG: "
                 "ip=%V&server=%V&uri=%V&id=%d&zone=%s%s&var_name=%V&content=%V",

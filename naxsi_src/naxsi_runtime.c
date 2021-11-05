@@ -1262,7 +1262,7 @@ ngx_http_output_forbidden_page(ngx_http_request_ctx_t* ctx, ngx_http_request_t* 
   if (!ctx->json_log) {
     for (i = 0; i < ostr->nelts; i++) {
       ngx_log_error(
-        NGX_LOG_ERR, r->connection->log, 0, "NAXSI_FMT: %s", ((ngx_str_t*)ostr->elts)[i].data);
+        NGX_LOG_ERR, cf->log ? cf->log : r->connection->log, 0, "NAXSI_FMT: %s", ((ngx_str_t*)ostr->elts)[i].data);
     }
   } else {
     const char* hex  = "0123456789abcdef";
@@ -2842,10 +2842,12 @@ ngx_http_naxsi_data_parse(ngx_http_request_ctx_t* ctx, ngx_http_request_t* r)
   unsigned int      n = 0;
   ngx_table_elt_t** h = NULL;
   ngx_array_t       a;
+#if (NGX_HTTP_X_FORWARDED_FOR)
   if (r->headers_in.x_forwarded_for.nelts >= 1) {
     a = r->headers_in.x_forwarded_for;
     n = a.nelts;
   }
+#endif
   if (n >= 1)
     h = a.elts;
   if (n >= 1) {
@@ -2879,6 +2881,7 @@ ngx_http_naxsi_update_current_ctx_status(ngx_http_request_ctx_t*    ctx,
 
   /*cr, sc, cf, ctx*/
   if (cf->check_rules && ctx->special_scores) {
+#if (NGX_HTTP_X_FORWARDED_FOR)
     if (r->headers_in.x_forwarded_for.nelts >= 1) {
       a = r->headers_in.x_forwarded_for;
       n = a.nelts;
@@ -2896,7 +2899,9 @@ ngx_http_naxsi_update_current_ctx_status(ngx_http_request_ctx_t*    ctx,
         memcpy(ip.data, h[0]->value.data, ip.len);
         ignore = nx_can_ignore_ip(&ip, cf) || nx_can_ignore_cidr(&ip, cf);
       }
-    } else {
+    } else
+#endif
+    {
       ngx_str_t* ip = &r->connection->addr_text;
       NX_DEBUG(_debug_whitelist_ignore,
                NGX_LOG_DEBUG_HTTP,

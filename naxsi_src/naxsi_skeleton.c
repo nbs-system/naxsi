@@ -65,6 +65,42 @@ static char *ngx_http_naxsi_log_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd, voi
     return ngx_log_set_log(cf, &alcf->log);
 }
 
+static ngx_http_request_ctx_t* recover_request_ctx(ngx_http_request_t *r);
+
+static void ngx_http_module_cleanup_handler(void *data);
+
+static ngx_int_t ngx_http_naxsi_add_variables(ngx_conf_t *cf);
+
+static ngx_int_t ngx_http_naxsi_server_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
+
+static ngx_int_t ngx_http_naxsi_uri_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
+
+static ngx_int_t ngx_http_naxsi_learning_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
+
+static ngx_int_t ngx_http_naxsi_block_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
+
+static ngx_int_t ngx_http_naxsi_total_processed_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
+
+static ngx_int_t ngx_http_naxsi_total_blocked_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
+
+static ngx_int_t ngx_http_naxsi_score_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
+
+static ngx_int_t ngx_http_naxsi_match_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
+
+static ngx_int_t ngx_http_naxsi_attack_family_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
+
+static ngx_int_t ngx_http_naxsi_attack_action_variable(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data);
+
 /* command handled by the module */
 static ngx_command_t ngx_http_naxsi_commands[] = {
   /* BasicRule (in main) */
@@ -249,12 +285,86 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
   ngx_null_command
 };
 
+static ngx_http_variable_t ngx_http_naxsi_variables[] = {
+    { ngx_string("naxsi_server"),               /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_server_variable,           /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+
+    { ngx_string("naxsi_uri"),                  /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_uri_variable,              /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+
+    { ngx_string("naxsi_learning"),             /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_learning_variable,         /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+
+    { ngx_string("naxsi_block"),                /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_block_variable,            /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+
+    { ngx_string("naxsi_total_processed"),      /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_total_processed_variable,  /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+
+    { ngx_string("naxsi_total_blocked"),        /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_total_blocked_variable,    /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+
+    { ngx_string("naxsi_score"),                /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_score_variable,            /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+
+    { ngx_string("naxsi_match"),                /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_match_variable,            /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+
+    { ngx_string("naxsi_attack_family"),        /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_attack_family_variable,    /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+
+    { ngx_string("naxsi_attack_action"),        /* Name */
+      NULL,                                     /* Set handler */
+      ngx_http_naxsi_attack_action_variable,    /* Get handler */
+      0,                                        /* Data */
+      NGX_HTTP_VAR_NOCACHEABLE,                 /* Flags */
+      0 },                                      /* Index */
+
+    { ngx_null_string, NULL, NULL, 0, 0, 0 }    /* Sentinel */
+};
+
 /*
 ** handlers for configuration phases of the module
 */
 
 static ngx_http_module_t ngx_http_naxsi_module_ctx = {
-  NULL,                            /* preconfiguration */
+  ngx_http_naxsi_add_variables,    /* preconfiguration */
   ngx_http_naxsi_init,             /* postconfiguration */
   ngx_http_naxsi_create_main_conf, /* create main configuration */
   NULL,                            /* init main configuration */
@@ -1148,9 +1258,19 @@ ngx_http_naxsi_access_handler(ngx_http_request_t* r)
                                              : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
            r->internal);
   if (!ctx) {
+    ngx_pool_cleanup_t *cln;
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_request_ctx_t));
     if (ctx == NULL)
       return NGX_ERROR;
+
+    cln = ngx_pool_cleanup_add(r->pool, 0);
+    if (cln == NULL) {
+      return NGX_ERROR;
+    }
+
+    cln->handler = ngx_http_module_cleanup_handler;
+    cln->data = ctx;
+    
     ngx_http_set_ctx(r, ctx, ngx_http_naxsi_module);
     NX_DEBUG(_debug_modifier,
              NGX_LOG_DEBUG_HTTP,
@@ -1418,4 +1538,463 @@ ngx_http_naxsi_access_handler(ngx_http_request_t* r)
   NX_DEBUG(_debug_mechanics, NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "NGX_FINISHED !");
 
   return NGX_DECLINED;
+}
+
+static ngx_http_request_ctx_t*
+recover_request_ctx(ngx_http_request_t *r) {
+    ngx_http_request_ctx_t *ctx;
+    ngx_pool_cleanup_t *cln;
+    ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
+    if (ctx == NULL && (r->internal || r->filter_finalize)) {
+        for (cln = r->pool->cleanup; cln; cln = cln->next) {
+            if (cln->handler == ngx_http_module_cleanup_handler) {
+                ctx = cln->data;
+                break;
+            }
+        }
+    }
+    return ctx;
+}
+
+static void
+ngx_http_module_cleanup_handler(void *data)
+{
+    return;
+}
+
+static ngx_int_t
+ngx_http_naxsi_add_variables(ngx_conf_t *cf)
+{
+    ngx_http_variable_t *var, *v;
+
+    for (v = ngx_http_naxsi_variables; v->name.len; v++) {
+        var = ngx_http_add_variable(cf, &v->name, v->flags);
+        if (var == NULL) {
+            return NGX_ERROR;
+        }
+        var->get_handler = v->get_handler;
+        var->data = v->data;
+    }
+    return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_naxsi_server_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    v->data = r->headers_in.server.data;
+    v->len = r->headers_in.server.len;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_naxsi_uri_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_http_request_ctx_t *ctx = recover_request_ctx(r);
+    if (!ctx) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    ngx_str_t *tmp_uri = ngx_pcalloc(r->pool, sizeof(ngx_str_t));
+    if (!tmp_uri) {
+        return (NGX_ERROR);
+    }
+    tmp_uri->len = r->uri.len + (2 * ngx_escape_uri(NULL, r->uri.data, r->uri.len, NGX_ESCAPE_ARGS));
+    tmp_uri->data = ngx_pcalloc(r->pool, tmp_uri->len+1);
+    if (!tmp_uri->data) {
+        return (NGX_ERROR);
+    }
+    ngx_escape_uri(tmp_uri->data, r->uri.data, r->uri.len, NGX_ESCAPE_ARGS);
+
+    v->data = tmp_uri->data;
+    v->len = tmp_uri->len;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_naxsi_learning_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_http_request_ctx_t *ctx = recover_request_ctx(r);
+    if (!ctx) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    v->data = ngx_palloc(r->pool, 1);
+    if (v->data == NULL) {
+        return NGX_ERROR;
+    }
+    v->data[0] = ctx->learning ? '1' : '0';
+    v->len = 1;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+
+    return NGX_OK;
+}
+
+
+static ngx_int_t
+ngx_http_naxsi_block_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_http_request_ctx_t *ctx = recover_request_ctx(r);
+    if (!ctx) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    v->data = ngx_palloc(r->pool, 1);
+    if (v->data == NULL) {
+        return NGX_ERROR;
+    }
+    v->data[0] = ctx->block ? '1' : '0';
+    v->len = 1;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+
+    return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_naxsi_total_processed_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_http_naxsi_loc_conf_t *cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
+
+    v->data = ngx_palloc(r->pool, NGX_INT32_LEN);
+    if (v->data == NULL) {
+        return NGX_ERROR;
+    }
+    v->len = ngx_sprintf(v->data, "%z", cf->request_processed) - v->data;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+
+    return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_naxsi_total_blocked_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_http_naxsi_loc_conf_t *cf = ngx_http_get_module_loc_conf(r, ngx_http_naxsi_module);
+
+    v->data = ngx_palloc(r->pool, NGX_INT32_LEN);
+    if (v->data == NULL) {
+        return NGX_ERROR;
+    }
+    v->len = ngx_sprintf(v->data, "%z", cf->request_blocked) - v->data;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+
+    return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_naxsi_score_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_http_request_ctx_t *ctx = recover_request_ctx(r);
+    if (!ctx) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    const char *fmt = "%d:%.*s:%d,"; /* id:cscore:score */
+    ngx_http_matched_rule_t *mr;
+    ngx_http_special_score_t *sc;
+    ngx_uint_t others = 0;
+    ngx_uint_t i;
+    size_t sz = 0;
+    char* p;
+
+    if (ctx->matched) {
+        mr = ctx->matched->elts;
+        for (i = 0; i < ctx->matched->nelts; i++) {
+            if (mr[i].rule->rule_id < 1000) {
+                others = 1;
+                sz += 8; /* strlen($OTHERS,) */
+                break;
+            }
+        }
+    }
+
+    if (ctx->special_scores) {
+        sc = ctx->special_scores->elts;
+        for (i = 0; i < ctx->special_scores->nelts; i++) {
+            if (sc[i].sc_score != 0) {
+                sz += snprintf(0, 0, fmt, i, sc[i].sc_tag->len, sc[i].sc_tag->data, sc[i].sc_score);
+            }
+        }
+    }
+
+    if (sz == 0) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    v->len = sz - 1; /* - last ',' */
+    v->data = ngx_palloc(r->pool, sz);
+    if (v->data == NULL) {
+        return NGX_ERROR;
+    }
+    p = (char*)v->data;
+
+    if (others) {
+        memcpy(p, "$OTHERS,", 8); /* strlen($OTHERS,) */
+        p += 8;
+        sz -= 8;
+    }
+
+    if (ctx->special_scores) {
+        sc = ctx->special_scores->elts;
+        for (i = 0; i < ctx->special_scores->nelts; i++) {
+            if (sc[i].sc_score != 0) {
+                size_t sub = snprintf(p, sz, fmt, i, sc[i].sc_tag->len, sc[i].sc_tag->data, sc[i].sc_score);
+                p += sub;
+                sz -= sub;
+            }
+        }
+    }
+
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_naxsi_match_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_http_request_ctx_t *ctx = recover_request_ctx(r);
+    if (!ctx) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    const char *fmt = "%d:%d:%s:%.*s,";  /* id:rule_id:zone:var_name */
+    ngx_http_matched_rule_t *mr;
+    ngx_uint_t i;
+    size_t sz = 0;
+    char* p;
+
+    if (ctx->matched) {
+        mr = ctx->matched->elts;
+        for (i = 0; i < ctx->matched->nelts; i++) {
+            /* FILE_EXT|NAME is the longest zone we may have */
+            sz += snprintf(0, 0, fmt, i, mr[i].rule->rule_id,
+                    "FILE_EXT|NAME", mr[i].name->len, mr[i].name->data);
+        }
+    }
+
+    if (sz == 0) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    v->len = 0;
+    v->data = ngx_palloc(r->pool, sz);
+    if (v->data == NULL) {
+        return NGX_ERROR;
+    }
+
+    p = (char*)v->data;
+    mr = ctx->matched->elts;
+    for (i = 0; i < ctx->matched->nelts; i++) {
+        const char *name_data = mr[i].name->len? (const char*)mr[i].name->data : "-";
+        size_t name_len = mr[i].name->len ? mr[i].name->len : 1;
+
+        char zone[13 + 1] = {0}; /* strlen("FILE_EXT|NAME") + '\0' */
+        if      (mr[i].body_var)    { strcat(zone, "BODY"); }
+        else if (mr[i].args_var)    { strcat(zone, "ARGS"); }
+        else if (mr[i].headers_var) { strcat(zone, "HEADERS"); }
+        else if (mr[i].url)         { strcat(zone, "URL"); }
+        else if (mr[i].file_ext)    { strcat(zone, "FILE_EXT"); }
+        if      (mr[i].target_name) { strcat(zone, "|NAME"); }
+
+        size_t sub = snprintf(p, sz, fmt, i, mr[i].rule->rule_id,
+                zone, name_len, name_data);
+        v->len += sub;
+        p += sub;
+        sz -= sub;
+    }
+
+    v->len -= 1; /* - last ',' */
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_naxsi_attack_family_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_http_request_ctx_t *ctx;
+    ngx_pool_cleanup_t *cln;
+    ngx_http_special_score_t *sc;
+    ngx_http_matched_rule_t *mr;
+    ngx_uint_t i;
+    size_t sz = 0;
+    u_char *str;
+    u_char *p;
+
+    ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
+
+    if (ctx == NULL && (r->internal || r->filter_finalize)) {
+        for (cln = r->pool->cleanup; cln; cln = cln->next) {
+            if (cln->handler == ngx_http_module_cleanup_handler) {
+                ctx = cln->data;
+                break;
+            }
+        }
+    }
+
+    if (!ctx) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    ngx_uint_t others = 0;
+    if (ctx->matched) {
+        mr = ctx->matched->elts;
+        for (i = 0; i < ctx->matched->nelts; i++) {
+            if (mr[i].rule->rule_id < 1000) {
+                others = 1;
+                sz = 8; /* strlen($OTHERS,) */
+                break;
+            }
+        }
+    }
+
+    if (ctx->special_scores) {
+        sc = ctx->special_scores->elts;
+        for (i = 0; i < ctx->special_scores->nelts; i++) {
+            if (sc[i].sc_score != 0) {
+                sz += sc[i].sc_tag->len + 1;
+            }
+        }
+    }
+
+    if (sz == 0) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    str = (u_char *)ngx_pcalloc(r->pool, sz);
+    if (str == NULL) {
+        return NGX_ERROR;
+    }
+    p = str;
+
+    if (others) {
+        memcpy(p, "$OTHERS,", 8);
+        p += 8;
+    }
+
+    if (ctx->special_scores) {
+        sc = ctx->special_scores->elts;
+        for (i = 0; i < ctx->special_scores->nelts; i++) {
+            if (sc[i].sc_score != 0) {
+                memcpy(p, sc[i].sc_tag->data, sc[i].sc_tag->len);
+                p += sc[i].sc_tag->len;
+                *p = ',';
+                p++;
+            }
+        }
+    }
+
+    v->data = str;
+    v->len = sz - 1;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+
+    return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_naxsi_attack_action_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_http_request_ctx_t *ctx;
+    ngx_pool_cleanup_t *cln;
+    size_t sz = 0;
+    u_char *str;
+    u_char *p;
+    //least significant bit represents if action is pass or block
+    //second least significant bit represents if naxsi is in learning mode
+    u_int learning_block_bits = 0;
+
+    ctx = ngx_http_get_module_ctx(r, ngx_http_naxsi_module);
+
+    if (ctx == NULL && (r->internal || r->filter_finalize)) {
+        for (cln = r->pool->cleanup; cln; cln = cln->next) {
+            if (cln->handler == ngx_http_module_cleanup_handler) {
+                ctx = cln->data;
+                break;
+            }
+        }
+    }
+
+    if (!ctx) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    learning_block_bits = ((ctx->learning ? 1 : 0) << 1) | (ctx->block ? 1 : 0);
+
+    switch (learning_block_bits) {
+        case 0: //pass
+            sz = 5; //  strlen("$PASS")
+            break;
+        case 1: //block
+            sz = 6; //  strlen("$BLOCK")
+            break;
+        case 2: //learning pass
+            sz = 14; //  strlen("$LEARNING-PASS")
+            break;
+        case 3: //learning block
+            sz = 15; //  strlen("$LEARNING-BLOCK")
+            break;
+        default:
+            break;
+    }
+
+    if (sz == 0) {
+        v->not_found = 1;
+        return NGX_OK;
+    }
+
+    str = (u_char *)ngx_pcalloc(r->pool, sz);
+    if (str == NULL) {
+        return NGX_ERROR;
+    }
+    p = str;
+    //p will not be updated, we only write to it once
+    switch (learning_block_bits) {
+        case 0: //pass
+            memcpy(p, "$PASS", sz);
+            break;
+        case 1: //block
+            memcpy(p, "$BLOCK", sz);
+            break;
+        case 2: //learning pass
+            memcpy(p, "$LEARNING-PASS", sz);
+            break;
+        case 3: //learning block
+            memcpy(p, "$LEARNING-BLOCK", sz);
+            break;
+    }
+
+    v->data = str;
+    v->len = sz;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+
+    return NGX_OK;
 }

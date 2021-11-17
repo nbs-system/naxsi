@@ -1718,7 +1718,7 @@ ngx_http_naxsi_score_variable(ngx_http_request_t *r, ngx_http_variable_value_t *
         for (i = 0; i < ctx->matched->nelts; i++) {
             if (mr[i].rule->rule_id < 1000) {
                 others = 1;
-                sz += 8; /* strlen($OTHERS,) */
+                sz += strlen("$OTHERS,");
                 break;
             }
         }
@@ -1728,7 +1728,7 @@ ngx_http_naxsi_score_variable(ngx_http_request_t *r, ngx_http_variable_value_t *
         sc = ctx->special_scores->elts;
         for (i = 0; i < ctx->special_scores->nelts; i++) {
             if (sc[i].sc_score != 0) {
-                sz += snprintf(0, 0, fmt, i, sc[i].sc_tag->len, sc[i].sc_tag->data, sc[i].sc_score);
+                sz += snprintf(NULL, 0, fmt, i, sc[i].sc_tag->len, sc[i].sc_tag->data, sc[i].sc_score);
             }
         }
     }
@@ -1746,7 +1746,7 @@ ngx_http_naxsi_score_variable(ngx_http_request_t *r, ngx_http_variable_value_t *
     p = (char*)v->data;
 
     if (others) {
-        memcpy(p, "$OTHERS,", 8); /* strlen($OTHERS,) */
+        memcpy(p, strlen("$OTHERS,"), 8);
         p += 8;
         sz -= 8;
     }
@@ -1809,7 +1809,7 @@ ngx_http_naxsi_match_variable(ngx_http_request_t *r, ngx_http_variable_value_t *
         const char *name_data = mr[i].name->len? (const char*)mr[i].name->data : "-";
         size_t name_len = mr[i].name->len ? mr[i].name->len : 1;
 
-        char zone[13 + 1] = {0}; /* strlen("FILE_EXT|NAME") + '\0' */
+        char zone[sizeof("FILE_EXT|NAME")] = {0};
         if      (mr[i].body_var)    { strcat(zone, "BODY"); }
         else if (mr[i].args_var)    { strcat(zone, "ARGS"); }
         else if (mr[i].headers_var) { strcat(zone, "HEADERS"); }
@@ -1865,7 +1865,7 @@ ngx_http_naxsi_attack_family_variable(ngx_http_request_t *r, ngx_http_variable_v
         for (i = 0; i < ctx->matched->nelts; i++) {
             if (mr[i].rule->rule_id < 1000) {
                 others = 1;
-                sz = 8; /* strlen($OTHERS,) */
+                sz = strlen("$OTHERS,");
                 break;
             }
         }
@@ -1949,16 +1949,16 @@ ngx_http_naxsi_attack_action_variable(ngx_http_request_t *r, ngx_http_variable_v
 
     switch (learning_block_bits) {
         case 0: //pass
-            sz = 5; //  strlen("$PASS")
+            sz = strlen("$PASS");
             break;
         case 1: //block
-            sz = 6; //  strlen("$BLOCK")
+            sz = strlen("$BLOCK");
             break;
         case 2: //learning pass
-            sz = 14; //  strlen("$LEARNING-PASS")
+            sz = strlen("$LEARNING-PASS");
             break;
         case 3: //learning block
-            sz = 15; //  strlen("$LEARNING-BLOCK")
+            sz = strlen("$LEARNING-BLOCK");
             break;
         default:
             break;

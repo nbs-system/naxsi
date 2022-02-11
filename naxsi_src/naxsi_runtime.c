@@ -182,6 +182,73 @@ unsigned char*
 ngx_utf8_check(ngx_str_t* str);
 
 /*
+ * variables to use pcre2
+ */
+static pcre2_match_data       *ngx_pcre2_match_data;
+static ngx_uint_t              ngx_pcre2_match_data_size;
+
+/*
+ * helper function to use pcre2
+ */
+ngx_int_t
+ngx_pcre2_exec(ngx_regex_t *re, unsigned char* str, unsigned int len, ngx_int_t tmp_idx, int *captures, ngx_uint_t size)
+{
+    size_t      *ov;
+    ngx_int_t    rc;
+    ngx_uint_t   n, i;
+
+    /*
+     * The pcre2_match() function might allocate memory for backtracking
+     * frames, typical allocations are from 40k and above.  So the allocator
+     * is configured to do direct allocations from heap during matching.
+     */
+
+    if (ngx_pcre2_match_data == NULL
+        || size > ngx_pcre2_match_data_size)
+    {
+        /*
+         * Allocate a match data if not yet allocated or smaller than
+         * needed.
+         */
+
+        if (ngx_pcre2_match_data) {
+            pcre2_match_data_free(ngx_pcre2_match_data);
+        }
+
+        ngx_pcre2_match_data_size = size;
+        ngx_pcre2_match_data = pcre2_match_data_create(size / 3, NULL);
+
+        if (ngx_pcre2_match_data == NULL) {
+            rc = PCRE2_ERROR_NOMEMORY;
+            goto failed;
+        }
+    }
+
+    rc = pcre2_match(re, str, len, tmp_idx, 0, ngx_pcre2_match_data, NULL);
+
+    if (rc < 0) {
+        goto failed;
+    }
+
+    n = pcre2_get_ovector_count(ngx_pcre2_match_data);
+    ov = pcre2_get_ovector_pointer(ngx_pcre2_match_data);
+
+    if (n > size / 3) {
+        n = size / 3;
+    }
+
+    for (i = 0; i < n; i++) {
+        captures[i * 2] = ov[i * 2];
+        captures[i * 2 + 1] = ov[i * 2 + 1];
+    }
+
+failed:
+
+    return rc;
+
+}
+
+/*
 ** in : string to inspect, associated rule
 ** does : apply the rule on the string, return 1 if matched,
 **    0 else and -1 on error
@@ -201,7 +268,14 @@ ngx_http_process_basic_rule_buffer(ngx_str_t* str, ngx_http_rule_t* rl, ngx_int_
     tmp_idx = 0;
     len     = str->len;
     while
-#if defined   nginx_version && (nginx_version >= 1002002 && nginx_version != 1003000)
+#if defined nginx_version && (nginx_version >= 1021005)
+      (tmp_idx < len && (match = ngx_pcre2_exec(rl->br->rx->regex,                         
+                                           str->data,
+                                           str->len,
+                                           tmp_idx,
+                                           captures,
+                                           30)) >= 0)
+#elif defined nginx_version && (nginx_version >= 1002002 && nginx_version != 1003000)
       (tmp_idx < len && (match = pcre_exec(rl->br->rx->regex->code,
                                            0,
                                            (const char*)str->data,
@@ -496,7 +570,9 @@ ngx_http_naxsi_pcre_wrapper(ngx_regex_compile_t* rx, unsigned char* str, unsigne
   int match;
   int captures[30];
 
-#if defined   nginx_version && (nginx_version >= 1002002 && nginx_version != 1003000)
+#if defined nginx_version && (nginx_version >= 1021005)
+  match = ngx_pcre2_exec(rx->regex, str, len, 0, captures, 1);
+#elif defined nginx_version && (nginx_version >= 1002002 && nginx_version != 1003000)
   match = pcre_exec(rx->regex->code, 0, (const char*)str, len, 0, 0, captures, 1);
 #elif defined nginx_version && (nginx_version > 1001011)
   match = pcre_exec(rx->regex->pcre, 0, (const char*)str, len, 0, 0, captures, 1);

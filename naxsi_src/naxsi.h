@@ -19,7 +19,6 @@
 #include <ngx_http.h>
 #include <ngx_http_core_module.h>
 #include <ngx_md5.h>
-#include <pcre.h>
 
 extern ngx_module_t ngx_http_naxsi_module;
 

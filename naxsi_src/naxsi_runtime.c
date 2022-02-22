@@ -270,7 +270,7 @@ ngx_http_process_basic_rule_buffer(ngx_str_t* str, ngx_http_rule_t* rl, ngx_int_
     tmp_idx = 0;
     len     = str->len;
     while
-#if defined nginx_version && (nginx_version >= 1021005)
+#if (NGX_PCRE2)
       (tmp_idx < len && (match = ngx_pcre2_exec(rl->br->rx->regex,                         
                                            str->data,
                                            str->len,
@@ -572,7 +572,7 @@ ngx_http_naxsi_pcre_wrapper(ngx_regex_compile_t* rx, unsigned char* str, unsigne
   int match;
   int captures[30];
 
-#if defined nginx_version && (nginx_version >= 1021005)
+#if (NGX_PCRE2)
   match = ngx_pcre2_exec(rx->regex, str, len, 0, captures, 1);
 #elif defined nginx_version && (nginx_version >= 1002002 && nginx_version != 1003000)
   match = pcre_exec(rx->regex->code, 0, (const char*)str, len, 0, 0, captures, 1);

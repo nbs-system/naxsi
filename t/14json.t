@@ -867,3 +867,103 @@ use URI::Escape;
     \"MyKey\": \"MyValue \0 <script>alert('1')</script>\"
 }"
 --- error_code: 412
+
+=== JSON17 : Valid JSON With HTTP Patch Method
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+         error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"PATCH /
+{
+    \"glossary\": {
+        \"title\": \"example glossary\",
+\"GlossDiv\": {
+            \"title\": \"S\",
+\"GlossList\": {
+                \"GlossEntry\": {
+                    \"ID\": \"SGML\",
+\"SortAs\": \"SGML\",
+\"GlossTerm\": \"Standard Generalized Markup Language\",
+\"Acronym\": \"SGML\",
+\"Abbrev\": \"ISO 8879:1986\",
+\"GlossDef\": {
+                        \"para\": \"A meta-markup language used to create markup languages such as DocBook.\",
+\"GlossSeeAlso\": [\"GML\", \"XML\"]
+                    },
+\"GlossSee\": \"markup\"
+                }
+            }
+        }
+    }
+}
+"
+--- error_code: 200
+
+=== JSON1 : invalid JSON With HTTP Patch Method (double closing ']')
+--- main_config
+load_module /tmp/naxsi_ut/modules/ngx_http_naxsi_module.so;
+--- http_config
+include /tmp/naxsi_ut/naxsi_core.rules;
+--- config
+location / {
+         SecRulesEnabled;
+         DeniedUrl "/RequestDenied";
+         CheckRule "$SQL >= 8" BLOCK;
+         CheckRule "$RFI >= 8" BLOCK;
+         CheckRule "$TRAVERSAL >= 4" BLOCK;
+         CheckRule "$XSS >= 8" BLOCK;
+         root $TEST_NGINX_SERVROOT/html/;
+         index index.html index.htm;
+         error_page 405 = $uri;
+}
+location /RequestDenied {
+         return 412;
+}
+--- more_headers
+Content-Type: application/json
+--- request eval
+use URI::Escape;
+"PATCH /
+{
+    \"glossary\": {
+        \"title\": \"example glossary\",
+\"GlossDiv\": {
+            \"title\": \"S\",
+\"GlossList\": {
+                \"GlossEntry\": {
+                    \"ID\": \"SGML\",
+\"SortAs\": \"SGML\",
+\"GlossTerm\": \"Standard Generalized Markup Language\",
+\"Acronym\": \"SGML\",
+\"Abbrev\": \"ISO 8879:1986\",
+\"GlossDef\": {
+                        \"para\": \"A meta-markup language used to create markup languages such as DocBook.\",
+\"GlossSeeAlso\": [\"GML\", \"XML\"]]
+                    },
+\"GlossSee\": \"markup\"
+                }
+            }
+        }
+    }
+}
+"
+--- error_code: 412

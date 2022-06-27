@@ -4,8 +4,8 @@
  * Licensed under GNU GPL v3.0 – See the LICENSE notice for details
  */
 
-#include "assert.h"
 #include "naxsi.h"
+#include "assert.h"
 #include "naxsi_macros.h"
 #include "naxsi_net.h"
 
@@ -271,7 +271,7 @@ ngx_http_process_basic_rule_buffer(ngx_str_t* str, ngx_http_rule_t* rl, ngx_int_
     len     = str->len;
     while
 #if (NGX_PCRE2)
-      (tmp_idx < len && (match = ngx_pcre2_exec(rl->br->rx->regex,                         
+      (tmp_idx < len && (match = ngx_pcre2_exec(rl->br->rx->regex,
                                            str->data,
                                            str->len,
                                            tmp_idx,
@@ -2912,20 +2912,20 @@ ngx_http_naxsi_data_parse(ngx_http_request_ctx_t* ctx, ngx_http_request_t* r)
       /* and the presence of data to parse */
       r->request_body && ((!ctx->block || ctx->learning) && !ctx->drop))
     ngx_http_naxsi_body_parse(ctx, r, cf, main_cf);
+#if (NGX_HTTP_X_FORWARDED_FOR)
   ngx_str_t tag;
   tag.len  = 15;
   tag.data = ngx_pcalloc(r->pool, tag.len + 1);
   if (tag.data)
     memcpy(tag.data, "x-forwarded-for", 15);
+#if (nginx_version < 1023000)
   unsigned int      n = 0;
   ngx_table_elt_t** h = NULL;
   ngx_array_t       a;
-#if (NGX_HTTP_X_FORWARDED_FOR)
   if (r->headers_in.x_forwarded_for.nelts >= 1) {
     a = r->headers_in.x_forwarded_for;
     n = a.nelts;
   }
-#endif
   if (n >= 1)
     h = a.elts;
   if (n >= 1) {
@@ -2933,6 +2933,16 @@ ngx_http_naxsi_data_parse(ngx_http_request_ctx_t* ctx, ngx_http_request_t* r)
 
     ngx_http_naxsi_update_current_ctx_status(ctx, cf, r, &tag, (ngx_str_t*)h[0]->value.data);
   }
+#else
+  ngx_table_elt_t* xff = NULL;
+  if (r->headers_in.x_forwarded_for != NULL) {
+    xff = r->headers_in.x_forwarded_for;
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "xfor %s", xff->value.data);
+
+    ngx_http_naxsi_update_current_ctx_status(ctx, cf, r, &tag, (ngx_str_t*)xff->value.data);
+  }
+#endif
+#endif
 }
 
 void
@@ -2947,19 +2957,20 @@ ngx_http_naxsi_update_current_ctx_status(ngx_http_request_ctx_t*    ctx,
   ngx_http_check_rule_t* cr;
 
   ngx_http_special_score_t* sc;
-  unsigned int              n = 0;
 
   NX_DEBUG(_debug_custom_score, NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "XX-custom check rules");
 
   int               ignore = 0;
-  ngx_table_elt_t** h;
-  ngx_array_t       a;
 
   ctx->ignore = 0;
 
   /*cr, sc, cf, ctx*/
   if (cf->check_rules && ctx->special_scores) {
 #if (NGX_HTTP_X_FORWARDED_FOR)
+#if (nginx_version < 1023000)
+      unsigned int              n = 0;
+      ngx_table_elt_t** h;
+      ngx_array_t       a;
     if (r->headers_in.x_forwarded_for.nelts >= 1) {
       a = r->headers_in.x_forwarded_for;
       n = a.nelts;
@@ -2978,6 +2989,23 @@ ngx_http_naxsi_update_current_ctx_status(ngx_http_request_ctx_t*    ctx,
         ignore = nx_can_ignore_ip(&ip, cf) || nx_can_ignore_cidr(&ip, cf);
       }
     } else
+#else
+    ngx_table_elt_t* xff;
+    if (r->headers_in.x_forwarded_for != NULL) {
+      xff = r->headers_in.x_forwarded_for;
+      NX_DEBUG(_debug_whitelist_ignore,
+                 NGX_LOG_DEBUG_HTTP,
+                 r->connection->log,
+                 0,
+                 "XX- lookup ignore X-Forwarded-For: %s",
+                 xff->value.data);
+      ngx_str_t ip;
+      ip.len  = strlen((char*)xff->value.data);
+      ip.data = ngx_pcalloc(r->pool, ip.len + 1);
+      memcpy(ip.data, xff->value.data, ip.len);
+      ignore = nx_can_ignore_ip(&ip, cf) || nx_can_ignore_cidr(&ip, cf);
+    } else
+#endif
 #endif
     {
       ngx_str_t* ip = &r->connection->addr_text;

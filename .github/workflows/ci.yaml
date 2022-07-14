@@ -2,8 +2,6 @@ name: "CI Unit Tests"
 
 on:
   push:
-    branches:
-      - main
   pull_request:
 
 jobs:
@@ -13,6 +11,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         nginx:
+          - 1.23.0
           - 1.21.6
           - 1.20.2
           - 1.18.0

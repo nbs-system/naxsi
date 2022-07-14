@@ -1,8 +1,5 @@
-/*
- * NAXSI, a web application firewall for NGINX
- * Copyright (C) NBS System – All Rights Reserved
- * Licensed under GNU GPL v3.0 – See the LICENSE notice for details
- */
+// SPDX-FileCopyrightText: 2016-2019, Thibault 'bui' Koechlin <tko@nbs-system.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /*
 ** This files contains skeleton functions,
@@ -60,9 +57,11 @@ ngx_http_naxsi_create_main_conf(ngx_conf_t* cf);
 void
 ngx_http_naxsi_payload_handler(ngx_http_request_t* r);
 
-static char *ngx_http_naxsi_log_loc_conf(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
-    ngx_http_naxsi_loc_conf_t *alcf = conf;
-    return ngx_log_set_log(cf, &alcf->log);
+static char*
+ngx_http_naxsi_log_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
+{
+  ngx_http_naxsi_loc_conf_t* alcf = conf;
+  return ngx_log_set_log(cf, &alcf->log);
 }
 
 /* command handled by the module */
@@ -152,7 +151,8 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* Learning Flag */
   { ngx_string(TOP_LEARNING_FLAG_T),
-    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF |
+      NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -160,7 +160,8 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* Learning Flag (nginx style) */
   { ngx_string(TOP_LEARNING_FLAG_N),
-    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF |
+      NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -168,7 +169,8 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* EnableFlag */
   { ngx_string(TOP_ENABLED_FLAG_T),
-    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF |
+      NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -176,7 +178,8 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* EnableFlag (nginx style) */
   { ngx_string(TOP_ENABLED_FLAG_N),
-    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF |
+      NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -184,7 +187,8 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* DisableFlag */
   { ngx_string(TOP_DISABLED_FLAG_T),
-    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF |
+      NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -192,7 +196,8 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* DisableFlag (nginx style) */
   { ngx_string(TOP_DISABLED_FLAG_N),
-    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF |
+      NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -200,7 +205,8 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* LibInjectionSql */
   { ngx_string(TOP_LIBINJECTION_SQL_T),
-    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF |
+      NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -208,7 +214,8 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* LibInjectionSql (nginx style) */
   { ngx_string(TOP_LIBINJECTION_SQL_N),
-    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF |
+      NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -216,7 +223,8 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* LibInjectionXss */
   { ngx_string(TOP_LIBINJECTION_XSS_T),
-    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF |
+      NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -224,7 +232,8 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
 
   /* LibInjectionXss (nginx style) */
   { ngx_string(TOP_LIBINJECTION_XSS_N),
-    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_NOARGS,
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF |
+      NGX_CONF_NOARGS,
     ngx_http_naxsi_flags_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
@@ -924,26 +933,26 @@ ngx_http_naxsi_flags_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
     /* it's a flagrule, just a hack to enable/disable mod */
     if (!ngx_strcmp(value[0].data, TOP_DISABLED_FLAG_T) ||
         !ngx_strcmp(value[0].data, TOP_DISABLED_FLAG_N)) {
-    alcf->force_disabled = 1;
-    return (NGX_CONF_OK);
-  } else
-    /* it's a flagrule, currently just a hack to enable/disable learning mode */
-    if (!ngx_strcmp(value[0].data, TOP_LEARNING_FLAG_T) ||
-        !ngx_strcmp(value[0].data, TOP_LEARNING_FLAG_N)) {
-    alcf->learning = 1;
-    return (NGX_CONF_OK);
-  } else if (!ngx_strcmp(value[0].data, TOP_LIBINJECTION_SQL_T) ||
-             !ngx_strcmp(value[0].data, TOP_LIBINJECTION_SQL_N)) {
-    NX_LOG_DEBUG(_debug_loc_conf, NGX_LOG_EMERG, cf, 0, "LibInjectionSql enabled");
-    alcf->libinjection_sql_enabled = 1;
-    return (NGX_CONF_OK);
-  } else if (!ngx_strcmp(value[0].data, TOP_LIBINJECTION_XSS_T) ||
-             !ngx_strcmp(value[0].data, TOP_LIBINJECTION_XSS_N)) {
-    alcf->libinjection_xss_enabled = 1;
-    NX_LOG_DEBUG(_debug_loc_conf, NGX_LOG_EMERG, cf, 0, "LibInjectionXss enabled");
-    return (NGX_CONF_OK);
-  } else
-    return (NGX_CONF_ERROR);
+      alcf->force_disabled = 1;
+      return (NGX_CONF_OK);
+    } else
+      /* it's a flagrule, currently just a hack to enable/disable learning mode */
+      if (!ngx_strcmp(value[0].data, TOP_LEARNING_FLAG_T) ||
+          !ngx_strcmp(value[0].data, TOP_LEARNING_FLAG_N)) {
+        alcf->learning = 1;
+        return (NGX_CONF_OK);
+      } else if (!ngx_strcmp(value[0].data, TOP_LIBINJECTION_SQL_T) ||
+                 !ngx_strcmp(value[0].data, TOP_LIBINJECTION_SQL_N)) {
+        NX_LOG_DEBUG(_debug_loc_conf, NGX_LOG_EMERG, cf, 0, "LibInjectionSql enabled");
+        alcf->libinjection_sql_enabled = 1;
+        return (NGX_CONF_OK);
+      } else if (!ngx_strcmp(value[0].data, TOP_LIBINJECTION_XSS_T) ||
+                 !ngx_strcmp(value[0].data, TOP_LIBINJECTION_XSS_N)) {
+        alcf->libinjection_xss_enabled = 1;
+        NX_LOG_DEBUG(_debug_loc_conf, NGX_LOG_EMERG, cf, 0, "LibInjectionXss enabled");
+        return (NGX_CONF_OK);
+      } else
+        return (NGX_CONF_ERROR);
 }
 
 static char*
@@ -1123,12 +1132,11 @@ ngx_http_naxsi_access_handler(ngx_http_request_t* r)
              &(r->uri),
              ctx,
              &(r->args),
-             r->method == NGX_HTTP_PATCH
-               ? "PATCH"
-               : r->method == NGX_HTTP_POST
-                   ? "POST"
-                   : r->method == NGX_HTTP_PUT ? "PUT"
-                                               : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
+             r->method == NGX_HTTP_PATCH  ? "PATCH"
+             : r->method == NGX_HTTP_POST ? "POST"
+             : r->method == NGX_HTTP_PUT  ? "PUT"
+             : r->method == NGX_HTTP_GET  ? "GET"
+                                          : "UNKNOWN!!",
              r->internal);
     return (NGX_DECLINED);
   }
@@ -1140,12 +1148,11 @@ ngx_http_naxsi_access_handler(ngx_http_request_t* r)
            &(r->uri),
            ctx,
            &(r->args),
-           r->method == NGX_HTTP_PATCH
-             ? "PATCH"
-             : r->method == NGX_HTTP_POST
-                 ? "POST"
-                 : r->method == NGX_HTTP_PUT ? "PUT"
-                                             : r->method == NGX_HTTP_GET ? "GET" : "UNKNOWN!!",
+           r->method == NGX_HTTP_PATCH  ? "PATCH"
+           : r->method == NGX_HTTP_POST ? "POST"
+           : r->method == NGX_HTTP_PUT  ? "PUT"
+           : r->method == NGX_HTTP_GET  ? "GET"
+                                        : "UNKNOWN!!",
            r->internal);
   if (!ctx) {
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_request_ctx_t));

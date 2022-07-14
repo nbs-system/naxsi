@@ -1,8 +1,5 @@
-/*
- * NAXSI, a web application firewall for NGINX
- * Copyright (C) NBS System – All Rights Reserved
- * Licensed under GNU GPL v3.0 – See the LICENSE notice for details
- */
+// SPDX-FileCopyrightText: 2016-2019, Thibault 'bui' Koechlin <tko@nbs-system.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "naxsi.h"
 #include "naxsi_net.h"
@@ -87,68 +84,6 @@ naxsi_escape_nullbytes(ngx_str_t* str)
     }
   }
   return nullbytes;
-}
-
-/*
-** Shamelessly ripped off from https://www.cl.cam.ac.uk/~mgk25/ucs/utf8_check.c
-** and adapted to ngx_str_t
-*/
-unsigned char*
-ngx_utf8_check(ngx_str_t* str)
-{
-  unsigned int   offset = 0;
-  unsigned char* s;
-
-  s = str->data;
-
-  while (offset < str->len && *s) {
-    if (*s < 0x80) {
-      /* 0xxxxxxx */
-      s++;
-      offset++;
-    } else if ((s[0] & 0xe0) == 0xc0) {
-      if (offset + 1 >= str->len) {
-        // not enough bytes
-        return s;
-      }
-      /* 110XXXXx 10xxxxxx */
-      if ((s[1] & 0xc0) != 0x80 || (s[0] & 0xfe) == 0xc0) { /* overlong? */
-        return s;
-      } else {
-        s += 2;
-        offset += 2;
-      }
-    } else if ((s[0] & 0xf0) == 0xe0) {
-      if (offset + 2 >= str->len) {
-        // not enough bytes
-        return s;
-      }
-      /* 1110XXXX 10Xxxxxx 10xxxxxx */
-      if ((s[1] & 0xc0) != 0x80 || (s[2] & 0xc0) != 0x80 ||
-          (s[0] == 0xe0 && (s[1] & 0xe0) == 0x80) ||               /* overlong? */
-          (s[0] == 0xed && (s[1] & 0xe0) == 0xa0) ||               /* surrogate? */
-          (s[0] == 0xef && s[1] == 0xbf && (s[2] & 0xfe) == 0xbe)) /* U+FFFE or U+FFFF? */
-        return s;
-      else
-        s += 3;
-    } else if ((s[0] & 0xf8) == 0xf0) {
-      if (offset + 3 >= str->len) {
-        // not enough bytes
-        return s;
-      }
-      /* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
-      if ((s[1] & 0xc0) != 0x80 || (s[2] & 0xc0) != 0x80 || (s[3] & 0xc0) != 0x80 ||
-          (s[0] == 0xf0 && (s[1] & 0xf0) == 0x80) ||      /* overlong? */
-          (s[0] == 0xf4 && s[1] > 0x8f) || s[0] > 0xf4) { /* > U+10FFFF? */
-        return s;
-      } else {
-        s += 4;
-      }
-    } else {
-      return s;
-    }
-  }
-  return NULL;
 }
 
 /*
@@ -801,9 +736,9 @@ ngx_http_naxsi_create_hashtables_n(ngx_http_naxsi_loc_conf_t* dlc, ngx_conf_t* c
           rgc = custloc_array(curr_r->br->custom_locations->elts)[name_idx].target_rx;
           if (rgc) {
 #if (NGX_PCRE2)
-            rgc->options  = PCRE2_CASELESS | PCRE2_MULTILINE;
+            rgc->options = PCRE2_CASELESS | PCRE2_MULTILINE;
 #else
-            rgc->options  = PCRE_CASELESS | PCRE_MULTILINE;
+            rgc->options = PCRE_CASELESS | PCRE_MULTILINE;
 #endif
             rgc->pattern  = custloc_array(curr_r->br->custom_locations->elts)[name_idx].target;
             rgc->pool     = cf->pool;
@@ -821,9 +756,9 @@ ngx_http_naxsi_create_hashtables_n(ngx_http_naxsi_loc_conf_t* dlc, ngx_conf_t* c
           rgc = custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target_rx;
           if (rgc) {
 #if (NGX_PCRE2)
-            rgc->options  = PCRE2_CASELESS | PCRE2_MULTILINE;
+            rgc->options = PCRE2_CASELESS | PCRE2_MULTILINE;
 #else
-            rgc->options  = PCRE_CASELESS | PCRE_MULTILINE;
+            rgc->options = PCRE_CASELESS | PCRE_MULTILINE;
 #endif
             rgc->pattern  = custloc_array(curr_r->br->custom_locations->elts)[uri_idx].target;
             rgc->pool     = cf->pool;
@@ -901,8 +836,8 @@ naxsi_log_offending(ngx_str_t*          name,
                     ngx_int_t           target_name)
 {
   ngx_http_naxsi_loc_conf_t* cf;
-  ngx_str_t tmp_uri, tmp_val, tmp_name;
-  ngx_str_t empty = ngx_string("");
+  ngx_str_t                  tmp_uri, tmp_val, tmp_name;
+  ngx_str_t                  empty = ngx_string("");
 
   // encode uri
   tmp_uri.len = req->uri.len +

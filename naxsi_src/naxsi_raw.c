@@ -1,8 +1,6 @@
-/*
- * NAXSI, a web application firewall for NGINX
- * Copyright (C) NBS System – All Rights Reserved
- * Licensed under GNU GPL v3.0 – See the LICENSE notice for details
- */
+// SPDX-FileCopyrightText: 2019, Giovanni Dante Grazioli <gda@nbs-system.com>
+// SPDX-FileCopyrightText: 2016-2019, Thibault 'bui' Koechlin <tko@nbs-system.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "naxsi.h"
 

@@ -1,0 +1,30 @@
+name: "Linters"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  licenses:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Reuse Compliance Check
+      uses: fsfe/reuse-action@v1.1
+
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Install wget, software-properties-common, lsb-release (dependencies of LLVM install script)
+      run: sudo apt --assume-yes install wget software-properties-common lsb-release
+    - name: Install automatic LLVM 13
+      run: wget https://apt.llvm.org/llvm.sh -O /tmp/llvm-install.sh; chmod +x /tmp/llvm-install.sh; sudo /tmp/llvm-install.sh 13
+    - name: Install clang-format-13
+      run: sudo apt --assume-yes install clang-format-13
+    - name: Format check
+      run: find naxsi_src/ -type f -name "*.c" -o -name "*.h" | grep -v "libinjection" | xargs -I % clang-format % --verbose --dry-run

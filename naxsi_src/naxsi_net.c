@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2019, Giovanni Dante Grazioli <gda@nbs-system.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "naxsi_net.h"
 
 int

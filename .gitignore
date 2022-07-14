@@ -1,3 +1,4 @@
 *.tar.gz
 *.asc
-t/servroot/
+nginx-source
+nginx-tmp

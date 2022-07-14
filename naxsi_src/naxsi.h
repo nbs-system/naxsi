@@ -1,24 +1,22 @@
-/*
- * NAXSI, a web application firewall for NGINX
- * Copyright (C) NBS System – All Rights Reserved
- * Licensed under GNU GPL v3.0 – See the LICENSE notice for details
- */
+// SPDX-FileCopyrightText: 2016-2019, Thibault 'bui' Koechlin <tko@nbs-system.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #ifndef __NAXSI_H__
 #define __NAXSI_H__
 
 #define NAXSI_VERSION "1.3"
 
-#include <ngx_config.h>
-#include <ngx_core.h>
-#include "ext/libinjection/libinjection_sqli.h"
-#include "ext/libinjection/libinjection_xss.h"
 #include <ctype.h>
 #include <nginx.h>
+#include <ngx_config.h>
+#include <ngx_core.h>
 #include <ngx_event.h>
 #include <ngx_http.h>
 #include <ngx_http_core_module.h>
 #include <ngx_md5.h>
+
+#include "libinjection/src/libinjection_sqli.h"
+#include "libinjection/src/libinjection_xss.h"
 
 extern ngx_module_t ngx_http_naxsi_module;
 
@@ -211,10 +209,10 @@ typedef struct
 {
   ngx_str_t*           str; // string
   ngx_regex_compile_t* rx;  // or regex
-                            /*
-                            ** basic rule can have 4 (so far) kind of matching mechanisms :
-                            ** RX, STR, LIBINJ_XSS, LIBINJ_SQL
-                            */
+  /*
+  ** basic rule can have 4 (so far) kind of matching mechanisms :
+  ** RX, STR, LIBINJ_XSS, LIBINJ_SQL
+  */
   naxsi_detect_mechanism_t match_type;
   /* is the match zone a regex or a string (hashtable) */
   ngx_int_t rx_mz;

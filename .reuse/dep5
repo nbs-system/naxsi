@@ -1,0 +1,28 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Naxsi WAF
+Upstream-Contact: deroad <wargio@libero.it>
+Source: https://github.com/rizinorg/rizin
+
+Files: .github/**
+Copyright: 2022 deroad <wargio@libero.it>
+License: LGPL-3.0-only
+
+Files: .clang-format
+Copyright: 2022 deroad <wargio@libero.it>
+License: LGPL-3.0-only
+
+Files: .gitignore .gitmodules
+Copyright: 2022 deroad <wargio@libero.it>
+License: LGPL-3.0-only
+
+Files: README.md .gitattributes logo.png
+Copyright: 2019 nbs-system <security@nbs-system.com>
+License: GPL-3.0-or-later
+
+Files: naxsi_config/naxsi_core.rules
+Copyright: 2019 nbs-system <security@nbs-system.com>
+License: GPL-3.0-or-later
+
+Files: unit-tests/**
+Copyright: 2019 nbs-system <security@nbs-system.com>
+License: GPL-3.0-or-later

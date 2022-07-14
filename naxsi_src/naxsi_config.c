@@ -1,8 +1,5 @@
-/*
- * NAXSI, a web application firewall for NGINX
- * Copyright (C) NBS System – All Rights Reserved
- * Licensed under GNU GPL v3.0 – See the LICENSE notice for details
- */
+// SPDX-FileCopyrightText: 2016-2019, Thibault 'bui' Koechlin <tko@nbs-system.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "naxsi_config.h"
 #include "naxsi.h"
@@ -197,7 +194,7 @@ naxsi_zone(ngx_conf_t* r, ngx_str_t* tmp, ngx_http_rule_t* rule)
       has_zone = 1;
       continue;
     } else if (!strncmp(tmp_ptr, "BODY", strlen("BODY"))) {
-      rule->br->body = 1;
+      rule->br->body      = 1;
       rule->br->body_rule = 1;
       tmp_ptr += strlen("BODY");
       has_zone = 1;
@@ -323,9 +320,9 @@ naxsi_zone(ngx_conf_t* r, ngx_str_t* tmp, ngx_http_rule_t* rule)
         custom_rule->target_rx = ngx_pcalloc(r->pool, sizeof(ngx_regex_compile_t));
         return_value_if(!custom_rule->target_rx, NGX_CONF_ERROR);
 #if (NGX_PCRE2)
-        custom_rule->target_rx->options  = PCRE2_CASELESS | PCRE2_MULTILINE;
+        custom_rule->target_rx->options = PCRE2_CASELESS | PCRE2_MULTILINE;
 #else
-        custom_rule->target_rx->options  = PCRE_CASELESS | PCRE_MULTILINE;
+        custom_rule->target_rx->options = PCRE_CASELESS | PCRE_MULTILINE;
 #endif
         custom_rule->target_rx->pattern  = custom_rule->target;
         custom_rule->target_rx->pool     = r->pool;
@@ -446,9 +443,9 @@ naxsi_rx(ngx_conf_t* r, ngx_str_t* tmp, ngx_http_rule_t* rule)
   rgc     = ngx_pcalloc(r->pool, sizeof(ngx_regex_compile_t));
   return_value_if(!rgc, NGX_CONF_ERROR);
 #if (NGX_PCRE2)
-  rgc->options  = PCRE2_CASELESS | PCRE2_MULTILINE;
+  rgc->options = PCRE2_CASELESS | PCRE2_MULTILINE;
 #else
-  rgc->options  = PCRE_CASELESS | PCRE_MULTILINE;
+  rgc->options = PCRE_CASELESS | PCRE_MULTILINE;
 #endif
   rgc->pattern  = ha;
   rgc->pool     = r->pool;

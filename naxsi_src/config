@@ -1,12 +1,37 @@
-ngx_addon_name=ngx_http_naxsi_module
+# SPDX-FileCopyrightText: 2019 Giovanni Dante Grazioli <gda@nbs-system.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
 
+naxsi_includes=""
+naxsi_sources=""
+
+# NAXSI include files
+naxsi_includes+="$ngx_addon_dir/naxsi.h "
+naxsi_includes+="$ngx_addon_dir/naxsi_const.h "
+naxsi_includes+="$ngx_addon_dir/naxsi_config.h "
+naxsi_includes+="$ngx_addon_dir/naxsi_net.h "
+
+# NAXSI C source files
+naxsi_sources+="$ngx_addon_dir/naxsi_config.c "
+naxsi_sources+="$ngx_addon_dir/naxsi_json.c "
+naxsi_sources+="$ngx_addon_dir/naxsi_net.c "
+naxsi_sources+="$ngx_addon_dir/naxsi_raw.c "
+naxsi_sources+="$ngx_addon_dir/naxsi_runtime.c "
+naxsi_sources+="$ngx_addon_dir/naxsi_skeleton.c "
+naxsi_sources+="$ngx_addon_dir/naxsi_utf8.c "
+naxsi_sources+="$ngx_addon_dir/naxsi_utils.c "
+naxsi_sources+="$ngx_addon_dir/libinjection/src/libinjection_html5.c "
+naxsi_sources+="$ngx_addon_dir/libinjection/src/libinjection_sqli.c "
+naxsi_sources+="$ngx_addon_dir/libinjection/src/libinjection_xss.c "
+
+# NGINX module condfiguration.
+ngx_addon_name=ngx_http_naxsi_module
 if test -n "$ngx_module_link"; then
     ngx_module_type=HTTP
     ngx_module_name=ngx_http_naxsi_module
-    ngx_module_srcs="$ngx_addon_dir/naxsi_runtime.c $ngx_addon_dir/naxsi_config.c $ngx_addon_dir/naxsi_utils.c $ngx_addon_dir/naxsi_skeleton.c $ngx_addon_dir/naxsi_json.c $ngx_addon_dir/naxsi_raw.c $ngx_addon_dir/naxsi_net.c $ngx_addon_dir/ext/libinjection/libinjection_sqli.c $ngx_addon_dir/ext/libinjection/libinjection_xss.c $ngx_addon_dir/ext/libinjection/libinjection_html5.c"
+    ngx_module_srcs="$naxsi_sources"
     . auto/module
 else
     HTTP_MODULES="$HTTP_MODULES ngx_http_naxsi_module"
-    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/naxsi_runtime.c $ngx_addon_dir/naxsi_config.c $ngx_addon_dir/naxsi_utils.c $ngx_addon_dir/naxsi_skeleton.c $ngx_addon_dir/naxsi_json.c $ngx_addon_dir/naxsi_raw.c $ngx_addon_dir/naxsi_net.c $ngx_addon_dir/ext/libinjection/libinjection_sqli.c $ngx_addon_dir/ext/libinjection/libinjection_xss.c $ngx_addon_dir/ext/libinjection/libinjection_html5.c"
-    NGX_ADDON_DEPS="$NGX_ADDON_DEPS $ngx_addon_dir/naxsi.h $ngx_addon_dir/naxsi_config.h $ngx_addon_dir/naxsi_net.h"
+    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $naxsi_sources"
+    NGX_ADDON_DEPS="$NGX_ADDON_DEPS $naxsi_includes"
 fi

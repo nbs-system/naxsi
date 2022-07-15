@@ -1,6 +1,6 @@
 ![naxsi](https://raw.githubusercontent.com/nbs-system/naxsi/master/logo.png)
 
-## What is Naxsi?
+# What is Naxsi?
 
 NAXSI means [Nginx]( http://nginx.org/ ) Anti [XSS]( https://www.owasp.org/index.php/Cross-site_Scripting_%28XSS%29 ) & [SQL Injection]( https://www.owasp.org/index.php/SQL_injection ). 
 
@@ -33,6 +33,15 @@ Naxsi should be compatible with any nginx version.
 
 It depends on `libpcre` for its regexp support, and is reported to work great on NetBSD, FreeBSD, OpenBSD, Debian, Ubuntu and CentOS.
 
-# Support
+# Why using this repository
 
-Support on the original repository https://github.com/nbs-system/naxsi is currently provided by me.
+The original project is (unofficially) abandoned, but you can fully ask for support here as i'm willing to keep the project working as last remaining developer.
+
+## Support
+
+You can ask for support regarding NAXSI here or on the original repository https://github.com/nbs-system/naxsi
+
+## Future plans
+
+- Bring back nxapi via py3
+- Creation of a simple tool to create rules and test them

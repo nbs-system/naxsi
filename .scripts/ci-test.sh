@@ -4,7 +4,7 @@
 
 RUN_TEST="$1"
 
-export NAXSI_CFG_PATH=$(realpath naxsi_config/)
+export NAXSI_CFG_PATH=$(realpath naxsi_rules/)
 export NAXSI_TMP_PATH=$(realpath nginx-tmp/)
 export NAXSI_TST_PATH=$(realpath unit-tests/)
 

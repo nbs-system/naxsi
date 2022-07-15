@@ -1,0 +1,62 @@
+####################################
+## Drupal whitelists ALPHA        ##
+####################################
+
+# some url patterns
+BasicRule wl:1000 "mz:$URL:/modules/update/update.css|URL";
+BasicRule wl:1000 "mz:$URL:/misc/tableselect.js|URL";
+BasicRule wl:1000 "mz:$URL:/modules/contextual/images/gear-select.png|URL|$HEADERS_VAR:cookie";
+BasicRule wl:1000 "mz:$URL:/misc/ui/jquery.ui.sortable.min.js|URL|$HEADERS_VAR:cookie";
+BasicRule wl:1000 "mz:$URL:/misc/tableheader.js|URL|$HEADERS_VAR:cookie";
+BasicRule wl:1000 "mz:$URL:/misc/tabledrag.js|URL|$HEADERS_VAR:cookie";
+
+# bad keywords in posts etc (update etc)
+BasicRule wl:1000 "mz:$URL:/|$BODY_VAR:comment_confirm_delete|NAME";
+BasicRule wl:1000 "mz:$URL:/|$ARGS_VAR:q";
+BasicRule wl:1000 "mz:$URL:/|$BODY_VAR:form_id";
+BasicRule wl:1000 "mz:$URL:/|$HEADERS_VAR:cookie";
+BasicRule wl:1010 "mz:$URL:/|$ARGS_VAR:date";
+
+# XSS because of [ and ] in POST variables
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^body|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^menu|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^path|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^comment_body|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^field_|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^type|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^modules|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^blocks|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^palette|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^regions|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^roles|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^fields|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$ARGS_VAR_X:^destination|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^filter|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^search_active_modules|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^shortcuts|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR_X:^formats|NAME";
+
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR:status";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR:role";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR:permission";
+BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR:type";
+
+# update module
+BasicRule wl:16 "mz:$URL:/|BODY";
+
+# user mail 
+BasicRule wl:1007,1010,1011,1013,1015,1310,1311 "mz:$URL:/|$BODY_VAR_X:^user_mail";
+
+# other stuff
+BasicRule wl:1007 "mz:$URL:/|$BODY_VAR:form_build_id";
+BasicRule wl:1007 "mz:$URL:/|$BODY_VAR:menu[parent]";
+BasicRule wl:1007 "mz:$URL:/|$BODY_VAR:form_token";
+BasicRule wl:1007 "mz:$URL:/|$BODY_VAR:additional_settings__active_tab";
+BasicRule wl:1007 "mz:$URL:/|$BODY_VAR:date";
+
+BasicRule wl:1302,1303 "mz:$URL:/|$BODY_VAR_X:^filters";
+BasicRule wl:1010,1011 "mz:$URL:/|$BODY_VAR:actions_label";
+BasicRule wl:1015 "mz:$URL:/|$BODY_VAR:date_format_long";
+BasicRule wl:1009,1016 "mz:$URL:/|$ARGS_VAR:destination";
+BasicRule wl:1016  "mz:$URL:/|$BODY_VAR_X:^palette";
+

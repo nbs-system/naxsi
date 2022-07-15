@@ -1,0 +1,26 @@
+#########                                                                 #########
+######                                                                       ######
+### Because of wordpress.rules is full of wl rules even got double.             ###
+### Thats why I start from scratch so these rules are in BETA us on own risk.   ###
+### I us not that many plugins and those I use only after I checked there code. ###
+######                                                                       ######
+#########                                                                 #########
+### HEADERS
+BasicRule  wl:1001,1315 "mz:$HEADERS_VAR:cookie";
+###	Theme customize
+BasicRule  wl:1001,1015,1310,1311 "mz:$URL_X:^/.*$|$BODY_VAR_X:^customized$|BODY";
+###	Widget customize
+BasicRule  wl:1001,1015,1310,1311 "mz:$URL_X:^/.*$|$BODY_VAR_X:^partials$|BODY";
+### oEmbed API
+BasicRule  wl:1000,1009,1101 "mz:$URL_X:^/.*wp-json/oembed/1.0/embed|$ARGS_VAR_X:^url$";
+BasicRule  wl:1009,1101 "mz:$URL_X:^/.*wp-json/oembed/1.0/embed|ARGS";
+BasicRule  wl:1009,1101 "mz:ARGS";
+###	Trackbacks
+BasicRule  wl:1005,1008,1010,1011,1015,1016,1100,1101,1400 "mz:$URL_X:^/.*trackback$/|BODY";
+BasicRule  wl:1005,1008,1010,1011,1015,1016,1100,1101,1400 "mz:BODY";
+BasicRule  wl:1008,1010,1011,1015,1016,1100,1101,1400 "mz:$URL_X:^/.*trackback$/|$BODY_VAR_X:^excerpt$";
+BasicRule  wl:1008,1010,1011,1015,1016,1100,1101,1400 "mz:$BODY_VAR:excerpt";
+BasicRule  wl:1101 "mz:$URL_X:^/.*trackback$/|$BODY_VAR_X:^url$";
+BasicRule  wl:1005 "mz:$URL_X:^/.*trackback$/|$BODY_VAR_X:^title$";
+BasicRule  wl:1101 "mz:$BODY_VAR:url";
+BasicRule  wl:1005 "mz:$BODY_VAR:title";

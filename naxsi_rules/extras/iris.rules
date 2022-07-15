@@ -1,0 +1,10 @@
+# Web IRC client Iris for the atheme platform https://github.com/atheme-legacy/iris
+### Allowed chars in the URI of WebChat Wizard "custom link" or "embed"
+BasicRule  wl:1000,1315 "mz:$HEADERS_VAR:cookie";
+BasicRule  wl:1015 "mz:$ARGS_VAR:channels";
+BasicRule  wl:1000,1002,1005,1007,1013,1200,1205,1310,1311,1314 "mz:$ARGS_VAR:nick";
+BasicRule  wl:1000,1005,1008,1013,1015,1200,1205 "mz:$URL:/|ARGS";
+### Allowed chars in Chat and Private
+BasicRule  wl:0 "mz:$URL:/e/p|$BODY_VAR:c";
+### Allowed chars in nick same as are allowed in IRCD
+BasicRule  wl:1000,1002,1005,1007,1205,1310,1311,1314 "mz:$URL:/e/n|$BODY_VAR:nick";

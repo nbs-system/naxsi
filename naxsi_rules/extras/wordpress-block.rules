@@ -1,0 +1,6 @@
+MainRule  "str:system.multicall" "msg:Wordpress XMLRPC possible Password Brute Force" "mz:$URL:/xmlrpc.php|BODY" "s:$ATTACK:8" id:42000442  ;
+MainRule  "str:system.listmethods" "msg:WordPress XMLRPC Enumeration system.listMethods" "mz:$URL:/xmlrpc.php|BODY" "s:$ATTACK:8" id:42000443  ;
+MainRule  "str:system.getcapabilities" "msg:WordPress XMLRPC Enumeration system.getCapabilities" "mz:$URL:/xmlrpc.php|BODY" "s:$ATTACK:8" id:42000444  ;
+MainRule  "str:/w3tc/dbcache" "msg:WordPress TotalCache-DBCache-Access" "mz:URL" "s:$UWA:8" id:42000125  ;
+MainRule  "str:/uploadify/uploadify.php" "msg:WordPress Uploadify-Access" "mz:URL" "s:$ATTACK:8" id:42000126  ;
+MainRule  "str:/wp-content/plugins/mm-forms-community/upload/temp/" "msg:Access To mm-forms-community upload dir" "mz:URL" "s:$ATTACK:8" id:42000060  ;

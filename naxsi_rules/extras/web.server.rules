@@ -1,0 +1,6 @@
+MainRule  "rx:^[a-zA-Z\d-]+\.[a-zA-Z]+$" "msg:HOST-Header Injection" "mz:$HEADERS_VAR:Host" "s:$ATTACK:6" id:42000465 ;
+MainRule  "rx:<!DOCTYPE(\s+)(%*\s*)([{}:.a-zA-Z0-9_-]*)(\s+)SYSTEM" "msg: possible XML/XXE-Exploitation atempt (Doctype)" "mz:BODY" "s:$ATTACK:8" id:42000455  ;
+MainRule  "str:meterpreter" "msg:Meterpreter-UA detected" "mz:$HEADERS_VAR:User-Agent" "s:$ATTACK:8" id:42000381  ;
+MainRule  "str:/.git/" "msg:GIT-Homedir-Access" "mz:URL" "s:$ATTACK:8" id:42000329  ;
+MainRule  "str:system(" "msg:PHP_SYSTEM_CMD" "mz:URL|BODY|ARGS" "s:$ATTACK:8,$UWA:8" id:42000049  ;
+MainRule  "str:\n\r" "msg:HTTP - Smuggling-Attempt (NewLine in URI)" "mz:URL" "s:$EVADE:8" id:42000278  ;

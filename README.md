@@ -33,9 +33,9 @@ Naxsi should be compatible with any nginx version.
 
 It depends on `libpcre` for its regexp support, and is reported to work great on NetBSD, FreeBSD, OpenBSD, Debian, Ubuntu and CentOS.
 
-## Why using this repository
+## Why using this repository
 
-The original project is (unofficially) abandoned, but you can fully ask for support here as i'm willing to keep the project working as last remaining developer.
+*The original project is (unofficially) abandoned*, but you can fully ask for support here as i'm willing to keep the project working as last remaining developer.
 
 ## Support
 

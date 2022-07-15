@@ -1,0 +1,7 @@
+# Etherpad: Really real-time collaborative document editing http://etherpad.org
+BasicRule  wl:1101,1015,1013,1011,1010,1008,1001 "mz:$URL:/jserror|$BODY_VAR:errorinfo";
+BasicRule  wl:2 "mz:$URL_X:^/p/.*/import$|BODY";
+BasicRule  wl:1311 "mz:$URL_X:^/p/.*]$|URL";
+BasicRule  wl:1007 "mz:URL";
+BasicRule  wl:1315 "mz:$HEADERS_VAR:cookie";
+BasicRule  wl:11 "mz:$URL:/socket.io/|BODY";

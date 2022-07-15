@@ -19,7 +19,7 @@ Files: README.md .gitattributes logo.png
 Copyright: 2019 nbs-system <security@nbs-system.com>
 License: GPL-3.0-or-later
 
-Files: naxsi_config/naxsi_core.rules
+Files: naxsi_rules/naxsi_core.rules naxsi_rules/extras/*
 Copyright: 2019 nbs-system <security@nbs-system.com>
 License: GPL-3.0-or-later
 

@@ -30,10 +30,8 @@ if $NEW_BUILD ; then
     rm nginx.tar.gz
 fi
 
-export NAXSI_CFG_PATH=$(realpath naxsi_config/)
 export NAXSI_SRC_PATH=$(realpath naxsi_src/)
 export NAXSI_TMP_PATH=$(realpath nginx-tmp/)
-export NAXSI_TST_PATH=$(realpath unit-tests/)
 export NGINX_TMP_PATH=$(realpath nginx-source/)
 export CFLAGS="-Wextra -Wall" # -Werror"
 

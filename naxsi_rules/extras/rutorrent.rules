@@ -1,0 +1,10 @@
+BasicRule wl:1005,1010,1011,1315 "mz:$HEADERS_VAR:cookie";
+BasicRule wl:1402 "mz:$HEADERS_VAR:content-type";
+BasicRule wl:11 "mz:$URL:/rutorrent/php/setsettings.php|BODY";
+BasicRule wl:11 "mz:$URL:/rutorrent/php/getsettings.php|BODY";
+BasicRule wl:1000,1001,1015,1310,1311 "mz:$BODY_VAR:v";
+BasicRule wl:1005,1008 "mz:$BODY_VAR:cookie";
+BasicRule wl:1000,1100,1101,1315 "mz:$BODY_VAR:url";
+BasicRule wl:1310,1311 "mz:$URL:/rutorrent/php/addtorrent.php|$ARGS_VAR:result[]|NAME";
+BasicRule wl:1000,1100,1101 "mz:$ARGS_VAR:name[]";
+BasicRule wl:1310,1311 "mz:$URL:/rutorrent/php/addtorrent.php|$ARGS_VAR:name[]|NAME";

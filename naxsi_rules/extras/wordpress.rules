@@ -1,0 +1,152 @@
+# WordPress naxsi rules
+
+### HEADERS
+BasicRule wl:1000,1001,1005,1007,1010,1011,1013,1100,1101,1200,1308,1309,1310,1311,1315 "mz:$HEADERS_VAR:cookie";
+# xmlrpc
+BasicRule wl:1402 "mz:$HEADERS_VAR:content-type";
+
+### simple BODY (POST)
+BasicRule wl:1001,1015,1009,1311,1310,1101,1016 "mz:$URL:/|$BODY_VAR:customized";
+# comments
+BasicRule wl:1000,1010,1011,1013,1015,1200,1310,1311 "mz:$BODY_VAR:post_title";
+BasicRule wl:1000 "mz:$BODY_VAR:original_publish";
+BasicRule wl:1000 "mz:$BODY_VAR:save";
+BasicRule wl:1008,1010,1011,1013,1015 "mz:$BODY_VAR:sk2_my_js_payload";
+BasicRule wl:1001,1009,1005,1016,1100,1101,1310 "mz:$BODY_VAR:url";
+BasicRule wl:1009,1100,1101 "mz:$BODY_VAR:referredby";
+BasicRule wl:1009,1100,1101 "mz:$BODY_VAR:_wp_original_http_referer";
+BasicRule wl:1000,1001,1005,1008,1007,1009,1010,1011,1013,1015,1016,1100,1101,1200,1302,1303,1310,1311,1315,1400 "mz:$BODY_VAR:comment";
+BasicRule wl:1100,1101 "mz:$BODY_VAR:redirect_to";
+BasicRule wl:1000,1009,1315 "mz:$BODY_VAR:_wp_http_referer";
+BasicRule wl:1000 "mz:$BODY_VAR:action";
+BasicRule wl:1001,1013 "mz:$BODY_VAR:blogname";
+BasicRule wl:1015,1013 "mz:$BODY_VAR:blogdescription";
+BasicRule wl:1015 "mz:$BODY_VAR:date_format_custom";
+BasicRule wl:1015 "mz:$BODY_VAR:date_format";
+BasicRule wl:1015 "mz:$BODY_VAR:tax_input%5bpost_tag%5d";
+BasicRule wl:1015 "mz:$BODY_VAR:tax_input[post_tag]";
+BasicRule wl:1100,1101 "mz:$BODY_VAR:siteurl";
+BasicRule wl:1100,1101 "mz:$BODY_VAR:home";
+BasicRule wl:1000,1015 "mz:$BODY_VAR:submit";
+# news content matches pretty much everything
+BasicRule wl:0 "mz:$BODY_VAR:content";
+BasicRule wl:1000 "mz:$BODY_VAR:delete_option";
+BasicRule wl:1000 "mz:$BODY_VAR:prowl-msg-message";
+BasicRule wl:1100,1101 "mz:$BODY_VAR:_url";
+BasicRule wl:1001,1009 "mz:$BODY_VAR:c2c_text_replace%5btext_to_replace%5d";
+BasicRule wl:1200 "mz:$BODY_VAR:ppn_post_note";
+BasicRule wl:1100,1101 "mz:$BODY_VAR:author";
+BasicRule wl:1001,1015 "mz:$BODY_VAR:excerpt";
+BasicRule wl:1015 "mz:$BODY_VAR:catslist";
+BasicRule wl:1005,1008,1009,1010,1011,1015,1315 "mz:$BODY_VAR:cookie";
+BasicRule wl:1101 "mz:$BODY_VAR:googleplus";
+BasicRule wl:1007 "mz:$BODY_VAR:name";
+BasicRule wl:1007 "mz:$BODY_VAR:action";
+BasicRule wl:1100,1101 "mz:$BODY_VAR:attachment%5burl%5d";
+BasicRule wl:1100,1101 "mz:$BODY_VAR:attachment_url";
+BasicRule wl:1001,1009,1100,1101,1302,1303,1310,1311 "mz:$BODY_VAR:html";
+BasicRule wl:1015 "mz:$BODY_VAR:title";
+BasicRule wl:1001,1009,1015 "mz:$BODY_VAR:recaptcha_challenge_field";
+BasicRule wl:1011 "mz:$BODY_VAR:pwd";
+BasicRule wl:1000 "mz:$BODY_VAR:excerpt";
+
+### BODY|NAME
+BasicRule wl:1000 "mz:$BODY_VAR:delete_option|NAME";
+BasicRule wl:1000 "mz:$BODY_VAR:from|NAME";
+
+### Simple ARGS (GET)
+# WP login screen
+BasicRule wl:1100,1101 "mz:$ARGS_VAR:redirect_to";
+BasicRule wl:1000,1009 "mz:$ARGS_VAR:_wp_http_referer";
+BasicRule wl:1000 "mz:$ARGS_VAR:wp_http_referer";
+BasicRule wl:1000 "mz:$ARGS_VAR:action";
+BasicRule wl:1000 "mz:$ARGS_VAR:action2";
+# load and load[] GET variable
+BasicRule wl:1000,1015 "mz:$ARGS_VAR:load";
+BasicRule wl:1000,1015 "mz:$ARGS_VAR:load[]";
+BasicRule wl:1015 "mz:$ARGS_VAR:q";
+BasicRule wl:1000,1015 "mz:$ARGS_VAR:load%5b%5d";
+
+### URL
+BasicRule wl:1000 "mz:URL|$URL:/wp-admin/update-core.php";
+BasicRule wl:1000 "mz:URL|$URL:/wp-admin/update.php";
+BasicRule wl:1000 "mz:$URL:/wp-includes/js/imgareaselect/imgareaselect.css|URL";
+BasicRule wl:1002 "mz:$URL_X:/wp-content/uploads/[0-9]{4}/[0-9]{2}/[^/]+\.jpg$|URL";
+# URL|ARGS
+BasicRule wl:1015 "mz:$URL:/wp-admin/load-styles.php|$ARGS_VAR:dashicons,admin-bar,wp-admin,buttons,wp-auth-check";
+BasicRule wl:1000 "mz:$URL:/wp-admin/about.php|$ARGS_VAR:updated";
+BasicRule wl:1009 "mz:$URL:/wp-admin/customize.php|$ARGS_VAR:return";
+# URL|BODY
+BasicRule wl:1009,1100,1101 "mz:$URL:/wp-admin/post.php|$BODY_VAR:_wp_http_referer";
+BasicRule wl:1016 "mz:$URL:/wp-admin/post.php|$BODY_VAR:metakeyselect";
+BasicRule wl:11 "mz:$URL:/xmlrpc.php|BODY";
+BasicRule wl:11,16 "mz:$URL:/wp-cron.php|BODY";
+BasicRule wl:2 "mz:$URL:/wp-admin/async-upload.php|BODY";
+# URL|BODY|NAME
+BasicRule wl:1100,1101 "mz:$URL:/wp-admin/post.php|$BODY_VAR:_wp_original_http_referer|NAME";
+BasicRule wl:1000 "mz:$URL:/wp-admin/post.php|$BODY_VAR:metakeyselect|NAME";
+BasicRule wl:1000 "mz:$URL:/wp-admin/user-edit.php|$BODY_VAR:from|NAME";
+BasicRule wl:1100,1101 "mz:$URL:/wp-admin/admin-ajax.php|$BODY_VAR:attachment%5burl%5d|NAME";
+BasicRule wl:1100,1101 "mz:$URL:/wp-admin/post.php|$BODY_VAR:attachment_url|NAME";
+BasicRule wl:1000 "mz:$URL:/wp-admin/plugins.php|$BODY_VAR:verify-delete|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/post.php|$BODY_VAR:post_category[]|NAME";
+BasicRule wl:1311 "mz:$URL:/wp-admin/post.php|$BODY_VAR:post_category|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/post.php|$BODY_VAR:tax_input[post_tag]|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/post.php|$BODY_VAR:newtag[post_tag]|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/users.php|$BODY_VAR:users[]|NAME";
+BasicRule wl:1000 "mz:$URL:/wp-admin/update-core.php|$BODY_VAR:Update%2BTranslations|NAME";
+BasicRule wl:1000 "mz:$URL:/wp-admin/update-core.php|$BODY_VAR:Update%2BNow|NAME";
+# URL|ARGS|NAME
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/load-scripts.php|$ARGS_VAR:load[]|NAME";
+BasicRule wl:1000 "mz:$URL:/wp-admin/users.php|$ARGS_VAR:delete_count|NAME";
+BasicRule wl:1000 "mz:$URL:/wp-admin/users.php|$ARGS_VAR:update|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/customize.php|$ARGS_VAR:autofocus[control]|NAME";
+
+# plain WP site
+BasicRule wl:1000 "mz:URL|$URL:/wp-admin/update-core.php";
+BasicRule wl:1000 "mz:URL|$URL:/wp-admin/update.php";
+# URL|BODY
+BasicRule wl:1009,1100,1101 "mz:$URL:/wp-admin/post.php|$BODY_VAR:_wp_http_referer";
+BasicRule wl:1016 "mz:$URL:/wp-admin/post.php|$BODY_VAR:metakeyselect";
+BasicRule wl:11 "mz:$URL:/xmlrpc.php|BODY";
+BasicRule wl:11,16 "mz:$URL:/wp-cron.php|BODY";
+# URL|BODY|NAME
+BasicRule wl:1100,1101 "mz:$URL:/wp-admin/post.php|$BODY_VAR:_wp_original_http_referer|NAME";
+BasicRule wl:1000 "mz:$URL:/wp-admin/post.php|$BODY_VAR:metakeyselect|NAME";
+BasicRule wl:1000 "mz:$URL:/wp-admin/user-edit.php|$BODY_VAR:from|NAME";
+BasicRule wl:1100,1101 "mz:$URL:/wp-admin/admin-ajax.php|$BODY_VAR:attachment%5burl%5d|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/admin-ajax.php|$BODY_VAR:data[wp-auth-check]|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/admin-ajax.php|$BODY_VAR:data[wp-check-locked-posts][]|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/admin-ajax.php|$BODY_VAR:data[wp-refresh-post-lock][post_id]|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/admin-ajax.php|$BODY_VAR:data[wp-refresh-post-lock][lock]|NAME";
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/update-core.php|$BODY_VAR:checked[]|NAME";
+# URL|ARGS|NAME
+BasicRule wl:1310,1311 "mz:$URL:/wp-admin/load-scripts.php|$ARGS_VAR:load[]|NAME";
+BasicRule wl:1000 "mz:$URL:/wp-admin/users.php|$ARGS_VAR:delete_count|NAME";
+BasicRule wl:1000 "mz:$URL:/wp-admin/users.php|$ARGS_VAR:update|NAME";
+
+### Plugins
+#WP Minify
+BasicRule wl:1015 "mz:$URL:/wp-content/plugins/bwp-minify/min/|$ARGS_VAR:f";
+#Jetpack Infinite Scroll
+BasicRule wl:1310,1311 "mz:$BODY_VAR:scripts[]|NAME";
+BasicRule wl:1310,1311 "mz:$BODY_VAR:styles[]|NAME";
+BasicRule wl:1310,1311 "mz:$BODY_VAR_X:^query_args\[.*\]|NAME";
+BasicRule wl:1000 "mz:$BODY_VAR:query_args[update_post_term_cache]|NAME";
+BasicRule wl:1000 "mz:$BODY_VAR:query_args[update_post_meta_cache]|NAME";
+#UpdraftPlus
+BasicRule wl:1000 "mz:$URL:/wp-content/plugins/updraftplus/includes/select2/select2.min.css|URL";
+BasicRule wl:1000 "mz:$URL:/wp-content/plugins/updraftplus/includes/select2/select2.min.js|URL";
+#WP plugin updates
+BasicRule wl:1315 "mz:$ARGS_VAR:query|$URL:/wp-json/jetpack/v4/jitm";
+#Jetpack Google Fonts
+BasicRule wl:1001 "mz:$URL_X:^/wp-content/plugins/jetpack/css/.*|URL";
+#WooCommerce
+BasicRule wl:1000 "mz:$URL:/wp-content/plugins/woocommerce/assets/js/select2/select2.full.min.js|URL";
+BasicRule wl:1000 "mz:$URL:/wp-content/plugins/woocommerce/assets/js/selectWoo/selectWoo.full.min.js|URL";
+BasicRule wl:1000 "mz:$URL:/wp-content/plugins/woocommerce/assets/js/stupidtable/stupidtable.min.js|URL";
+#WPML
+BasicRule wl:1000 "mz:$URL:/wp-content/plugins/sitepress-multilingual-cms/lib/select2/select2.min.js|URL";
+#Yoast SEO
+BasicRule wl:1000 "mz:$URL:/wp-content/plugins/wordpress-seo/js/dist/select2/select2.full.min.js|URL";
+BasicRule wl:1000 "mz:$URL:/wp-content/plugins/wordpress-seo/css/dist/select2/select2.min.css|URL";

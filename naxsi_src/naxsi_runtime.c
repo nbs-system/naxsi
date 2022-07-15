@@ -1,10 +1,9 @@
 // SPDX-FileCopyrightText: 2016-2019, Thibault 'bui' Koechlin <tko@nbs-system.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "assert.h"
-#include "naxsi.h"
-#include "naxsi_macros.h"
-#include "naxsi_net.h"
+#include <naxsi.h>
+#include <naxsi_macros.h>
+#include <naxsi_net.h>
 
 /* used to store locations during the configuration time.
    then, accessed by the hashtable building feature during "init" time. */
@@ -604,7 +603,7 @@ ngx_http_naxsi_is_rule_whitelisted_rx(ngx_http_request_t*        req,
   /* Look it up in regexed whitelists for matchzones */
   if (!cf->rxmz_wlr || cf->rxmz_wlr->nelts < 1)
     return (0);
-  NX_DEBUG(wl_debug_rx,
+  NX_DEBUG(_debug_wl_debug_rx,
            NGX_LOG_DEBUG_HTTP,
            req->connection->log,
            0,
@@ -616,7 +615,7 @@ ngx_http_naxsi_is_rule_whitelisted_rx(ngx_http_request_t*        req,
     p = (((ngx_http_rule_t**)(cf->rxmz_wlr->elts))[i]);
 
     if (!p->br || !p->br->custom_locations || p->br->custom_locations->nelts < 1) {
-      NX_DEBUG(wl_debug_rx,
+      NX_DEBUG(_debug_wl_debug_rx,
                NGX_LOG_DEBUG_HTTP,
                req->connection->log,
                0,
@@ -632,7 +631,7 @@ ngx_http_naxsi_is_rule_whitelisted_rx(ngx_http_request_t*        req,
     *not apply.
     */
 
-    NX_DEBUG(wl_debug_rx,
+    NX_DEBUG(_debug_wl_debug_rx,
              NGX_LOG_DEBUG_HTTP,
              req->connection->log,
              0,
@@ -642,14 +641,18 @@ ngx_http_naxsi_is_rule_whitelisted_rx(ngx_http_request_t*        req,
              p->br->custom_locations->nelts);
 
     if (p->br->zone != (ngx_int_t)zone) {
-      NX_DEBUG(
-        wl_debug_rx, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "%d/%d Not targeting same zone.");
+      NX_DEBUG(_debug_wl_debug_rx,
+               NGX_LOG_DEBUG_HTTP,
+               req->connection->log,
+               0,
+               "%d/%d Not targeting same zone.");
 
       continue;
     }
 
     if (target_name != p->br->target_name) {
-      NX_DEBUG(wl_debug_rx, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "only one target_name");
+      NX_DEBUG(
+        _debug_wl_debug_rx, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "only one target_name");
 
       continue;
     }
@@ -661,7 +664,7 @@ ngx_http_naxsi_is_rule_whitelisted_rx(ngx_http_request_t*        req,
           custloc_array(p->br->custom_locations->elts)[x].target_rx, name->data, name->len);
         if (rx_match < 0) {
           violation = 1;
-          NX_DEBUG(wl_debug_rx,
+          NX_DEBUG(_debug_wl_debug_rx,
                    NGX_LOG_DEBUG_HTTP,
                    req->connection->log,
                    0,
@@ -672,7 +675,7 @@ ngx_http_naxsi_is_rule_whitelisted_rx(ngx_http_request_t*        req,
 
           break;
         }
-        NX_DEBUG(wl_debug_rx,
+        NX_DEBUG(_debug_wl_debug_rx,
                  NGX_LOG_DEBUG_HTTP,
                  req->connection->log,
                  0,
@@ -687,7 +690,7 @@ ngx_http_naxsi_is_rule_whitelisted_rx(ngx_http_request_t*        req,
           custloc_array(p->br->custom_locations->elts)[x].target_rx, name->data, name->len);
         if (rx_match < 0) {
           violation = 1;
-          NX_DEBUG(wl_debug_rx,
+          NX_DEBUG(_debug_wl_debug_rx,
                    NGX_LOG_DEBUG_HTTP,
                    req->connection->log,
                    0,
@@ -698,7 +701,7 @@ ngx_http_naxsi_is_rule_whitelisted_rx(ngx_http_request_t*        req,
 
           break;
         }
-        NX_DEBUG(wl_debug_rx,
+        NX_DEBUG(_debug_wl_debug_rx,
                  NGX_LOG_DEBUG_HTTP,
                  req->connection->log,
                  0,
@@ -713,7 +716,7 @@ ngx_http_naxsi_is_rule_whitelisted_rx(ngx_http_request_t*        req,
         rx_match = ngx_http_naxsi_pcre_wrapper(
           custloc_array(p->br->custom_locations->elts)[x].target_rx, req->uri.data, req->uri.len);
         if (rx_match < 0) {
-          NX_DEBUG(wl_debug_rx,
+          NX_DEBUG(_debug_wl_debug_rx,
                    NGX_LOG_DEBUG_HTTP,
                    req->connection->log,
                    0,
@@ -725,7 +728,7 @@ ngx_http_naxsi_is_rule_whitelisted_rx(ngx_http_request_t*        req,
           violation = 1;
           break;
         }
-        NX_DEBUG(wl_debug_rx,
+        NX_DEBUG(_debug_wl_debug_rx,
                  NGX_LOG_DEBUG_HTTP,
                  req->connection->log,
                  0,
@@ -736,13 +739,16 @@ ngx_http_naxsi_is_rule_whitelisted_rx(ngx_http_request_t*        req,
       }
     }
     if (violation == 0) {
-      NX_DEBUG(
-        wl_debug_rx, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "wut, rule whitelisted by rx.");
+      NX_DEBUG(_debug_wl_debug_rx,
+               NGX_LOG_DEBUG_HTTP,
+               req->connection->log,
+               0,
+               "wut, rule whitelisted by rx.");
 
       if (nx_check_ids(r->rule_id, p->wlid_array) == 1)
         return (1);
     } else {
-      NX_DEBUG(wl_debug_rx, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "not good ----");
+      NX_DEBUG(_debug_wl_debug_rx, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "not good ----");
     }
   }
   return (0);
@@ -1043,7 +1049,8 @@ ngx_http_naxsi_is_rule_whitelisted_n(ngx_http_request_t*        req,
   ** Look it up in regexed whitelists for matchzones
   */
   if (ngx_http_naxsi_is_rule_whitelisted_rx(req, cf, r, name, zone, target_name) == 1) {
-    NX_DEBUG(wl_debug_rx, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "Whitelisted by RX !");
+    NX_DEBUG(
+      _debug_wl_debug_rx, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "Whitelisted by RX !");
 
     return (1);
   }
@@ -1937,7 +1944,7 @@ ngx_http_basestr_ruleset_n(ngx_pool_t*             pool,
                               : "UNKNOWN");
 
   if (!rules) {
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "XX-no rules, wtf ?!");
+    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "XX-no no rules has been defined for naxsi.");
     return (0);
   }
   r = rules->elts;

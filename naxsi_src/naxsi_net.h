@@ -4,6 +4,8 @@
 #ifndef __NAXSI_NET_H__
 #define __NAXSI_NET_H__
 
+#include <naxsi.h>
+
 #if defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <netinet/in.h>
 #include <sys/socket.h>

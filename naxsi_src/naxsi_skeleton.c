@@ -7,10 +7,14 @@
 ** aware of nginx's modules can skip most of this.
 */
 
-#include "naxsi.h"
-#include "naxsi_net.h"
+#include <naxsi.h>
+#include <naxsi_net.h>
+
 #include <ctype.h>
+#include <strings.h>
 #include <sys/times.h>
+
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 /*
 ** Macro used to print incorrect configuration lines
@@ -20,10 +24,10 @@
     ngx_conf_log_error(NGX_LOG_EMERG,                                                              \
                        cf,                                                                         \
                        0,                                                                          \
-                       "Naxsi-Config : Incorrect line %V %V (%s/%d)...",                           \
+                       "Naxsi-Config : Incorrect line %V %V (%s:%d)...",                           \
                        &(value[0]),                                                                \
                        &(value[1]),                                                                \
-                       __FILE__,                                                                   \
+                       __FILENAME__,                                                               \
                        __LINE__);                                                                  \
   } while (0)
 

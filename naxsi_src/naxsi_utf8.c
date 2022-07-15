@@ -1,9 +1,7 @@
 // SPDX-FileCopyrightText: 1999 Markus Kuhn <mgk25@cl.cam.ac.uk>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "naxsi.h"
-#include <ctype.h>
-#include <sys/times.h>
+#include <naxsi.h>
 
 /* @file naxsi_utf8.c
  *

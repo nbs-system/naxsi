@@ -1,14 +1,7 @@
 #vi:filetype=perl
 
-
-# A AJOUTER :
-# TEST CASE AVEC UNE REGLE SUR UN HEADER GENERIQUE
-# La même sur des arguments :)
-
 use lib 'lib';
 use Test::Nginx::Socket;
-
-repeat_each(3);
 
 plan tests => repeat_each(1) * blocks();
 no_root_location();
@@ -36,7 +29,7 @@ location /RequestDenied {
          return 412;
 }
 --- raw_request eval
-"GET /?ruuu=a' onmouseover='alert(1) HTTP/1.0
+"GET /?ruuu=a'%20onmouseover='alert(1) HTTP/1.0
 
 "
 --- error_code: 412
@@ -58,7 +51,7 @@ location /RequestDenied {
          return 412;
 }
 --- raw_request eval
-"GET /?ruuu=a' onmouseover='alert(1) HTTP/1.0
+"GET /?ruuu=a'%20onmouseover='alert(1) HTTP/1.0
 
 "
 --- error_code: 200
@@ -80,7 +73,7 @@ location /RequestDenied {
          return 412;
 }
 --- raw_request eval
-"GET /?ruuu=a' onmouseover='alert(1) HTTP/1.0
+"GET /?ruuu=a'%20onmouseover='alert(1) HTTP/1.0
 
 "
 --- error_code: 200
@@ -103,7 +96,7 @@ location /RequestDenied {
          return 412;
 }
 --- raw_request eval
-"GET /?fuu4242424=a' onmouseover='alert(1) HTTP/1.0
+"GET /?fuu4242424=a'%20onmouseover='alert(1) HTTP/1.0
 
 "
 --- error_code: 412
@@ -127,7 +120,7 @@ location /RequestDenied {
          return 412;
 }
 --- raw_request eval
-"GET /foobar/?fuu4242424=1' OR '1'='1 HTTP/1.0
+"GET /foobar/?fuu4242424=1'%20OR%20'1'='1 HTTP/1.0
 
 "
 --- error_code: 412
@@ -150,7 +143,7 @@ location /RequestDenied {
          return 412;
 }
 --- raw_request eval
-"GET /foobar/?fuu4242424=1' OR \"1\"= HTTP/1.0
+"GET /foobar/?fuu4242424=1'%20OR%20\"1\"= HTTP/1.0
 
 "
 --- error_code: 404

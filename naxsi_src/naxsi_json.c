@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2016-2019, Thibault 'bui' Koechlin <tko@nbs-system.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "naxsi.h"
-#include "naxsi_macros.h"
+#include <naxsi.h>
+#include <naxsi_macros.h>
 
 #define json_char(x) ((x)->src + (x)->off)
 

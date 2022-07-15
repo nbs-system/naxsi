@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: 2022 wargio <deroad@libero.it>
 # SPDX-License-Identifier: LGPL-3.0-only
 
+RUN_TEST="$1"
+
 export NAXSI_CFG_PATH=$(realpath naxsi_config/)
 export NAXSI_TMP_PATH=$(realpath nginx-tmp/)
 export NAXSI_TST_PATH=$(realpath unit-tests/)
@@ -25,4 +27,9 @@ export TEST_NGINX_NAXSI_MODULE_SO="$NAXSI_TMP_PATH/naxsi_ut/modules/ngx_http_nax
 export TEST_NGINX_NAXSI_RULES="$NAXSI_CFG_PATH/naxsi_core.rules"
 
 cd "$NAXSI_TMP_PATH"
-prove -r "$NAXSI_TST_PATH/tests/"*.t
+
+if [ -z "$RUN_TEST" ]; then
+    prove -r "$NAXSI_TST_PATH/tests/"*.t
+else
+    prove --verbose -r "$NAXSI_TST_PATH/tests/$RUN_TEST"
+fi

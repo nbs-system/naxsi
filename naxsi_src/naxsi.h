@@ -1,24 +1,29 @@
+// SPDX-FileCopyrightText: 2022 wargio <deroad@libero.it>
 // SPDX-FileCopyrightText: 2016-2019, Thibault 'bui' Koechlin <tko@nbs-system.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #ifndef __NAXSI_H__
 #define __NAXSI_H__
 
-#define NAXSI_VERSION "1.3"
-
-#include <ctype.h>
-#include <nginx.h>
 #include <ngx_config.h>
 #include <ngx_core.h>
-#include <ngx_event.h>
 #include <ngx_http.h>
 #include <ngx_http_core_module.h>
 #include <ngx_md5.h>
+
+#include <ctype.h>
+
+#include <naxsi_const.h>
 
 #include "libinjection/src/libinjection_sqli.h"
 #include "libinjection/src/libinjection_xss.h"
 
 extern ngx_module_t ngx_http_naxsi_module;
+
+/**
+ * Enable this to debug naxsi
+ */
+#define _debug_naxsi_logs 0
 
 /*
 ** as the #ifdef #endif for debug are getting really messy ...
@@ -29,7 +34,6 @@ extern ngx_module_t ngx_http_naxsi_module;
 *(0);
 */
 
-#define _naxsi_rawbody            0
 #define _debug_basestr_ruleset    0
 #define _debug_custom_score       0
 #define _debug_body_parse         0
@@ -53,24 +57,24 @@ extern ngx_module_t ngx_http_naxsi_module;
 #define _debug_whitelist_heavy    0
 #define _debug_whitelist_light    0
 #define _debug_whitelist_ignore   0
-#define wl_debug_rx               0
+#define _debug_libinj_sqli        0
+#define _debug_libinj_xss         0
+#define _debug_wl_debug_rx        0
 
-#ifndef __NAXSI_DEBUG
-#define __NAXSI_DEBUG
+#if _debug_naxsi_logs
 #define NX_DEBUG(FEATURE, DEF, LOG, ST, ...)                                                       \
   do {                                                                                             \
     if (FEATURE)                                                                                   \
       ngx_log_debug(DEF, LOG, ST, __VA_ARGS__);                                                    \
   } while (0)
-#endif
-
-#ifndef __NAXSI_LOG_DEBUG
-#define __NAXSI_LOG_DEBUG
 #define NX_LOG_DEBUG(FEATURE, DEF, LOG, ST, ...)                                                   \
   do {                                                                                             \
     if (FEATURE)                                                                                   \
       ngx_conf_log_error(DEF, LOG, ST, __VA_ARGS__);                                               \
   } while (0)
+#else
+#define NX_DEBUG(FEATURE, DEF, LOG, ST, ...)
+#define NX_LOG_DEBUG(FEATURE, DEF, LOG, ST, ...)
 #endif
 
 /*

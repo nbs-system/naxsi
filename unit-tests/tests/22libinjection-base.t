@@ -1,14 +1,7 @@
 #vi:filetype=perl
 
-
-# A AJOUTER :
-# TEST CASE AVEC UNE REGLE SUR UN HEADER GENERIQUE
-# La même sur des arguments :)
-
 use lib 'lib';
 use Test::Nginx::Socket;
-
-repeat_each(3);
 
 plan tests => repeat_each(1) * blocks();
 no_root_location();
@@ -36,7 +29,7 @@ location /RequestDenied {
         # return 412;
 }
 --- raw_request eval
-"GET /?x=a' onmouseover='alert(1) HTTP/1.0
+"GET /?x=a'%20onmouseover='alert(1) HTTP/1.0
 
 "
 --- error_code: 200
@@ -135,7 +128,7 @@ location /RequestDenied {
         # return 412;
 }
 --- raw_request eval
-"GET /?x=1' OR '1'='1 HTTP/1.0
+"GET /?x=1'%20OR%20'1'='1 HTTP/1.0
 
 "
 --- error_code: 200
@@ -160,7 +153,7 @@ location /RequestDenied {
         # return 412;
 }
 --- raw_request eval
-"GET /?x=1' OR '1'='1 HTTP/1.0
+"GET /?x=1'%20OR%20'1'='1 HTTP/1.0
 
 "
 --- error_code: 412
@@ -186,7 +179,7 @@ location /RequestDenied {
         # return 412;
 }
 --- raw_request eval
-"GET /?x=1' OR '1'='1 HTTP/1.0
+"GET /?x=1'%20OR%20'1'='1 HTTP/1.0
 
 "
 --- error_code: 200
@@ -209,7 +202,7 @@ location /RequestDenied {
         # return 412;
 }
 --- raw_request eval
-"GET /?x=1' OR '1'='1 HTTP/1.0
+"GET /?x=1'%20OR%20'1'='1 HTTP/1.0
 
 "
 --- error_code: 412
@@ -232,7 +225,7 @@ location /RequestDenied {
          return 412;
 }
 --- raw_request eval
-"GET /?x=1' OR '1'='1 HTTP/1.0
+"GET /?x=1'%20OR%20'1'='1 HTTP/1.0
 
 "
 --- error_code: 200
@@ -329,7 +322,7 @@ location /RequestDenied {
          return 412;
 }
 --- raw_request eval
-"GET /?a' UNION SELECT 1,1=1 HTTP/1.0
+"GET /?a'%20UNION%20SELECT%201,1=1 HTTP/1.0
 
 "
 --- error_code: 412

@@ -4,8 +4,6 @@ use lib 'lib';
 use Test::Nginx::Socket;
 use Env;
 
-repeat_each(3);
-
 plan tests => repeat_each(1) * blocks();
 no_root_location();
 no_long_string();

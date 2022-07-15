@@ -7,6 +7,14 @@ on:
   pull_request:
 
 jobs:
+  no-debug:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Check debug logs are disabled
+      run: /bin/bash .scripts/ci-debug-check.sh
+
   licenses:
     runs-on: ubuntu-latest
     steps:

@@ -33,4 +33,15 @@
 #define NAXSI_RULE_LIBINJ_SQL "d:libinj_sql"
 #define NAXSI_RULE_NEGATIVE   "negative"
 
+#if defined nginx_version && (nginx_version >= 1021005)
+// after 1.21.5 NGX_REGEX_MULTILINE is present.
+#define NAXSI_REGEX_OPTIONS (NGX_REGEX_CASELESS | NGX_REGEX_MULTILINE)
+#else
+#if (NGX_PCRE2)
+#define NAXSI_REGEX_OPTIONS (PCRE2_CASELESS | PCRE2_MULTILINE)
+#else
+#define NAXSI_REGEX_OPTIONS (PCRE_CASELESS | PCRE_MULTILINE)
+#endif
+#endif
+
 #endif /* __NAXSI_CONST_H__ */

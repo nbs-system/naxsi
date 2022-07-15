@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2016-2019, Thibault 'bui' Koechlin <tko@nbs-system.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "naxsi_config.h"
-#include "naxsi.h"
-#include "naxsi_macros.h"
+#include <naxsi.h>
+#include <naxsi_config.h>
+#include <naxsi_macros.h>
 /*
 ** TOP LEVEL configuration parsing code
 */
@@ -319,11 +319,7 @@ naxsi_zone(ngx_conf_t* r, ngx_str_t* tmp, ngx_http_rule_t* rule)
 
         custom_rule->target_rx = ngx_pcalloc(r->pool, sizeof(ngx_regex_compile_t));
         return_value_if(!custom_rule->target_rx, NGX_CONF_ERROR);
-#if (NGX_PCRE2)
-        custom_rule->target_rx->options = PCRE2_CASELESS | PCRE2_MULTILINE;
-#else
-        custom_rule->target_rx->options = PCRE_CASELESS | PCRE_MULTILINE;
-#endif
+        custom_rule->target_rx->options  = NAXSI_REGEX_OPTIONS;
         custom_rule->target_rx->pattern  = custom_rule->target;
         custom_rule->target_rx->pool     = r->pool;
         custom_rule->target_rx->err.len  = 0;
@@ -442,11 +438,8 @@ naxsi_rx(ngx_conf_t* r, ngx_str_t* tmp, ngx_http_rule_t* rule)
   ha.len  = tmp->len - strlen(RX_T);
   rgc     = ngx_pcalloc(r->pool, sizeof(ngx_regex_compile_t));
   return_value_if(!rgc, NGX_CONF_ERROR);
-#if (NGX_PCRE2)
-  rgc->options = PCRE2_CASELESS | PCRE2_MULTILINE;
-#else
-  rgc->options = PCRE_CASELESS | PCRE_MULTILINE;
-#endif
+
+  rgc->options  = NAXSI_REGEX_OPTIONS;
   rgc->pattern  = ha;
   rgc->pool     = r->pool;
   rgc->err.len  = 0;

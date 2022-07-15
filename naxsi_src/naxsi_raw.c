@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2016-2019, Thibault 'bui' Koechlin <tko@nbs-system.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "naxsi.h"
+#include <naxsi.h>
 
 void
 ngx_http_naxsi_rawbody_parse(ngx_http_request_ctx_t* ctx,

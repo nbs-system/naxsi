@@ -1,14 +1,9 @@
 #vi:filetype=perl
 
-
-# A AJOUTER :
-# TEST CASE AVEC UNE REGLE SUR UN HEADER GENERIQUE
-# La même sur des arguments :)
-
 use lib 'lib';
 use Test::Nginx::Socket;
 
-plan tests => repeat_each(2) * blocks();
+plan tests => repeat_each(1) * blocks();
 no_root_location();
 no_long_string();
 $ENV{TEST_NGINX_SERVROOT} = server_root();

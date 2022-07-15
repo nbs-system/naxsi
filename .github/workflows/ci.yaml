@@ -13,12 +13,13 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         nginx:
+          - 1.23.0
+          - 1.22.0
+          - 1.21.5
           - 1.20.2
           - 1.18.0
           - 1.16.1
           - 1.14.2
-          - 1.12.2
-          - 1.10.3
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository

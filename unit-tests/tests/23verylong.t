@@ -1,10 +1,5 @@
 #vi:filetype=perl
 
-
-# A AJOUTER :
-# TEST CASE AVEC UNE REGLE SUR UN HEADER GENERIQUE
-# La même sur des arguments :)
-
 use lib 'lib';
 use Test::Nginx::Socket;
 

@@ -1,0 +1,60 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ "main" ]
+  schedule:
+    - cron: '42 17 * * 2'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        persist-credentials: false
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: 'cpp'
+        
+    - name: Autobuild
+      run: .scripts/ci-build.sh "1.23.0"
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        output: "reports"
+        upload: false
+
+    - name: Move file to merged.sarif (CodeQL)
+      run: mv reports/*.sarif merged.sarif
+
+    - name: Exclude NGINX source
+      run: |
+        jq 'del(.runs[].results[].locations[] | select(.physicalLocation.artifactLocation.uri | contains("nginx-source/")))' merged.sarif > tmp0.sarif
+        jq 'del(.runs[].results[] | select(.locations | length == 0))' tmp0.sarif > filtered.sarif
+
+    - name: Treat warnings as errors
+      run: |
+        jq '.runs[].tool.driver.rules[] |= . + {"defaultConfiguration": {"level": "error"}}' filtered.sarif > final.sarif
+
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: final.sarif

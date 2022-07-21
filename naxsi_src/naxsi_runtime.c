@@ -787,12 +787,13 @@ ngx_http_naxsi_is_rule_whitelisted_n(ngx_http_request_t*        req,
            : zone == RAW_BODY ? "RAW_BODY"
                               : "UNKNOWN",
            name);
-  if (target_name)
+  if (target_name) {
     NX_DEBUG(_debug_whitelist_compat,
              NGX_LOG_DEBUG_HTTP,
              req->connection->log,
              0,
              "extra: exception happened in |NAME");
+  }
   tmp_hashname.data = NULL;
 
   /* Check if the rule is part of disabled rules for this location */
@@ -1833,17 +1834,19 @@ ngx_http_spliturl_ruleset(ngx_pool_t*             pool,
              &(name),
              &(val));
 
-    if (rules)
+    if (rules) {
       ngx_http_basestr_ruleset_n(pool, &name, &val, rules, req, ctx, zone);
-    else
+    } else {
       NX_DEBUG(
         _debug_spliturl_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "XX-no arg rules ?");
+    }
 
-    if (main_rules)
+    if (main_rules) {
       ngx_http_basestr_ruleset_n(pool, &name, &val, main_rules, req, ctx, zone);
-    else
+    } else {
       NX_DEBUG(
         _debug_spliturl_ruleset, NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "XX-no main rules ?");
+    }
 
     str += len;
   }
@@ -1944,7 +1947,8 @@ ngx_http_basestr_ruleset_n(ngx_pool_t*             pool,
                               : "UNKNOWN");
 
   if (!rules) {
-    ngx_log_debug(NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "XX-no no rules has been defined for naxsi.");
+    ngx_log_debug(
+      NGX_LOG_DEBUG_HTTP, req->connection->log, 0, "XX-no no rules has been defined for naxsi.");
     return (0);
   }
   r = rules->elts;
@@ -2355,7 +2359,7 @@ ngx_http_naxsi_multipart_parse(ngx_http_request_ctx_t* ctx,
 
   /*extract boundary*/
   if (nx_content_type_parse(r, (unsigned char**)&boundary, &boundary_len) != NGX_OK) {
-    if (boundary && boundary_len > 1)
+    if (boundary && boundary_len > 1) {
       NX_DEBUG(_debug_post_heavy,
                NGX_LOG_DEBUG_HTTP,
                r->connection->log,
@@ -2363,6 +2367,7 @@ ngx_http_naxsi_multipart_parse(ngx_http_request_ctx_t* ctx,
                "XX-POST boundary : (%s) : %d",
                boundary,
                boundary_len);
+    }
     ngx_http_apply_rulematch_v_n(&nx_int__uncommon_post_boundary, ctx, r, NULL, NULL, BODY, 1, 0);
     return;
   }
@@ -2596,26 +2601,28 @@ ngx_http_naxsi_multipart_parse(ngx_http_request_ctx_t* ctx,
                &final_data);
 
       /* here we got val name + val content !*/
-      if (cf->body_rules)
+      if (cf->body_rules) {
         ngx_http_basestr_ruleset_n(r->pool, &final_var, &final_data, cf->body_rules, r, ctx, BODY);
-      else
+      } else {
         NX_DEBUG(_debug_post_heavy,
                  /* here we got val name + val content !*/
                  NGX_LOG_DEBUG_HTTP,
                  r->connection->log,
                  0,
                  "No local body rules ?!");
+      }
 
-      if (main_cf->body_rules)
+      if (main_cf->body_rules) {
         ngx_http_basestr_ruleset_n(
           r->pool, &final_var, &final_data, main_cf->body_rules, r, ctx, BODY);
-      else
+      } else {
         NX_DEBUG(_debug_post_heavy,
                  /* here we got val name + val content !*/
                  NGX_LOG_DEBUG_HTTP,
                  r->connection->log,
                  0,
                  "No main body rules ?!");
+      }
 
       idx += (u_char*)end - (src + idx);
     } else {

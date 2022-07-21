@@ -571,8 +571,9 @@ ngx_http_wlr_finalize_hashtables(ngx_conf_t* cf, ngx_http_naxsi_loc_conf_t* dlc)
       if (ngx_hash_init(&hash_init, (ngx_hash_key_t*)uri_ar->elts, uri_ar->nelts) != NGX_OK) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "$URL hashtable init failed"); /* LCOV_EXCL_LINE */
         return (NGX_ERROR);                                                     /* LCOV_EXCL_LINE */
-      } else
+      } else {
         NX_LOG_DEBUG(_debug_whitelist, NGX_LOG_EMERG, cf, 0, "$URL hashtable init successed !");
+      }
     }
     if (get_ar) {
       dlc->wlr_args_hash = (ngx_hash_t*)ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));

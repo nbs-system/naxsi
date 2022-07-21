@@ -22,58 +22,128 @@ jobs:
         name:
           [
             "arch-linux",
-            #"debian-buster",
-            #"debian-stretch",
-            #"debian-bullseye",
-            #"debian-sid",
-            #"debian-bookworm",
-            #"ubuntu-bionic",
-            #"ubuntu-focal",
-            #"ubuntu-jammy",
-            #"ubuntu-impish",
+            "debian-buster",
+            "debian-stretch",
+            "debian-bullseye",
+            "debian-bookworm",
+            "ubuntu-bionic",
+            "ubuntu-focal",
+            "ubuntu-jammy",
+            "ubuntu-impish",
           ]
         include:
           - name: arch-linux
             container: archlinux:latest
             package: arch
-          #- name: debian-buster
-          #  container: debian:buster
-          #  package: deb
-          #- name: debian-stretch
-          #  container: debian:stretch
-          #  package: deb
-          #- name: debian-bullseye
-          #  container: debian:bullseye
-          #  package: deb
-          #- name: debian-sid
-          #  container: debian:sid
-          #  package: deb
-          #- name: debian-bookworm
-          #  container: debian:bookworm
-          #  package: deb
-          #- name: ubuntu-bionic
-          #  container: ubuntu:bionic
-          #  package: deb
-          #- name: ubuntu-focal
-          #  container: ubuntu:focal
-          #  package: deb
-          #- name: ubuntu-jammy
-          #  container: ubuntu:jammy
-          #  package: deb
-          #- name: ubuntu-impish
-          #  container: ubuntu:impish
-          #  package: deb
+          - name: debian-buster
+            container: debian:buster
+            package: deb
+          - name: debian-stretch
+            container: debian:stretch
+            package: deb
+          - name: debian-bullseye
+            container: debian:bullseye
+            package: deb
+          - name: debian-bookworm
+            container: debian:bookworm
+            package: deb
+          - name: ubuntu-bionic
+            container: ubuntu:bionic
+            package: deb
+          - name: ubuntu-focal
+            container: ubuntu:focal
+            package: deb
+          - name: ubuntu-jammy
+            container: ubuntu:jammy
+            package: deb
+          - name: ubuntu-impish
+            container: ubuntu:impish
+            package: deb
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    # requires git in the container.
-    #- name: Checkout submodules
-    #  run: git submodule update --init --recursive
+    # DEB package
+    - name: Update OS & Install deps
+      if: matrix.package == 'deb'
+      run: |
+        cat /etc/apt/sources.list > /tmp/sources.list.orig
+        cat /tmp/sources.list.orig | grep -v "#" | sed 's/^deb /deb-src /g' >> /etc/apt/sources.list
+        apt-get -qqy update
+        DEBIAN_FRONTEND=noninteractive apt-get -qqy --no-install-recommends install \
+            build-essential \
+            ca-certificates \
+            dpkg-dev \
+            gzip \
+            git \
+            libgd-dev \
+            libgeoip-dev \
+            libpcre3-dev \
+            libssl-dev \
+            libxslt1-dev \
+            nginx \
+            tar \
+            wget \
+            zlib1g-dev
+    - name: Checkout needed repos
+      if: matrix.package == 'deb'
+      run: |
+        rm -rf naxsi_src/libinjection
+        git clone --depth=1 https://github.com/libinjection/libinjection.git naxsi_src/libinjection
+        git clone --depth=1 https://github.com/wargio/deb-creator.git
+        chmod 777 .
+        apt-get source nginx
+    - name: ${{ matrix.name }} package
+      if: matrix.package == 'deb'
+      run: |
+        mkdir -p deb_pkg/
+        DEB_PKG=$(realpath deb_pkg)
+        NAXSI_VERSION=$(grep "NAXSI_VERSION" naxsi_src/naxsi_const.h | cut -d ' ' -f3 | sed 's/"//g')
+        LIBPCRE3_VERSION=$(dpkg -s libpcre3 | grep '^Version:' | cut -d ' ' -f2 | cut -d '-' -f1)
+        NGINX_VERSION=$(dpkg -s nginx | grep '^Version:' | cut -d ' ' -f2 | cut -d '-' -f1)
+        NGINX_BUILD_OPTS=$(nginx -V 2>&1 | grep "configure arguments:" | cut -d ":" -f2- | sed -e "s#/build/nginx-[A-Za-z0-9]*/#./#g" | sed 's/--add-dynamic-module=[A-Za-z0-9\/\._-]*//g')
+        echo "NGINX_VERSION:    $NGINX_VERSION"
+        echo "NGINX_BUILD_OPTS: $NGINX_BUILD_OPTS"
+        # build module
+        cd nginx-$NGINX_VERSION
+        CMDLINE=$(echo ./configure $NGINX_BUILD_OPTS --add-dynamic-module=../naxsi_src/)
+        eval $CMDLINE
+        make modules
+        cd ..
+        # install files
+        mkdir -p "$DEB_PKG/data/usr/lib/nginx/modules/"
+        mkdir -p "$DEB_PKG/data/usr/share/nginx/modules-available/"
+        mkdir -p "$DEB_PKG/data/usr/share/naxsi/rules/"
+        install -Dm755 distros/deb/postinstall.script "$DEB_PKG/postinstall.script"
+        install -Dm755 distros/deb/postremove.script "$DEB_PKG/postremove.script"
+        install -Dm755 distros/deb/preremove.script "$DEB_PKG/preremove.script"
+        install -Dm644 distros/deb/control.install "$DEB_PKG/control.install"
+        install -Dm755 "nginx-$NGINX_VERSION/objs/ngx_http_naxsi_module.so" "$DEB_PKG/data/usr/lib/nginx/modules/ngx_http_naxsi_module.so"
+        install -Dm644 distros/deb/mod-http-naxsi.conf "$DEB_PKG/data/usr/share/nginx/modules-available/mod-http-naxsi.conf"
+        install -Dm644 distros/deb/naxsi_block_mode.conf "$DEB_PKG/data/usr/share/naxsi/naxsi_block_mode.conf"
+        install -Dm644 distros/deb/naxsi_denied_url.conf "$DEB_PKG/data/usr/share/naxsi/naxsi_denied_url.conf"
+        install -Dm644 distros/deb/naxsi_learning_mode.conf "$DEB_PKG/data/usr/share/naxsi/naxsi_learning_mode.conf"
+        install -Dm644 naxsi_rules/naxsi_core.rules "$DEB_PKG/data/usr/share/naxsi/naxsi_core.rules"
+        install -Dm644 naxsi_rules/extras/*.rules "$DEB_PKG/data/usr/share/naxsi/"
+        # add deb details.
+        sed -i "s/@NGINX_VERSION@/$NGINX_VERSION/" "$DEB_PKG/control.install"
+        sed -i "s/@LIBPCRE3_VERSION@/$LIBPCRE3_VERSION/" "$DEB_PKG/control.install"
+        sed -i "s/@NAXSI_VERSION@/$NAXSI_VERSION/" "$DEB_PKG/control.install"
+        # build deb file
+        ./deb-creator/deb-creator "$DEB_PKG"
+    - name: Test deb package
+      if: matrix.package == 'deb'
+      run: dpkg -i deb_pkg/*.deb
+    - name: Upload deb package
+      if: matrix.package == 'deb'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.name }}
+        path: deb_pkg/*.deb
 
     # Arch Linux package
-    - name: Package arch
+    - name: ${{ matrix.name }} package
       if: matrix.package == 'arch'
       run: |
         pacman -Syy --needed --noconfirm sudo base-devel git
@@ -85,9 +155,12 @@ jobs:
         sudo -u build-user makepkg -s --noconfirm
         # Fix package name due github name restrictions
         ls *.pkg.tar.zst | sed 's/:/-/g' | xargs -I % mv -v *.pkg.tar.zst %
+    - name: Test arch package
+      if: matrix.package == 'arch'
+      run: pacman -U --noconfirm distros/arch/*.pkg.tar.zst
     - name: Upload arch package
       if: matrix.package == 'arch'
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.name }}-nginx-mod-naxsi-git-x86_64.pkg.tar.zst
+        name: ${{ matrix.name }}
         path: distros/arch/*.pkg.tar.zst

@@ -1,0 +1,32 @@
+#!/bin/sh
+set -e
+# Automatically added by dh_nginx/UNDECLARED
+if [ "$1" = "purge" ] ; then
+	for confpair in mod-http-naxsi.conf:50-mod-http-naxsi.conf  ; do
+		from=$(echo $confpair | cut -d: -f1)
+		to=$(echo $confpair | cut -d: -f2)
+
+		if [ -L /etc/nginx/modules-enabled/$to ]; then
+			rm /etc/nginx/modules-enabled/$to
+		fi
+		if [ -L /etc/nginx/modules-enabled/$to.removed ]; then
+			rm /etc/nginx/modules-enabled/$to.removed
+		fi
+	done
+fi
+
+if [ "$1" = "remove" ] ; then
+	for confpair in mod-http-naxsi.conf:50-mod-http-naxsi.conf  ; do
+		from=$(echo $confpair | cut -d: -f1)
+		to=$(echo $confpair | cut -d: -f2)
+
+		if [ -L /etc/nginx/modules-enabled/$to ]; then
+			mv /etc/nginx/modules-enabled/$to /etc/nginx/modules-enabled/$to.removed
+		fi
+	done
+
+        if which dpkg-trigger >/dev/null 2>&1 ; then
+                dpkg-trigger --no-await nginx-reload
+        fi
+fi
+# End automatically added section

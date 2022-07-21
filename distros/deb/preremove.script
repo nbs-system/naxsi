@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+# Automatically added by dh_nginx/UNDECLARED
+if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ] ; then
+	for confpair in mod-http-naxsi.conf:50-mod-http-naxsi.conf  ; do
+		from=$(echo $confpair | cut -d: -f1)
+		to=$(echo $confpair | cut -d: -f2)
+
+		if [ -L /etc/nginx/modules-enabled/$to ]; then
+			mv /etc/nginx/modules-enabled/$to /etc/nginx/modules-enabled/$to.removed
+		fi
+	done
+fi
+# End automatically added section

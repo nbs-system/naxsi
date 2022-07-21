@@ -33,11 +33,12 @@ fi
 export NAXSI_SRC_PATH=$(realpath naxsi_src/)
 export NAXSI_TMP_PATH=$(realpath nginx-tmp/)
 export NGINX_TMP_PATH=$(realpath nginx-source/)
-export CFLAGS="-Wextra -Wall" # -Werror"
 
 if $NEW_BUILD ; then
     cd "$NGINX_TMP_PATH"
-    ./configure --with-select_module \
+    ./configure --with-cc-opt='-g -O2 -Wextra -Wall -fstack-protector-strong -Wformat -Werror=format-security -fPIC -Wdate-time -D_FORTIFY_SOURCE=2' \
+                --with-ld-opt='-Wl,-z,relro -Wl,-z,now -fPIC' \
+                --with-select_module \
                 --conf-path="$NAXSI_TMP_PATH/naxsi_ut/nginx.conf" \
                 --http-client-body-temp-path="$NAXSI_TMP_PATH/naxsi_ut/body/" \
                 --http-fastcgi-temp-path="$NAXSI_TMP_PATH/naxsi_ut/fastcgi/" \

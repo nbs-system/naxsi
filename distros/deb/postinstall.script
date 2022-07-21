@@ -1,0 +1,30 @@
+#!/bin/sh
+set -e
+# Automatically added by dh_nginx/UNDECLARED
+for confpair in mod-http-naxsi.conf:50-mod-http-naxsi.conf  ; do
+	from=$(echo $confpair | cut -d: -f1)
+	to=$(echo $confpair | cut -d: -f2)
+
+	if [ -L /etc/nginx/modules-enabled/$to.removed ]; then
+		rm /etc/nginx/modules-enabled/$to.removed
+		removed_link=true
+	else
+		removed_link=false
+	fi
+
+	# Symlink on
+	# 1) Fresh installations
+	# 2) Reinstalls after automatic removes (preserve admin actions)
+	if [ -z "$2" -o "$removed_link" = "true" ]; then
+		ln -sf /usr/share/nginx/modules-available/$from \
+			/etc/nginx/modules-enabled/$to
+	fi
+done
+
+if [ "$1" = "configure" ] ; then
+	if which dpkg-trigger >/dev/null 2>&1 ; then
+		dpkg-trigger --no-await nginx-reload
+	fi
+
+fi
+# End automatically added section

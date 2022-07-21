@@ -1,0 +1,58 @@
+# Maintainer: Giovanni Dante (deroad) Grazioli <deroad@libero.it>
+
+pkgname=nginx-mod-naxsi-git
+pkgver=1.4
+pkgrel=1
+epoch=1
+_modname=naxsi
+pkgdesc='Nginx Anti XSS & SQL Injection'
+arch=('x86_64')
+depends=('nginx')
+makedepends=('nginx-src')
+url="https://github.com/wargio/naxsi"
+license=('GPL3')
+backup=('etc/nginx/naxsi_core.rules')
+conflicts=('nginx-mod-naxsi')
+source=(
+	"$pkgname::git+https://github.com/wargio/$_modname.git"
+)
+sha256sums=('SKIP')
+
+pkgver () {
+	cd ${srcdir}/${pkgname}
+	printf $(grep "NAXSI_VERSION" naxsi_src/naxsi_const.h | cut -d ' ' -f3 | sed 's/"//g')
+}
+
+prepare() {
+	cd ${pkgname}
+	git submodule init
+	git config submodule.libinjection.url "${srcdir}/${pkgname}/naxsi_src/libinjection"
+	git submodule update
+
+	mkdir -p ${srcdir}/build
+	cd ${srcdir}/build
+
+	ln -sf /usr/src/nginx/auto
+	ln -sf /usr/src/nginx/src
+}
+
+build() {
+	cd ${srcdir}/build
+	/usr/src/nginx/configure --with-compat --add-dynamic-module=${srcdir}/${pkgname}/naxsi_src
+	make modules
+}
+
+package() {
+	cd $srcdir/build/objs
+	for mod in *.so; do
+		install -Dm755 $mod "$pkgdir"/usr/lib/nginx/modules/$mod
+	done
+
+	cd $srcdir/${pkgname}/naxsi_rules
+	install -Dm644 naxsi_core.rules "$pkgdir"/etc/nginx/naxsi_core.rules
+
+	cd extras
+	for rule in *.rules; do
+		install -Dm644 $rule "$pkgdir"/etc/nginx/naxsi_extras/$rule
+	done
+}

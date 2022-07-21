@@ -1,0 +1,93 @@
+name: "CI for distros"
+
+on:
+  push:
+    branches:
+      - main
+      - "distro-*"
+    tags:
+      - v*
+  pull_request:
+    branches:
+      - "distro-*"
+
+jobs:
+  packages:
+    runs-on: ubuntu-latest
+    name: ${{ matrix.name }}
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          [
+            "arch-linux",
+            #"debian-buster",
+            #"debian-stretch",
+            #"debian-bullseye",
+            #"debian-sid",
+            #"debian-bookworm",
+            #"ubuntu-bionic",
+            #"ubuntu-focal",
+            #"ubuntu-jammy",
+            #"ubuntu-impish",
+          ]
+        include:
+          - name: arch-linux
+            container: archlinux:latest
+            package: arch
+          #- name: debian-buster
+          #  container: debian:buster
+          #  package: deb
+          #- name: debian-stretch
+          #  container: debian:stretch
+          #  package: deb
+          #- name: debian-bullseye
+          #  container: debian:bullseye
+          #  package: deb
+          #- name: debian-sid
+          #  container: debian:sid
+          #  package: deb
+          #- name: debian-bookworm
+          #  container: debian:bookworm
+          #  package: deb
+          #- name: ubuntu-bionic
+          #  container: ubuntu:bionic
+          #  package: deb
+          #- name: ubuntu-focal
+          #  container: ubuntu:focal
+          #  package: deb
+          #- name: ubuntu-jammy
+          #  container: ubuntu:jammy
+          #  package: deb
+          #- name: ubuntu-impish
+          #  container: ubuntu:impish
+          #  package: deb
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    # requires git in the container.
+    #- name: Checkout submodules
+    #  run: git submodule update --init --recursive
+
+    # Arch Linux package
+    - name: Package arch
+      if: matrix.package == 'arch'
+      run: |
+        pacman -Syy --needed --noconfirm sudo base-devel git
+        chmod 777 distros/arch
+        useradd build-user -m
+        passwd -d build-user
+        printf 'build-user ALL=(ALL) ALL\n' | tee -a /etc/sudoers
+        cd distros/arch
+        sudo -u build-user makepkg -s --noconfirm
+        # Fix package name due github name restrictions
+        ls *.pkg.tar.zst | sed 's/:/-/g' | xargs -I % mv -v *.pkg.tar.zst %
+    - name: Upload arch package
+      if: matrix.package == 'arch'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.name }}-nginx-mod-naxsi-git-x86_64.pkg.tar.zst
+        path: distros/arch/*.pkg.tar.zst

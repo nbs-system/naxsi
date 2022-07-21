@@ -15,6 +15,10 @@ Files: .gitignore .gitmodules
 Copyright: 2022 deroad <wargio@libero.it>
 License: LGPL-3.0-only
 
+Files: distros/**
+Copyright: 2022 deroad <wargio@libero.it>
+License: LGPL-3.0-only
+
 Files: README.md .gitattributes logo.png
 Copyright: 2019 nbs-system <security@nbs-system.com>
 License: GPL-3.0-or-later

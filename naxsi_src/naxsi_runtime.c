@@ -177,7 +177,7 @@ ngx_http_naxsi_rawbody_parse(ngx_http_request_ctx_t* ctx,
 unsigned char*
 ngx_utf8_check(ngx_str_t* str);
 
-#if defined nginx_version && (nginx_version >= 1021005)
+#if NGX_PCRE2
 /*
  * variables to use pcre2
  */

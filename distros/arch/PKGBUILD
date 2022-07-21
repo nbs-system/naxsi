@@ -48,15 +48,21 @@ package() {
 		install -Dm755 $mod "$pkgdir"/usr/lib/nginx/modules/$mod
 	done
 
-	mkdir -p "$pkgdir"/etc/nginx/naxsi/
+	mkdir -p "$pkgdir"/etc/nginx/naxsi/whitelists
+	mkdir -p "$pkgdir"/etc/nginx/naxsi/blocking
 
 	install -Dm644 "$srcdir/${pkgname}"/distros/nginx/naxsi_block_mode.conf "$pkgdir"/etc/nginx/naxsi/naxsi_block_mode.conf
 	install -Dm644 "$srcdir/${pkgname}"/distros/nginx/naxsi_denied_url.conf "$pkgdir"/etc/nginx/naxsi/naxsi_denied_url.conf
 	install -Dm644 "$srcdir/${pkgname}"/distros/nginx/naxsi_learning_mode.conf "$pkgdir"/etc/nginx/naxsi/naxsi_learning_mode.conf
 	install -Dm644 "$srcdir/${pkgname}"/naxsi_rules/naxsi_core.rules "$pkgdir"/etc/nginx/naxsi/naxsi_core.rules
 
-	cd "$srcdir/${pkgname}"/naxsi_rules/extras
+	cd "$srcdir/${pkgname}"/naxsi_rules/whitelists/
 	for rule in *.rules; do
-		install -Dm644 $rule "$pkgdir"/etc/nginx/naxsi/$rule
+		install -Dm644 $rule "$pkgdir"/etc/nginx/naxsi/whitelists/$rule
+	done
+
+	cd "$srcdir/${pkgname}"/naxsi_rules/blocking/
+	for rule in *.rules; do
+		install -Dm644 $rule "$pkgdir"/etc/nginx/naxsi/blocking/$rule
 	done
 }

@@ -140,7 +140,8 @@ jobs:
         # install files
         mkdir -p "$DEB_PKG/data/usr/lib/nginx/modules/"
         mkdir -p "$DEB_PKG/data/usr/share/nginx/modules-available/"
-        mkdir -p "$DEB_PKG/data/usr/share/naxsi/rules/"
+        mkdir -p "$DEB_PKG/data/usr/share/naxsi/whitelists"
+        mkdir -p "$DEB_PKG/data/usr/share/naxsi/blocking"
         install -Dm755 distros/deb/postinstall.script "$DEB_PKG/postinstall.script"
         install -Dm755 distros/deb/postremove.script "$DEB_PKG/postremove.script"
         install -Dm755 distros/deb/preremove.script "$DEB_PKG/preremove.script"
@@ -151,7 +152,8 @@ jobs:
         install -Dm644 distros/nginx/naxsi_denied_url.conf "$DEB_PKG/data/usr/share/naxsi/naxsi_denied_url.conf"
         install -Dm644 distros/nginx/naxsi_learning_mode.conf "$DEB_PKG/data/usr/share/naxsi/naxsi_learning_mode.conf"
         install -Dm644 naxsi_rules/naxsi_core.rules "$DEB_PKG/data/usr/share/naxsi/naxsi_core.rules"
-        install -Dm644 naxsi_rules/extras/*.rules "$DEB_PKG/data/usr/share/naxsi/"
+        install -Dm644 naxsi_rules/whitelists/*.rules "$DEB_PKG/data/usr/share/naxsi/whitelists"
+        install -Dm644 naxsi_rules/blocking/*.rules "$DEB_PKG/data/usr/share/naxsi/blocking"
         # add deb details.
         sed -i "s/@NGINX_VERSION@/$NGINX_VERSION/" "$DEB_PKG/control.install"
         sed -i "s/@LIBPCRE3_VERSION@/$LIBPCRE3_VERSION/" "$DEB_PKG/control.install"

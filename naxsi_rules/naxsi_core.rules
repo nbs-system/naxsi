@@ -15,8 +15,6 @@
 #@MainRule "msg:no generic rules" id:19;
 #@MainRule "msg:bad utf8" id:20;
 
-
-
 ##################################
 ## SQL Injections IDs:1000-1099 ##
 ##################################

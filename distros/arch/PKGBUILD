@@ -38,7 +38,7 @@ prepare() {
 
 build() {
 	cd ${srcdir}/build
-	/usr/src/nginx/configure --with-compat --add-dynamic-module=${srcdir}/${pkgname}/naxsi_src
+	/usr/src/nginx/configure --with-compat --add-dynamic-module="${srcdir}/${pkgname}/naxsi_src"
 	make modules
 }
 
@@ -48,11 +48,15 @@ package() {
 		install -Dm755 $mod "$pkgdir"/usr/lib/nginx/modules/$mod
 	done
 
-	cd $srcdir/${pkgname}/naxsi_rules
-	install -Dm644 naxsi_core.rules "$pkgdir"/etc/nginx/naxsi_core.rules
+	mkdir -p "$pkgdir"/etc/nginx/naxsi/
 
-	cd extras
+	install -Dm644 "$srcdir/${pkgname}"/distros/nginx/naxsi_block_mode.conf "$pkgdir"/etc/nginx/naxsi/naxsi_block_mode.conf
+	install -Dm644 "$srcdir/${pkgname}"/distros/nginx/naxsi_denied_url.conf "$pkgdir"/etc/nginx/naxsi/naxsi_denied_url.conf
+	install -Dm644 "$srcdir/${pkgname}"/distros/nginx/naxsi_learning_mode.conf "$pkgdir"/etc/nginx/naxsi/naxsi_learning_mode.conf
+	install -Dm644 "$srcdir/${pkgname}"/naxsi_rules/naxsi_core.rules "$pkgdir"/etc/nginx/naxsi/naxsi_core.rules
+
+	cd "$srcdir/${pkgname}"/naxsi_rules/extras
 	for rule in *.rules; do
-		install -Dm644 $rule "$pkgdir"/etc/nginx/naxsi_extras/$rule
+		install -Dm644 $rule "$pkgdir"/etc/nginx/naxsi/$rule
 	done
 }

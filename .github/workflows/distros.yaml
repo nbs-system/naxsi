@@ -4,14 +4,40 @@ on:
   push:
     branches:
       - main
-      - "distro-*"
+      - "dist-*"
     tags:
       - v*
   pull_request:
     branches:
-      - "distro-*"
+      - "dist-*"
 
 jobs:
+  tarball:
+    runs-on: ubuntu-latest
+    name: "Release Tarball"
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+        persist-credentials: false
+    - name: Prepare Release
+      shell: bash
+      run: |
+        if [[ "${{ startsWith(github.event.ref, 'refs/tags')}}" = "true" ]]
+        then
+          RELEASE_ID="${{ github.event.ref }}"
+        else
+          RELEASE_ID="git-`date "+%Y-%m-%d"`-${{ format('{0}', github.sha) }}"
+        fi
+        RELEASE_ID=${RELEASE_ID##refs/tags/}
+        echo RELEASE_NAME="naxsi-${RELEASE_ID}" >> $GITHUB_ENV
+    - name: Upload tarball
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.RELEASE_NAME }}
+        path: ./*
+
   packages:
     runs-on: ubuntu-latest
     name: ${{ matrix.name }}
@@ -121,9 +147,9 @@ jobs:
         install -Dm644 distros/deb/control.install "$DEB_PKG/control.install"
         install -Dm755 "nginx-$NGINX_VERSION/objs/ngx_http_naxsi_module.so" "$DEB_PKG/data/usr/lib/nginx/modules/ngx_http_naxsi_module.so"
         install -Dm644 distros/deb/mod-http-naxsi.conf "$DEB_PKG/data/usr/share/nginx/modules-available/mod-http-naxsi.conf"
-        install -Dm644 distros/deb/naxsi_block_mode.conf "$DEB_PKG/data/usr/share/naxsi/naxsi_block_mode.conf"
-        install -Dm644 distros/deb/naxsi_denied_url.conf "$DEB_PKG/data/usr/share/naxsi/naxsi_denied_url.conf"
-        install -Dm644 distros/deb/naxsi_learning_mode.conf "$DEB_PKG/data/usr/share/naxsi/naxsi_learning_mode.conf"
+        install -Dm644 distros/nginx/naxsi_block_mode.conf "$DEB_PKG/data/usr/share/naxsi/naxsi_block_mode.conf"
+        install -Dm644 distros/nginx/naxsi_denied_url.conf "$DEB_PKG/data/usr/share/naxsi/naxsi_denied_url.conf"
+        install -Dm644 distros/nginx/naxsi_learning_mode.conf "$DEB_PKG/data/usr/share/naxsi/naxsi_learning_mode.conf"
         install -Dm644 naxsi_rules/naxsi_core.rules "$DEB_PKG/data/usr/share/naxsi/naxsi_core.rules"
         install -Dm644 naxsi_rules/extras/*.rules "$DEB_PKG/data/usr/share/naxsi/"
         # add deb details.

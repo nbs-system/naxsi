@@ -1787,7 +1787,7 @@ ngx_http_naxsi_match_variable(ngx_http_request_t *r, ngx_http_variable_value_t *
         mr = ctx->matched->elts;
         for (i = 0; i < ctx->matched->nelts; i++) {
             /* FILE_EXT|NAME is the longest zone we may have */
-            sz += snprintf(0, 0, fmt, i, mr[i].rule->rule_id,
+            sz += snprintf(NULL, 0, fmt, i, mr[i].rule->rule_id,
                     "FILE_EXT|NAME", mr[i].name->len, mr[i].name->data);
         }
     }

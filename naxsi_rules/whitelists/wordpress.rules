@@ -6,21 +6,21 @@ BasicRule wl:1000,1001,1005,1007,1010,1011,1013,1100,1101,1200,1308,1309,1310,13
 BasicRule wl:1402 "mz:$HEADERS_VAR:content-type";
 
 ### simple BODY (POST)
-BasicRule wl:1001,1015,1009,1311,1310,1101,1016 "mz:$URL:/|$BODY_VAR:customized";
+BasicRule wl:1001,1009,1015,1016,1101,1310,1311 "mz:$URL:/|$BODY_VAR:customized";
 # comments
 BasicRule wl:1000,1010,1011,1013,1015,1200,1310,1311 "mz:$BODY_VAR:post_title";
 BasicRule wl:1000 "mz:$BODY_VAR:original_publish";
 BasicRule wl:1000 "mz:$BODY_VAR:save";
 BasicRule wl:1008,1010,1011,1013,1015 "mz:$BODY_VAR:sk2_my_js_payload";
-BasicRule wl:1001,1009,1005,1016,1100,1101,1310 "mz:$BODY_VAR:url";
+BasicRule wl:1001,1005,1009,1016,1100,1101,1310 "mz:$BODY_VAR:url";
 BasicRule wl:1009,1100,1101 "mz:$BODY_VAR:referredby";
 BasicRule wl:1009,1100,1101 "mz:$BODY_VAR:_wp_original_http_referer";
-BasicRule wl:1000,1001,1005,1008,1007,1009,1010,1011,1013,1015,1016,1100,1101,1200,1302,1303,1310,1311,1315,1400 "mz:$BODY_VAR:comment";
+BasicRule wl:1000,1001,1005,1007,1008,1009,1010,1011,1013,1015,1016,1100,1101,1200,1302,1303,1310,1311,1315,1400 "mz:$BODY_VAR:comment";
 BasicRule wl:1100,1101 "mz:$BODY_VAR:redirect_to";
 BasicRule wl:1000,1009,1315 "mz:$BODY_VAR:_wp_http_referer";
 BasicRule wl:1000 "mz:$BODY_VAR:action";
 BasicRule wl:1001,1013 "mz:$BODY_VAR:blogname";
-BasicRule wl:1015,1013 "mz:$BODY_VAR:blogdescription";
+BasicRule wl:1013,1015 "mz:$BODY_VAR:blogdescription";
 BasicRule wl:1015 "mz:$BODY_VAR:date_format_custom";
 BasicRule wl:1015 "mz:$BODY_VAR:date_format";
 BasicRule wl:1015 "mz:$BODY_VAR:tax_input%5bpost_tag%5d";

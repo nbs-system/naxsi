@@ -1,0 +1,10 @@
+#######################################
+## Wordpress ids: 30000000           ##
+#######################################
+
+MainRule id:30000000 "s:$UWA:8" "str:system.multicall" "mz:$URL:/xmlrpc.php|BODY" "msg:Wordpress XMLRPC possible Password Brute Force";
+MainRule id:30000001 "s:$UWA:8" "str:system.listmethods" "mz:$URL:/xmlrpc.php|BODY" "msg:WordPress XMLRPC Enumeration system.listMethods";
+MainRule id:30000002 "s:$UWA:8" "str:system.getcapabilities" "mz:$URL:/xmlrpc.php|BODY" "msg:WordPress XMLRPC Enumeration system.getCapabilities";
+MainRule id:30000003 "s:$UWA:8" "str:/w3tc/dbcache" "mz:URL" "msg:WordPress TotalCache-DBCache-Access";
+MainRule id:30000004 "s:$UWA:8" "str:/uploadify/uploadify.php" "mz:URL" "msg:WordPress Uploadify-Access";
+MainRule id:30000005 "s:$UWA:8" "str:/wp-content/plugins/mm-forms-community/upload/temp/" "mz:URL" "msg:Access To mm-forms-community upload dir";

@@ -36,3 +36,15 @@ jobs:
       run: sudo apt --assume-yes install clang-format-13
     - name: Format check
       run: find naxsi_src/ -type f -name "*.c" -o -name "*.h" | grep -v "libinjection" | xargs -I % clang-format --verbose --dry-run %
+
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Install python3
+      run: sudo apt --assume-yes install python3
+    - name: Format check rules
+      run: |
+        bash .scripts/ci-rules-linter.sh naxsi_rules/blocking
+        bash .scripts/ci-rules-linter.sh naxsi_rules/whitelists

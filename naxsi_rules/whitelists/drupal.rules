@@ -44,7 +44,7 @@ BasicRule wl:1310,1311 "mz:$URL:/|$BODY_VAR:type";
 # update module
 BasicRule wl:16 "mz:$URL:/|BODY";
 
-# user mail 
+# user mail
 BasicRule wl:1007,1010,1011,1013,1015,1310,1311 "mz:$URL:/|$BODY_VAR_X:^user_mail";
 
 # other stuff
@@ -58,5 +58,4 @@ BasicRule wl:1302,1303 "mz:$URL:/|$BODY_VAR_X:^filters";
 BasicRule wl:1010,1011 "mz:$URL:/|$BODY_VAR:actions_label";
 BasicRule wl:1015 "mz:$URL:/|$BODY_VAR:date_format_long";
 BasicRule wl:1009,1016 "mz:$URL:/|$ARGS_VAR:destination";
-BasicRule wl:1016  "mz:$URL:/|$BODY_VAR_X:^palette";
-
+BasicRule wl:1016 "mz:$URL:/|$BODY_VAR_X:^palette";

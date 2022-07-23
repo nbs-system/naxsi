@@ -1,0 +1,8 @@
+#######################################
+## VPN Security ids: 40000000        ##
+#######################################
+
+# CVE-2018-13379 path traversal vulnerability in Fortinet's FortiGate SSL VPN
+# https://x.x.x.x/remote/fgt_lang?lang=/../../../..//////////dev/cmdb/sslvpn_websession
+MainRule id:40000000 "s:$UWA:8" "str:/sslvpn_websession" "mz:ARGS" "msg:CVE-2018-13379";
+MainRule id:40000001 "s:$UWA:8" "str:/remote/fgt_lang" "mz:URL" "msg:CVE-2018-13379";

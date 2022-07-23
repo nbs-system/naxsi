@@ -19,14 +19,19 @@ Files: distros/**
 Copyright: 2022 deroad <wargio@libero.it>
 License: LGPL-3.0-only
 
+Files: naxsi_rules/**
+Copyright: 2022 deroad <wargio@libero.it>
+License: LGPL-3.0-only
+
 Files: README.md .gitattributes logo.png
 Copyright: 2019 nbs-system <security@nbs-system.com>
 License: GPL-3.0-or-later
 
-Files: naxsi_rules/**
+Files: naxsi_rules/naxsi_core.rules
 Copyright: 2019 nbs-system <security@nbs-system.com>
 License: GPL-3.0-or-later
 
 Files: unit-tests/**
 Copyright: 2019 nbs-system <security@nbs-system.com>
+Copyright: 2022 deroad <wargio@libero.it>
 License: GPL-3.0-or-later

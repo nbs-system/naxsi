@@ -81,9 +81,6 @@ jobs:
           - name: ubuntu-jammy
             container: ubuntu:jammy
             package: deb
-          - name: ubuntu-impish
-            container: ubuntu:impish
-            package: deb
 
     steps:
     - name: Checkout repository

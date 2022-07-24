@@ -55,7 +55,6 @@ jobs:
             "ubuntu-bionic",
             "ubuntu-focal",
             "ubuntu-jammy",
-            "ubuntu-impish",
           ]
         include:
           - name: arch-linux

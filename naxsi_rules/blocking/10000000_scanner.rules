@@ -67,3 +67,6 @@ MainRule id:10000032 "s:$UWA:8" "str:Expense" "mz:$HEADERS_VAR:User-Agent" "msg:
 # Scan from NetSystemsResearch with this User-Agent:
 # NetSystemsResearch studies the availability of various services across the internet. Our website is netsystemsresearch.com
 MainRule id:10000033 "s:$UWA:8" "str:NetSystemsResearch" "mz:$HEADERS_VAR:User-Agent" "msg:NetSystemsResearch Web Scan";
+
+# Golang default User-Agent
+MainRule id:10000034 "s:$UWA:8" "str:Go-http" "mz:$HEADERS_VAR:User-Agent" "msg:Golang in user-agent";

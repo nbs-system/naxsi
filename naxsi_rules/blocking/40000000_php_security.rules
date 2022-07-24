@@ -1,0 +1,33 @@
+#######################################
+## PHP Security ids: 40000000        ##
+#######################################
+
+# Php Functions
+MainRule id:40000000 "s:$UWA:8" "str:gzinflate(" "mz:URL|BODY|ARGS" "msg:gzinflate in URI";
+MainRule id:40000001 "s:$UWA:8" "str:system(" "mz:URL|BODY|ARGS" "msg:php system called";
+MainRule id:40000002 "s:$UWA:8" "str:base64_decode(" "mz:URL|BODY|ARGS" "msg:php base64_decode called";
+MainRule id:40000003 "s:$UWA:8" "str:@eval" "mz:URL|BODY|ARGS" "msg:php eval called";
+MainRule id:40000004 "s:$UWA:8" "rx:eval\((\s+)?\$_" "mz:URL|BODY|ARGS" "msg:php eval called";
+
+# PhpMyAdmin
+MainRule id:40000005 "s:$UWA:8" "str:/db-admin" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000006 "s:$UWA:8" "str:/dbadmin" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000007 "s:$UWA:8" "str:/myadmin" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000008 "s:$UWA:8" "str:/mysqldumper " "mz:URL" "msg:MysqlDumper";
+MainRule id:40000009 "s:$UWA:8" "str:/mysqlmanager" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000010 "s:$UWA:8" "str:/p/m/a/" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000011 "s:$UWA:8" "str:/php-my-admin" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000012 "s:$UWA:8" "str:/php-myadmin" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000013 "s:$UWA:8" "str:/phpmanager" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000014 "s:$UWA:8" "str:/phpmy" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000015 "s:$UWA:8" "str:/phpmy-admin" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000016 "s:$UWA:8" "str:/phpmyadmin" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000017 "s:$UWA:8" "str:/phppgadmin " "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000018 "s:$UWA:8" "str:/pma" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000019 "s:$UWA:8" "str:/sql-admin" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000020 "s:$UWA:8" "str:/sqladmin" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000021 "s:$UWA:8" "str:/sqlweb" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000022 "s:$UWA:8" "str:/sysadmin" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000023 "s:$UWA:8" "str:/webadmin" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000024 "s:$UWA:8" "str:/webdb" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:40000025 "s:$UWA:8" "str:/websql" "mz:URL" "msg:SQL Admin Interface";

@@ -3,73 +3,71 @@
 #######################################
 
 # webserver critical files
-MainRule id:20000000 "s:$UWA:8" "str:.conf" "mz:URL" "msg:file access .conf";
-MainRule id:20000001 "s:$UWA:8" "str:.ini" "mz:URL" "msg:file access .ini";
-MainRule id:20000002 "s:$UWA:8" "str:.sql" "mz:URL" "msg:file access .sql";
-MainRule id:20000003 "s:$UWA:8" "str:/sftp-config.json" "mz:URL|BODY" "msg:SFTP-config-file access";
-MainRule id:20000004 "s:$UWA:8" "str:/.bzr" "mz:URL" "msg:bazaar version control folder access";
-MainRule id:20000005 "s:$UWA:8" "str:/.git" "mz:URL" "msg:git version control folder access";
-MainRule id:20000006 "s:$UWA:8" "str:/.hg" "mz:URL" "msg:mercurial version control folder access";
-MainRule id:20000007 "s:$UWA:8" "str:/.svn" "mz:URL" "msg:svn version control folder access";
-MainRule id:20000008 "s:$UWA:8" "str:/bzr/" "mz:URL" "msg:bazaar version control folder access";
-MainRule id:20000009 "s:$UWA:8" "str:/git/" "mz:URL" "msg:git version control folder access";
-MainRule id:20000010 "s:$UWA:8" "str:/hg/" "mz:URL" "msg:mercurial version control folder access";
-MainRule id:20000011 "s:$UWA:8" "str:/svn/" "mz:URL" "msg:svn version control folder access";
+MainRule id:20000000 "s:$UWA:8" "str:.conf" "mz:URL" "msg:file access to .conf";
+MainRule id:20000001 "s:$UWA:8" "str:.ini" "mz:URL" "msg:file access to .ini";
+MainRule id:20000002 "s:$UWA:8" "str:.sql" "mz:URL" "msg:file access to .sql";
+MainRule id:20000003 "s:$UWA:8" "rx:\.txt$" "mz:URL" "msg:file access to .txt";
+MainRule id:20000004 "s:$UWA:8" "str:/sftp-config.json" "mz:URL|BODY" "msg:file access to sftp-config.json";
+MainRule id:20000005 "s:$UWA:8" "str:/.bzr" "mz:URL" "msg:bazaar version control folder access";
+MainRule id:20000006 "s:$UWA:8" "str:/.git" "mz:URL" "msg:git version control folder access";
+MainRule id:20000007 "s:$UWA:8" "str:/.hg" "mz:URL" "msg:mercurial version control folder access";
+MainRule id:20000008 "s:$UWA:8" "str:/.svn" "mz:URL" "msg:svn version control folder access";
+MainRule id:20000009 "s:$UWA:8" "str:/bzr/" "mz:URL" "msg:bazaar version control folder access";
+MainRule id:20000010 "s:$UWA:8" "str:/git/" "mz:URL" "msg:git version control folder access";
+MainRule id:20000011 "s:$UWA:8" "str:/hg/" "mz:URL" "msg:mercurial version control folder access";
+MainRule id:20000012 "s:$UWA:8" "str:/svn/" "mz:URL" "msg:svn version control folder access";
+MainRule id:20000013 "s:$UWA:8" "str:.htpasswd" "mz:ARGS|BODY|URL|FILE_EXT" "msg:file access to .htpasswd";
+MainRule id:20000014 "s:$UWA:8" "str:.htaccess" "mz:ARGS|BODY|URL|FILE_EXT" "msg:file access to .htaccess";
+MainRule id:20000015 "s:$UWA:8" "str:.ds_store" "mz:URL" "msg:file access to .ds_store";
+MainRule id:20000016 "s:$UWA:8" "str:changelog." "mz:URL" "msg:file access to changelog";
+MainRule id:20000017 "s:$UWA:8" "rx:^/core.\d+$" "mz:URL" "msg:file access to core dumps";
+MainRule id:20000018 "s:$UWA:8" "rx:\.module$" "mz:URL" "msg:file access to .module (drupal)";
+MainRule id:20000019 "s:$UWA:8" "str:web.config" "mz:URL" "msg:file access to web.config (drupal)";
+MainRule id:20000020 "s:$UWA:8" "rx:release[-_]notes\." "mz:URL" "msg:file access to release notes";
+MainRule id:20000021 "s:$UWA:8" "rx:~$" "mz:URL" "msg:file access to cache files";
+MainRule id:20000022 "s:$UWA:8" "str:web-inf" "mz:URL|BODY|ARGS" "msg:folder access to WEB-INF";
 
 # Exposed Services
-MainRule id:20000012 "s:$UWA:8" "str:/cgi-bin/luci" "mz:URL" "msg:Exposed OpenWRT";
-MainRule id:20000013 "s:$UWA:8" "str:/jenkins" "mz:URL" "msg:Exposed Jenkins";
+MainRule id:20000023 "s:$UWA:8" "str:/cgi-bin/luci" "mz:URL" "msg:Exposed OpenWRT";
+MainRule id:20000024 "s:$UWA:8" "rx:^/cgi-bin/.+\.cgi$" "mz:URL" "msg:Exposed cgi-bin";
+MainRule id:20000025 "s:$UWA:8" "str:/jenkins" "mz:URL" "msg:Exposed Jenkins";
+MainRule id:20000026 "s:$UWA:8" "str:/console/login/LoginForm.jsp" "mz:URL" "msg:Exposed Oracle WebLogic Server Administration Console";
+MainRule id:20000027 "s:$UWA:8" "str:/nuxeo/login.jsp" "mz:URL" "msg:Exposed Nuxeo Enterprise Platform";
+MainRule id:20000028 "s:$UWA:8" "str:/zabbix/index.php" "mz:URL" "msg:Exposed Zabbix";
 
 # Known hacking tools like burp suite, etc..
-MainRule id:20000014 "s:$UWA:8" "str:burpcollaborator.net" "mz:ARGS|BODY|HEADERS" "msg:burp collaborator";
-MainRule id:20000015 "s:$UWA:8" "str:/netsparker" "mz:URL" "msg:Netsparker";
+MainRule id:20000029 "s:$UWA:8" "str:burpcollaborator.net" "mz:ARGS|BODY|HEADERS" "msg:burp collaborator";
+MainRule id:20000030 "s:$UWA:8" "str:/netsparker" "mz:URL" "msg:Netsparker";
 
 # Malicious strings in request
-MainRule id:20000016 "s:$UWA:8" "str:\n\r" "mz:URL" "msg:HTTP - Smuggling-Attempt (NewLine in URI)";
-MainRule id:20000017 "s:$UWA:6" "rx:^[a-zA-Z\d-]+\.[a-zA-Z]+$" "mz:$HEADERS_VAR:Host" "msg:HOST-Header Injection";
-MainRule id:20000018 "s:$UWA:8" "str:/bin/sh" "mz:URL|BODY|ARGS|$HEADERS_VAR:User-Agent|$HEADERS_VAR:Cookie" "msg:/bin/sh in URI";
-MainRule id:20000019 "s:$UWA:8" "rx:<!DOCTYPE(\s+)(%*\s*)([{}:.a-zA-Z0-9_-]*)(\s+)SYSTEM" "mz:BODY" "msg: possible XML/XXE-Exploitation atempt (Doctype)";
-MainRule id:20000020 "s:$UWA:8" "str:http://http://" "mz:HEADERS" "msg:Abnormal double http:// in HTTP header";
-MainRule id:20000021 "s:$UWA:8" "str:https://http://" "mz:HEADERS" "msg:Abnormal double http:// in HTTP header";
-MainRule id:20000022 "s:$UWA:8" "str:http://https://" "mz:HEADERS" "msg:Abnormal double http:// in HTTP header";
-MainRule id:20000023 "s:$UWA:8" "str:https://https://" "mz:HEADERS" "msg:Abnormal double http:// in HTTP header";
+MainRule id:20000031 "s:$UWA:8" "str:\n\r" "mz:URL" "msg:HTTP - Smuggling-Attempt (NewLine in URI)";
+MainRule id:20000032 "s:$UWA:6" "rx:^[a-zA-Z\d-]+\.[a-zA-Z]+$" "mz:$HEADERS_VAR:Host" "msg:HOST-Header Injection";
+MainRule id:20000033 "s:$UWA:8" "str:/bin/sh" "mz:URL|BODY|ARGS|$HEADERS_VAR:User-Agent|$HEADERS_VAR:Cookie" "msg:/bin/sh in URI";
+MainRule id:20000034 "s:$UWA:8" "str:/etc/passwd" "mz:URL|BODY|ARGS|$HEADERS_VAR:User-Agent|$HEADERS_VAR:Cookie" "msg:/etc/passwd in URI";
+MainRule id:20000035 "s:$UWA:8" "str:/etc/shadow" "mz:URL|BODY|ARGS|$HEADERS_VAR:User-Agent|$HEADERS_VAR:Cookie" "msg:/etc/shadow in URI";
+MainRule id:20000036 "s:$UWA:8" "str:/etc/hosts" "mz:URL|BODY|ARGS|$HEADERS_VAR:User-Agent|$HEADERS_VAR:Cookie" "msg:/etc/hosts in URI";
+MainRule id:20000037 "s:$UWA:8" "str:/Windows/system.ini" "mz:URL|BODY|ARGS|$HEADERS_VAR:User-Agent|$HEADERS_VAR:Cookie" "msg:/Windows/system.ini in URI";
+MainRule id:20000038 "s:$UWA:8" "rx:<!DOCTYPE(\s+)(%*\s*)([{}:.a-zA-Z0-9_-]*)(\s+)SYSTEM" "mz:BODY" "msg: possible XML/XXE-Exploitation atempt (Doctype)";
+MainRule id:20000039 "s:$UWA:8" "str:http://http://" "mz:HEADERS" "msg:Abnormal double http:// in HTTP header";
+MainRule id:20000040 "s:$UWA:8" "str:https://http://" "mz:HEADERS" "msg:Abnormal double http:// in HTTP header";
+MainRule id:20000041 "s:$UWA:8" "str:http://https://" "mz:HEADERS" "msg:Abnormal double http:// in HTTP header";
+MainRule id:20000042 "s:$UWA:8" "str:https://https://" "mz:HEADERS" "msg:Abnormal double http:// in HTTP header";
 
-# ThinkPHP Remote Code Execution
-MainRule id:20000024 "s:$UWA:8" "str:index/\think\app/invokefunction" "mz:HEADERS" "msg:ThinkPHP Remote Code Execution";
+# ThinkPHP Remote Code Execution CVE-2018-20062
+MainRule id:20000043 "s:$UWA:8" "str:index/\think\app/invokefunction" "mz:HEADERS" "msg:CVE-2018-20062";
 
 # AWS related files
-MainRule id:20000025 "s:$UWA:8" "str:/.aws/" "mz:URL" "msg:AWS Credential Stealer";
+MainRule id:20000044 "s:$UWA:8" "str:/.aws/" "mz:URL" "msg:AWS Credential Stealer";
+MainRule id:20000045 "s:$UWA:8" "str:/.env/" "mz:URL" "msg:AWS Credential Stealer";
 
 # Exposed Microsoft Exchange
-MainRule id:20000026 "s:$UWA:8" "str:autodiscover/autodiscover.json" "mz:URL" "msg:";
-MainRule id:20000027 "s:$UWA:8" "str:autodiscover/autodiscover.xml " "mz:URL" "msg:";
-
-# Php Functions
-MainRule id:20000028 "s:$UWA:8" "str:gzinflate(" "mz:URL|BODY|ARGS" "msg:gzinflate in URI";
-MainRule id:20000029 "s:$UWA:8" "str:system(" "mz:URL|BODY|ARGS" "msg:php system called";
-
-# PhpMyAdmin
-MainRule id:20000030 "s:$UWA:8" "str:/db-admin" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000031 "s:$UWA:8" "str:/dbadmin" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000032 "s:$UWA:8" "str:/myadmin" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000033 "s:$UWA:8" "str:/mysqldumper " "mz:URL" "msg:MysqlDumper";
-MainRule id:20000034 "s:$UWA:8" "str:/mysqlmanager" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000035 "s:$UWA:8" "str:/p/m/a/" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000036 "s:$UWA:8" "str:/php-my-admin" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000037 "s:$UWA:8" "str:/php-myadmin" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000038 "s:$UWA:8" "str:/phpmanager" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000039 "s:$UWA:8" "str:/phpmy" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000040 "s:$UWA:8" "str:/phpmy-admin" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000041 "s:$UWA:8" "str:/phpmyadmin" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000042 "s:$UWA:8" "str:/phppgadmin " "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000043 "s:$UWA:8" "str:/pma" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000044 "s:$UWA:8" "str:/sql-admin" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000045 "s:$UWA:8" "str:/sqladmin" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000046 "s:$UWA:8" "str:/sqlweb" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000047 "s:$UWA:8" "str:/sysadmin" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000048 "s:$UWA:8" "str:/webadmin" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000049 "s:$UWA:8" "str:/webdb" "mz:URL" "msg:SQL Admin Interface";
-MainRule id:20000050 "s:$UWA:8" "str:/websql" "mz:URL" "msg:SQL Admin Interface";
+MainRule id:20000046 "s:$UWA:8" "str:autodiscover/autodiscover.json" "mz:URL" "msg:Exposed Microsoft Exchange";
+MainRule id:20000047 "s:$UWA:8" "str:autodiscover/autodiscover.xml" "mz:URL" "msg:Exposed Microsoft Exchange";
+MainRule id:20000048 "s:$UWA:8" "str:/auth.owa" "mz:URL" "msg:Exposed Microsoft Exchange";
 
 # Ignition 2.5.1 Remote Code Execution CVE-2021-3129
-MainRule id:20000051 "s:$UWA:8" "str:/_ignition/execute-solution" "mz:URL" "msg:CVE-2021-3129";
+MainRule id:20000049 "s:$UWA:8" "str:/_ignition/execute-solution" "mz:URL" "msg:CVE-2021-3129";
+
+# CVE-2018-13379 path traversal vulnerability in Fortinet's FortiGate SSL VPN
+# https://x.x.x.x/remote/fgt_lang?lang=/../../../..//////////dev/cmdb/sslvpn_websession
+MainRule id:20000050 "s:$UWA:8" "str:/sslvpn_websession" "mz:ARGS|BODY|HEADERS" "msg:CVE-2018-13379";

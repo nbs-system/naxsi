@@ -16,10 +16,10 @@ __DATA__
 load_module $TEST_NGINX_NAXSI_MODULE_SO;
 --- http_config
 include $TEST_NGINX_NAXSI_RULES;
-$TEST_NGINX_NAXSI_BLOCKING_RULES
+include $TEST_NGINX_NAXSI_BLOCKING_RULES/*;
 --- config
 location / {
-    $TEST_NGINX_NAXSI_WHITELISTS_RULES
+    include $TEST_NGINX_NAXSI_WHITELISTS_RULES/*;
     SecRulesEnabled;
     DeniedUrl "/RequestDenied";
     CheckRule "$SQL >= 8" BLOCK;

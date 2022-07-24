@@ -13,6 +13,10 @@ if [ -z "$RULE_FOLDER" ]; then
     exit 1
 fi
 
+if [[ -d "$TMP_DIR" ]]; then
+    rm -rf "$TMP_DIR"
+fi
+
 mkdir "$TMP_DIR" || exit 1
 for FILE in $(ls "$RULE_FOLDER/"*.rules); do
     FILENAME=$(basename $FILE)

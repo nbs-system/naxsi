@@ -8,3 +8,4 @@ MainRule id:30000002 "s:$UWA:8" "str:system.getcapabilities" "mz:$URL:/xmlrpc.ph
 MainRule id:30000003 "s:$UWA:8" "str:/w3tc/dbcache" "mz:URL" "msg:WordPress TotalCache-DBCache-Access";
 MainRule id:30000004 "s:$UWA:8" "str:/uploadify/uploadify.php" "mz:URL" "msg:WordPress Uploadify-Access";
 MainRule id:30000005 "s:$UWA:8" "str:/wp-content/plugins/mm-forms-community/upload/temp/" "mz:URL" "msg:Access To mm-forms-community upload dir";
+MainRule id:30000006 "s:$UWA:8" "str:wp-config.php" "mz:BODY|ARGS|URL" "msg:WordPress access to wp-config.php";

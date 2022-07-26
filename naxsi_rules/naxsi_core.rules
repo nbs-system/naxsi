@@ -86,4 +86,5 @@ MainRule "str:%U" "msg:M$ encoding" "mz:ARGS|BODY|URL|$HEADERS_VAR:Cookie" "s:$E
 #############################
 ## File uploads: 1500-1600 ##
 #############################
-MainRule "rx:\.ph|\.asp|\.ht|\.jsp" "msg:asp/php/jsp file upload" "mz:FILE_EXT" "s:$UPLOAD:8" id:1500;
+MainRule "rx:\.ph|\.asp|\.ht|\.jsp" "msg:asp/php/jsp/htaccess file upload" "mz:FILE_EXT" "s:$UPLOAD:8" id:1500;
+MainRule "rx:^[\.a-z0-9_\- ]+$" negative "msg:uploaded filename contains non-printable ascii chars" "mz:FILE_EXT" "s:$UPLOAD:8" id:1501;

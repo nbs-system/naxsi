@@ -1,2 +1,5 @@
 # whitelist robots.txt
 BasicRule wl:20000003 "mz:$URL:/robots.txt|URL";
+
+# whitelist /.well-known/security.txt
+BasicRule wl:20000003 "mz:$URL:/.well-known/security.txt|URL";

@@ -1,0 +1,2 @@
+# whitelist robots.txt
+BasicRule wl:20000003 "mz:$URL:/robots.txt|URL";

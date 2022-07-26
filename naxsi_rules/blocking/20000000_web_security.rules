@@ -71,3 +71,15 @@ MainRule id:20000049 "s:$UWA:8" "str:/_ignition/execute-solution" "mz:URL" "msg:
 # CVE-2018-13379 path traversal vulnerability in Fortinet's FortiGate SSL VPN
 # https://x.x.x.x/remote/fgt_lang?lang=/../../../..//////////dev/cmdb/sslvpn_websession
 MainRule id:20000050 "s:$UWA:8" "str:/sslvpn_websession" "mz:ARGS|BODY|HEADERS" "msg:CVE-2018-13379";
+
+# Exposed Apache Tomcat Administration Panel
+MainRule id:20000051 "s:$UWA:8" "str:/manager/html" "mz:URL" "msg:Exposed Apache Tomcat Administration Panel";
+
+# Block NMAP enumeration
+MainRule id:20000052 "s:$UWA:8" "str:/HNAP1" "mz:URL" "msg:NMAP enumeration attempt";
+MainRule id:20000053 "s:$UWA:8" "str:/__Additional" "mz:URL" "msg:NMAP enumeration attempt";
+MainRule id:20000054 "s:$UWA:8" "str:/docs/cplugError.html/" "mz:URL" "msg:NMAP enumeration attempt";
+MainRule id:20000055 "s:$UWA:8" "rx:/default\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";
+MainRule id:20000056 "s:$UWA:8" "rx:/start\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";
+MainRule id:20000057 "s:$UWA:8" "rx:/localstart\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";
+MainRule id:20000058 "s:$UWA:8" "rx:/admin\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";

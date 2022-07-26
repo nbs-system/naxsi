@@ -26,6 +26,7 @@ location / {
     CheckRule "$RFI >= 8" BLOCK;
     CheckRule "$TRAVERSAL >= 4" BLOCK;
     CheckRule "$XSS >= 8" BLOCK;
+    CheckRule "$UWA >= 8" BLOCK;
     root $TEST_NGINX_SERVROOT/html/;
     index index.html index.htm;
 }
@@ -56,6 +57,7 @@ location / {
     CheckRule "$RFI >= 8" BLOCK;
     CheckRule "$TRAVERSAL >= 4" BLOCK;
     CheckRule "$XSS >= 8" BLOCK;
+    CheckRule "$UWA >= 8" BLOCK;
     root $TEST_NGINX_SERVROOT/html/;
     index index.html index.htm;
 }
@@ -65,4 +67,30 @@ location /RequestDenied {
 --- request eval
 "GET /"
 --- error_code: 200
+
+
+=== PHP easter eggs
+--- main_config
+load_module $TEST_NGINX_NAXSI_MODULE_SO;
+--- http_config
+include $TEST_NGINX_NAXSI_RULES;
+include $TEST_NGINX_NAXSI_BLOCKING_RULES/*;
+--- config
+location / {
+    SecRulesEnabled;
+    DeniedUrl "/RequestDenied";
+    CheckRule "$SQL >= 8" BLOCK;
+    CheckRule "$RFI >= 8" BLOCK;
+    CheckRule "$TRAVERSAL >= 4" BLOCK;
+    CheckRule "$XSS >= 8" BLOCK;
+    CheckRule "$UWA >= 8" BLOCK;
+    root $TEST_NGINX_SERVROOT/html/;
+    index index.html index.htm;
+}
+location /RequestDenied {
+    return 412;
+}
+--- request eval
+"GET /?=PHPB8B5F2A0-3C92-11d3-A3A9-4C7B08C10000"
+--- error_code: 412
 

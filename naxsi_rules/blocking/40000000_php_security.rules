@@ -31,3 +31,9 @@ MainRule id:40000022 "s:$UWA:8" "str:/sysadmin" "mz:URL" "msg:SQL Admin Interfac
 MainRule id:40000023 "s:$UWA:8" "str:/webadmin" "mz:URL" "msg:SQL Admin Interface";
 MainRule id:40000024 "s:$UWA:8" "str:/webdb" "mz:URL" "msg:SQL Admin Interface";
 MainRule id:40000025 "s:$UWA:8" "str:/websql" "mz:URL" "msg:SQL Admin Interface";
+
+# Block PHPUnit eval-stdin.php CVE-2017-9841
+MainRule id:40000026 "s:$UWA:8" "str:eval-stdin.php" "mz:URL" "msg:CVE-2017-9841";
+
+# Block PHP easter egg which normally can be disabled via expose_php = off
+MainRule id:40000027 "s:$UWA:8" "rx:PHP[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" "mz:URL|BODY|ARGS" "msg:PHP easter egg credits";

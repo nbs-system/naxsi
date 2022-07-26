@@ -37,3 +37,12 @@ MainRule id:40000026 "s:$UWA:8" "str:eval-stdin.php" "mz:URL" "msg:CVE-2017-9841
 
 # Block PHP easter egg which normally can be disabled via expose_php = off
 MainRule id:40000027 "s:$UWA:8" "rx:PHP[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" "mz:URL|BODY|ARGS" "msg:PHP easter egg credits";
+
+# Block PHP Xdebug
+MainRule id:40000028 "s:$UWA:8" "str:XDEBUG_SESSION" "mz:BODY|ARGS|HEADERS|NAME" "msg:Block PHP Xdebug";
+
+# Block PHPinfo access
+MainRule id:40000029 "s:$UWA:8" "str:phpinfo" "mz:URL|BODY|ARGS" "msg:PHPinfo access";
+
+# Block known php installer exploit
+MainRule id:40000030 "s:$UWA:8" "str:install.php" "mz:URL" "msg:Access to php install";

@@ -70,3 +70,6 @@ MainRule id:10000033 "s:$UWA:8" "str:NetSystemsResearch" "mz:$HEADERS_VAR:User-A
 
 # Golang default User-Agent
 MainRule id:10000034 "s:$UWA:8" "str:Go-http" "mz:$HEADERS_VAR:User-Agent" "msg:Golang in user-agent";
+
+# Perl default User-Agent
+MainRule id:10000035 "s:$UWA:8" "str:libwww-perl" "mz:$HEADERS_VAR:User-Agent" "msg:Golang in user-agent";

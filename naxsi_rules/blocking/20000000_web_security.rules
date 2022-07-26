@@ -54,7 +54,7 @@ MainRule id:20000041 "s:$UWA:8" "str:http://https://" "mz:HEADERS" "msg:Abnormal
 MainRule id:20000042 "s:$UWA:8" "str:https://https://" "mz:HEADERS" "msg:Abnormal double http:// in HTTP header";
 
 # ThinkPHP Remote Code Execution CVE-2018-20062
-MainRule id:20000043 "s:$UWA:8" "str:index/\think\app/invokefunction" "mz:HEADERS" "msg:CVE-2018-20062";
+MainRule id:20000043 "s:$UWA:8" "str:index/\\think\\app/invokefunction" "mz:URL" "msg:CVE-2018-20062";
 
 # AWS related files
 MainRule id:20000044 "s:$UWA:8" "str:/.aws/" "mz:URL" "msg:AWS Credential Stealer";
@@ -77,9 +77,25 @@ MainRule id:20000051 "s:$UWA:8" "str:/manager/html" "mz:URL" "msg:Exposed Apache
 
 # Block NMAP enumeration
 MainRule id:20000052 "s:$UWA:8" "str:/HNAP1" "mz:URL" "msg:NMAP enumeration attempt";
-MainRule id:20000053 "s:$UWA:8" "str:/__Additional" "mz:URL" "msg:NMAP enumeration attempt";
-MainRule id:20000054 "s:$UWA:8" "str:/docs/cplugError.html/" "mz:URL" "msg:NMAP enumeration attempt";
-MainRule id:20000055 "s:$UWA:8" "rx:/default\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";
-MainRule id:20000056 "s:$UWA:8" "rx:/start\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";
-MainRule id:20000057 "s:$UWA:8" "rx:/localstart\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";
-MainRule id:20000058 "s:$UWA:8" "rx:/admin\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";
+MainRule id:20000053 "s:$UWA:8" "rx:/default\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";
+MainRule id:20000054 "s:$UWA:8" "rx:/start\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";
+MainRule id:20000055 "s:$UWA:8" "rx:/localstart\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";
+MainRule id:20000056 "s:$UWA:8" "rx:/admin\.(asp|aspx|cfm|cgi|jsa|jsp|php|pl)$" "mz:URL" "msg:NMAP enumeration attempt";
+MainRule id:20000057 "s:$UWA:8" "str:/nmaplowercheck" "mz:URL" "msg:NMAP enumeration attempt";
+
+# Siemens PLC scan
+MainRule id:20000058 "s:$UWA:8" "str:/__Additional" "mz:URL" "msg:Siemens PLC scan";
+MainRule id:20000059 "s:$UWA:8" "str:/docs/cplugError.html/" "mz:URL" "msg:Siemens PLC scan";
+MainRule id:20000060 "s:$UWA:8" "str:/Portal/Portal.mwsl" "mz:URL" "msg:Siemens PLC scan";
+
+# Block Citrix XenApp
+MainRule id:20000061 "s:$UWA:8" "str:/scripts/wpnbr.dll" "mz:URL" "msg:Siemens PLC scan";
+
+# Block jenkins authentication bypass CVE-2018-1000861
+MainRule id:20000062 "s:$UWA:8" "str:/securityRealm/user/admin/search/index" "mz:URL" "msg:CVE-2018-1000861";
+
+# Block jenkins RCE CVE-2019-1003029, CVE-2019-1003030
+MainRule id:20000063 "s:$UWA:8" "str:/descriptorByName/org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript/checkScript/" "mz:URL" "msg:CVE-2019-1003029, CVE-2019-1003030";
+
+# Log4J bypass
+MainRule id:20000064 "s:$UWA:8" "str:${env:NaN:-" "mz:URL|ARGS|BODY|HEADERS" "msg:Attempted Log4J Bypass";

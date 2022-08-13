@@ -37,6 +37,20 @@ It depends on `libpcre` for its regexp support, and is reported to work great on
 
 *The original project is (unofficially) abandoned*, but you can fully ask for support here as i'm willing to keep the project working as last remaining developer.
 
+## Build naxsi
+
+**Be sure when you clone the repository to fetch all the submodules.**
+
+```
+$ git clone --recurse-submodules https://github.com/wargio/naxsi.git
+$ wget --no-clobber -O nginx.tar.gz "https://nginx.org/download/nginx-1.22.0.tar.gz"
+$ mkdir nginx-source
+$ tar -C nginx-source -xzf nginx.tar.gz --strip-components=1
+$ cd nginx-source
+$ ./configure  --prefix=/etc/nginx --add-dynamic-module=../naxsi/naxsi_src
+$ make
+```
+
 ## Support
 
 You can ask for support regarding NAXSI here or on the original repository https://github.com/nbs-system/naxsi

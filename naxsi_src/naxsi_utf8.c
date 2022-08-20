@@ -42,12 +42,14 @@ ngx_utf8_check(ngx_str_t* str)
       }
       /* 1110XXXX 10Xxxxxx 10xxxxxx */
       if ((s[1] & 0xc0) != 0x80 || (s[2] & 0xc0) != 0x80 ||
-          (s[0] == 0xe0 && (s[1] & 0xe0) == 0x80) ||               /* overlong? */
-          (s[0] == 0xed && (s[1] & 0xe0) == 0xa0) ||               /* surrogate? */
-          (s[0] == 0xef && s[1] == 0xbf && (s[2] & 0xfe) == 0xbe)) /* U+FFFE or U+FFFF? */
+          (s[0] == 0xe0 && (s[1] & 0xe0) == 0x80) ||                 /* overlong? */
+          (s[0] == 0xed && (s[1] & 0xe0) == 0xa0) ||                 /* surrogate? */
+          (s[0] == 0xef && s[1] == 0xbf && (s[2] & 0xfe) == 0xbe)) { /* U+FFFE or U+FFFF? */
         return s;
-      else
+      } else {
         s += 3;
+        offset += 3;
+      }
     } else if ((s[0] & 0xf8) == 0xf0) {
       if (offset + 3 >= str->len) {
         // not enough bytes
@@ -60,6 +62,7 @@ ngx_utf8_check(ngx_str_t* str)
         return s;
       } else {
         s += 4;
+        offset += 4;
       }
     } else {
       return s;

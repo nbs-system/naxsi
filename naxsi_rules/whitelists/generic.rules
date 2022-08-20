@@ -2,4 +2,4 @@
 BasicRule wl:20000003 "mz:$URL:/robots.txt|URL";
 
 # whitelist /.well-known/security.txt
-BasicRule wl:20000003 "mz:$URL:/.well-known/security.txt|URL";
+BasicRule wl:20000003,20000045 "mz:$URL:/.well-known/security.txt|URL";

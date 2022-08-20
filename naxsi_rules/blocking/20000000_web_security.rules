@@ -58,7 +58,9 @@ MainRule id:20000043 "s:$UWA:8" "str:index/\\think\\app/invokefunction" "mz:URL"
 
 # AWS related files
 MainRule id:20000044 "s:$UWA:8" "str:/.aws/" "mz:URL" "msg:AWS Credential Stealer";
-MainRule id:20000045 "s:$UWA:8" "str:/.env/" "mz:URL" "msg:AWS Credential Stealer";
+
+# dot folders and files
+MainRule id:20000045 "s:$UWA:8" "rx:/\.[^.]" "mz:URL" "msg:Access to dot folder or file";
 
 # Exposed Microsoft Exchange
 MainRule id:20000046 "s:$UWA:8" "str:autodiscover/autodiscover.json" "mz:URL" "msg:Exposed Microsoft Exchange";

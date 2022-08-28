@@ -101,3 +101,8 @@ MainRule id:20000063 "s:$UWA:8" "str:/descriptorByName/org.jenkinsci.plugins.scr
 
 # Log4J bypass
 MainRule id:20000064 "s:$UWA:8" "str:${env:NaN:-" "mz:URL|ARGS|BODY|HEADERS" "msg:Attempted Log4J Bypass";
+
+# Windows system paths
+MainRule id:20000065 "s:$UWA:8" "str:\Windows\system.ini" "mz:URL|BODY|ARGS|$HEADERS_VAR:User-Agent|$HEADERS_VAR:Cookie" "msg:\Windows\system.ini in URI";
+MainRule id:20000066 "s:$UWA:8" "str:/Windows/win.ini" "mz:URL|BODY|ARGS|$HEADERS_VAR:User-Agent|$HEADERS_VAR:Cookie" "msg:/Windows/win.ini in URI";
+MainRule id:20000067 "s:$UWA:8" "str:\Windows\win.ini" "mz:URL|BODY|ARGS|$HEADERS_VAR:User-Agent|$HEADERS_VAR:Cookie" "msg:\Windows\win.ini in URI";

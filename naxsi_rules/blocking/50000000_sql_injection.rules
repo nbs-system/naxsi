@@ -1,0 +1,14 @@
+#######################################
+## SQL Injection ids: 50000000       ##
+#######################################
+
+# Transact-SQL General Extended Stored Procedures
+# https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/general-extended-stored-procedures-transact-sql
+MainRule id:50000000 "s:$SQL:8" "rx:xp_(cmdshell|enumgroups|grantlogin|logevent|loginconfig|logininfo|msver|revokelogin|sprintf|sqlmaint|sscanf)" "mz:BODY|HEADERS|ARGS|URL" "msg:Transact-SQL GESP";
+
+# Classic SQL injection
+MainRule id:50000001 "s:$SQL:8" "rx:(CHAR|CONCAT|CONCAT_WS)\([0-9a-fx,]+\)" "mz:BODY|HEADERS|ARGS|URL" "msg:SQL Injection";
+MainRule id:50000002 "s:$SQL:8" "rx:SLEEP\([0-9]+\)" "mz:BODY|HEADERS|ARGS|URL" "msg:SQL Injection";
+MainRule id:50000003 "s:$SQL:8" "rx:\bBENCHMARK\b\([0-9,]+.+\)" "mz:BODY|HEADERS|ARGS|URL" "msg:SQL Injection";
+MainRule id:50000004 "s:$SQL:8" "rx:\b(UNION|INFORMATION_SCHEMA)\b.*(#|--|\*)" "mz:BODY|HEADERS|ARGS|URL" "msg:SQL Injection";
+MainRule id:50000005 "s:$SQL:8" "rx:(MD\d|SHA\d+)\(.+\)" "mz:BODY|HEADERS|ARGS|URL" "msg:SQL Injection";

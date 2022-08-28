@@ -153,8 +153,8 @@ def parse_file(filename, rules, whitelists, ruleid):
 		if line.startswith("#") or len(line) < 1:
 			comments.append(line)
 			continue
-		elif '#' in line and not '#"' in line:
-			comments.append('#' + line.split('#', 1)[1])
+		elif '#' in line and not '#"' in line and not line.endswith(';'):
+			comments.append('#' + line.split('#', 1)[-1])
 			line = line.split('#')[0]
 
 		if not line.endswith(';'):

@@ -54,7 +54,7 @@ MainRule id:20000041 "s:$UWA:8" "str:http://https://" "mz:HEADERS" "msg:Abnormal
 MainRule id:20000042 "s:$UWA:8" "str:https://https://" "mz:HEADERS" "msg:Abnormal double http:// in HTTP header";
 
 # ThinkPHP Remote Code Execution CVE-2018-20062
-MainRule id:20000043 "s:$UWA:8" "str:index/\\think\\app/invokefunction" "mz:URL" "msg:CVE-2018-20062";
+MainRule id:20000043 "s:$UWA:8" "str:index/\think\app/invokefunction" "mz:URL" "msg:CVE-2018-20062";
 
 # AWS related files
 MainRule id:20000044 "s:$UWA:8" "str:/.aws/" "mz:URL" "msg:AWS Credential Stealer";

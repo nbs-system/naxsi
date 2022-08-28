@@ -64,7 +64,10 @@ MainRule "str:c:\\" "msg:obvious windows path" "mz:ARGS|URL|BODY|$HEADERS_VAR:Co
 MainRule "str:cmd.exe" "msg:obvious probe" "mz:ARGS|URL|BODY|$HEADERS_VAR:Cookie" "s:$TRAVERSAL:4" id:1204;
 MainRule "str:\\" "msg:backslash" "mz:ARGS|URL|BODY|$HEADERS_VAR:Cookie" "s:$TRAVERSAL:4" id:1205;
 #MainRule "str:/" "msg:slash in args" "mz:ARGS|BODY|$HEADERS_VAR:Cookie" "s:$TRAVERSAL:2" id:1206;
-MainRule "str:/..;/" "msg:dir traversal bypass" "mz:ARGS|BODY|$HEADERS_VAR:Cookie" "s:$TRAVERSAL:2" id:1207;
+MainRule "str:/..;/" "msg:dir traversal bypass" "mz:ARGS|URL|BODY|$HEADERS_VAR:Cookie" "s:$TRAVERSAL:2" id:1207;
+MainRule "str:/.;/" "msg:dir traversal bypass" "mz:ARGS|URL|BODY|$HEADERS_VAR:Cookie" "s:$TRAVERSAL:4" id:1208;
+MainRule "str:/.%2e/" "msg:dir traversal bypass" "mz:ARGS|URL|BODY|$HEADERS_VAR:Cookie" "s:$TRAVERSAL:4" id:1209;
+MainRule "str:/%2e./" "msg:dir traversal bypass" "mz:ARGS|URL|BODY|$HEADERS_VAR:Cookie" "s:$TRAVERSAL:4" id:1210;
 
 ########################################
 ## Cross Site Scripting IDs:1300-1399 ##

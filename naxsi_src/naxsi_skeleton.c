@@ -35,18 +35,27 @@
 */
 static ngx_int_t
 ngx_http_naxsi_access_handler(ngx_http_request_t* r);
+static ngx_int_t
+ngx_http_naxsi_push_loc_conf(ngx_conf_t* cf, ngx_http_naxsi_loc_conf_t* conf);
 static char*
 ngx_http_naxsi_read_main_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf);
 static ngx_int_t
 ngx_http_naxsi_init(ngx_conf_t* cf);
 static char*
-ngx_http_naxsi_read_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf);
+ngx_http_naxsi_br_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf);
 
 static char*
 ngx_http_naxsi_cr_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf);
 
 static char*
 ngx_http_naxsi_ud_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf);
+
+static ngx_int_t
+ngx_http_naxsi_add_ii_loc_conf(ngx_conf_t* cf, ngx_http_naxsi_loc_conf_t* conf, char* ip_str);
+static char*
+ngx_http_naxsi_ii_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf);
+static char*
+ngx_http_naxsi_ic_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf);
 
 static char*
 ngx_http_naxsi_flags_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf);
@@ -86,7 +95,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
   /* BasicRule (in loc) */
   { ngx_string(TOP_BASIC_RULE_T),
     NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
-    ngx_http_naxsi_read_conf,
+    ngx_http_naxsi_br_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
     NULL },
@@ -94,7 +103,7 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
   /* BasicRule (in loc) - nginx style */
   { ngx_string(TOP_BASIC_RULE_N),
     NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
-    ngx_http_naxsi_read_conf,
+    ngx_http_naxsi_br_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
     NULL },
@@ -118,7 +127,15 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
   /* WhitelistIP */
   { ngx_string(TOP_IGNORE_IP_T),
     NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
-    ngx_http_naxsi_read_conf,
+    ngx_http_naxsi_ii_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },
+
+  /* WhitelistIP - nginx style */
+  { ngx_string(TOP_IGNORE_IP_N),
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    ngx_http_naxsi_ii_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
     NULL },
@@ -126,7 +143,15 @@ static ngx_command_t ngx_http_naxsi_commands[] = {
   /* WhitelistCIDR */
   { ngx_string(TOP_IGNORE_CIDR_T),
     NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
-    ngx_http_naxsi_read_conf,
+    ngx_http_naxsi_ic_loc_conf,
+    NGX_HTTP_LOC_CONF_OFFSET,
+    0,
+    NULL },
+
+  /* WhitelistCIDR - nginx style */
+  { ngx_string(TOP_IGNORE_CIDR_N),
+    NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_HTTP_LMT_CONF | NGX_CONF_1MORE,
+    ngx_http_naxsi_ic_loc_conf,
     NGX_HTTP_LOC_CONF_OFFSET,
     0,
     NULL },
@@ -305,6 +330,24 @@ ngx_http_naxsi_create_loc_conf(ngx_conf_t* cf)
   return (conf);
 }
 
+/* Push loc conf to main conf */
+static ngx_int_t
+ngx_http_naxsi_push_loc_conf(ngx_conf_t* cf, ngx_http_naxsi_loc_conf_t* conf)
+{
+  ngx_http_naxsi_loc_conf_t **bar;
+  ngx_http_naxsi_main_conf_t* main_cf;
+
+  if (!conf->pushed) {
+    main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_naxsi_module);
+    bar = ngx_array_push(main_cf->locations);
+    if (!bar)
+      return (NGX_ERROR);
+    *bar         = conf;
+    conf->pushed = 1;
+  }
+  return (NGX_OK);
+}
+
 /* merge loc conf */
 /* NOTE/WARNING : This function wasn't tested correctly.
    Actually, we shouldn't merge anything, as configuration is
@@ -362,8 +405,6 @@ ngx_http_naxsi_merge_loc_conf(ngx_conf_t* cf, void* parent, void* child)
     conf->enabled = prev->enabled;
   if (conf->force_disabled == 0)
     conf->force_disabled = prev->force_disabled;
-  if (conf->pushed == 0)
-    conf->pushed = prev->pushed;
   if (conf->libinjection_sql_enabled == 0)
     conf->libinjection_sql_enabled = prev->libinjection_sql_enabled;
   if (conf->libinjection_xss_enabled == 0)
@@ -386,6 +427,10 @@ ngx_http_naxsi_merge_loc_conf(ngx_conf_t* cf, void* parent, void* child)
     conf->flag_libinjection_sql_h = prev->flag_libinjection_sql_h;
   if (conf->log == NULL)
     conf->log = prev->log;
+
+  if (ngx_http_naxsi_push_loc_conf(cf, conf) != NGX_OK)
+    return NGX_CONF_ERROR;
+
   return NGX_CONF_OK;
 }
 
@@ -494,11 +539,10 @@ ngx_http_naxsi_init(ngx_conf_t* cf)
 **	  see foo_cfg_parse.c for stuff
 */
 static char*
-ngx_http_naxsi_read_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
+ngx_http_naxsi_br_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
 {
-  ngx_http_naxsi_loc_conf_t *alcf = conf, **bar;
+  ngx_http_naxsi_loc_conf_t *alcf = conf;
 
-  ngx_http_naxsi_main_conf_t* main_cf;
   ngx_str_t*                  value;
   ngx_http_rule_t             rule, *rule_r;
 
@@ -512,37 +556,8 @@ ngx_http_naxsi_read_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
   if (!alcf || !cf) {
     return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
   }
+
   value   = cf->args->elts;
-  main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_naxsi_module);
-  if (!alcf->pushed) {
-    bar = ngx_array_push(main_cf->locations);
-    if (!bar)
-      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
-    *bar         = alcf;
-    alcf->pushed = 1;
-  }
-
-  if (!alcf->ignore_cidrs) {
-    alcf->ignore_cidrs = ngx_array_create(cf->pool, 1, sizeof(cidr_t));
-    if (!alcf->ignore_cidrs) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "CIDRs array alloc failed"); /* LCOV_EXCL_LINE */
-      return (NGX_CONF_ERROR);                                              /* LCOV_EXCL_LINE */
-    }
-  }
-
-  if (!alcf->ignore_ips) {
-    alcf->ignore_ips = (ngx_hash_t*)ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
-    if (!alcf->ignore_ips) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "IPs hashtable alloc failed"); /* LCOV_EXCL_LINE */
-      return (NGX_CONF_ERROR);                                                /* LCOV_EXCL_LINE */
-    }
-    alcf->ignore_ips_ha.pool      = cf->pool;
-    alcf->ignore_ips_ha.temp_pool = cf->temp_pool;
-    if (ngx_hash_keys_array_init(&alcf->ignore_ips_ha, NGX_HASH_SMALL) != NGX_OK) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "IPs hash keys init failed"); /* LCOV_EXCL_LINE */
-      return (NGX_CONF_ERROR);                                               /* LCOV_EXCL_LINE */
-    }
-  }
 
   /*
   ** if it's a basic rule
@@ -642,104 +657,8 @@ ngx_http_naxsi_read_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
         memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
       }
     }
-    return (NGX_CONF_OK);
-  } else if (!ngx_strcmp(value[0].data, TOP_IGNORE_IP_T) ||
-             !ngx_strcmp(value[0].data, TOP_IGNORE_IP_N)) {
-
-    char ip_str[INET6_ADDRSTRLEN] = { 0 };
-    int  is_ipv6                  = strchr((const char*)value[1].data, ':') != NULL;
-    if (is_ipv6 && !parse_ipv6((const char*)value[1].data, NULL, ip_str)) {
-      ngx_conf_log_error(
-        NGX_LOG_EMERG, cf, 0, "invalid IPv6: %s", value[1].data); /* LCOV_EXCL_LINE */
-      return (NGX_CONF_ERROR);                                    /* LCOV_EXCL_LINE */
-    } else if (!is_ipv6 && !parse_ipv4((const char*)value[1].data, NULL, ip_str)) {
-      ngx_conf_log_error(
-        NGX_LOG_EMERG, cf, 0, "invalid IPv4: %s", value[1].data); /* LCOV_EXCL_LINE */
-      return (NGX_CONF_ERROR);                                    /* LCOV_EXCL_LINE */
-    }
-    ngx_str_t key = { .data = NULL, .len = strlen(ip_str) };
-    key.data      = (unsigned char*)ngx_pcalloc(cf->pool, key.len);
-    if (!key.data) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "cannot allocate memory"); /* LCOV_EXCL_LINE */
-      return (NGX_CONF_ERROR);                                            /* LCOV_EXCL_LINE */
-    }
-    memcpy(key.data, ip_str, key.len);
-
-    if (ngx_hash_add_key(&alcf->ignore_ips_ha, &key, (void*)1234, NGX_HASH_READONLY_KEY) !=
-        NGX_OK) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "cannot add hash value"); /* LCOV_EXCL_LINE */
-      return (NGX_CONF_ERROR);                                           /* LCOV_EXCL_LINE */
-    }
-    return (NGX_CONF_OK); /* LCOV_EXCL_LINE */
-  } else if (!ngx_strcmp(value[0].data, TOP_IGNORE_CIDR_T) ||
-             !ngx_strcmp(value[0].data, TOP_IGNORE_CIDR_N)) {
-    char* smask = strchr((char*)value[1].data, '/');
-    if (!smask) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "invalid CIDR: missing mask)"); /* LCOV_EXCL_LINE */
-      return (NGX_CONF_ERROR);                                                 /* LCOV_EXCL_LINE */
-    }
-
-    ip_t ip                       = { { 0 } };
-    char ip_str[INET6_ADDRSTRLEN] = { 0 };
-    int  is_ipv6                  = strchr((const char*)value[1].data, ':') != NULL;
-    smask[0]                      = 0;
-    if (is_ipv6 && !parse_ipv6((const char*)value[1].data, &ip, ip_str)) {
-      ngx_conf_log_error(
-        NGX_LOG_EMERG, cf, 0, "invalid IPv6 net: %s", value[1].data); /* LCOV_EXCL_LINE */
-      return (NGX_CONF_ERROR);                                        /* LCOV_EXCL_LINE */
-    } else if (!is_ipv6 && !parse_ipv4((const char*)value[1].data, &ip, ip_str)) {
-      ngx_conf_log_error(
-        NGX_LOG_EMERG, cf, 0, "invalid IPv4 net: %s", value[1].data); /* LCOV_EXCL_LINE */
-      return (NGX_CONF_ERROR);                                        /* LCOV_EXCL_LINE */
-    }
-    smask[0] = '/';
-
-    unsigned int mask = atoi(smask + 1);
-    if ((is_ipv6 && mask > 128) || (!is_ipv6 && mask > 32) || mask == 0) {
-      ngx_conf_log_error(NGX_LOG_EMERG,
-                         cf,
-                         0,
-                         "invalid CIDR: mask %d > %d",
-                         mask,
-                         (is_ipv6 ? 128 : 32)); /* LCOV_EXCL_LINE */
-      return (NGX_CONF_ERROR);                  /* LCOV_EXCL_LINE */
-    }
-    if ((is_ipv6 && mask == 128) || (!is_ipv6 && mask == 32)) {
-      ngx_str_t key = { .data = NULL, .len = strlen(ip_str) };
-      key.data      = (unsigned char*)ngx_pcalloc(cf->pool, key.len);
-      if (!key.data) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "cannot allocate memory"); /* LCOV_EXCL_LINE */
-        return (NGX_CONF_ERROR);                                            /* LCOV_EXCL_LINE */
-      }
-      memcpy(key.data, ip_str, key.len);
-
-      if (ngx_hash_add_key(&alcf->ignore_ips_ha, &key, (void*)1234, NGX_HASH_READONLY_KEY) !=
-          NGX_OK) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "cannot add hash value"); /* LCOV_EXCL_LINE */
-        return (NGX_CONF_ERROR);                                           /* LCOV_EXCL_LINE */
-      }
-    } else {
-      cidr_t* tmp = (cidr_t*)ngx_array_push(alcf->ignore_cidrs);
-      if (!tmp) {
-        ngx_conf_log_error(
-          NGX_LOG_EMERG, cf, 0, "cannot allocate array value"); /* LCOV_EXCL_LINE */
-        return (NGX_CONF_ERROR);                                /* LCOV_EXCL_LINE */
-      }
-      tmp->version = is_ipv6 ? IPv6 : IPv4;
-      tmp->subnet  = ip;
-      /* Generate IPv[46] mask (optimized) */
-      if (is_ipv6) {
-        if (mask > 63) {
-          tmp->mask.v6[0] = 0xffffffffffffffff;
-          tmp->mask.v6[1] = 0xffffffffffffffff << (128 - mask);
-        } else {
-          tmp->mask.v6[0] = 0xffffffffffffffff << (64 - mask);
-          tmp->mask.v6[1] = 0;
-        }
-      } else {
-        tmp->mask.v4 = 0xffffffff << (32 - mask);
-      }
-    }
+    if (ngx_http_naxsi_push_loc_conf(cf, alcf) != NGX_OK)
+      return NGX_CONF_ERROR;
     return (NGX_CONF_OK);
   }
   ngx_http_naxsi_line_conf_error(cf, value);
@@ -750,8 +669,7 @@ static char*
 ngx_http_naxsi_cr_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
 {
 
-  ngx_http_naxsi_loc_conf_t * alcf = conf, **bar;
-  ngx_http_naxsi_main_conf_t* main_cf;
+  ngx_http_naxsi_loc_conf_t * alcf = conf;
   ngx_str_t*                  value;
   ngx_http_check_rule_t*      rule_c;
   unsigned int                i;
@@ -760,14 +678,6 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
   if (!alcf || !cf)
     return (NGX_CONF_ERROR);
   value   = cf->args->elts;
-  main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_naxsi_module);
-  if (!alcf->pushed) {
-    bar = ngx_array_push(main_cf->locations);
-    if (!bar)
-      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
-    *bar         = alcf;
-    alcf->pushed = 1;
-  }
 
   if (ngx_strcmp(value[0].data, TOP_CHECK_RULE_T) && ngx_strcmp(value[0].data, TOP_CHECK_RULE_N))
     return (NGX_CONF_ERROR);
@@ -850,6 +760,10 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
     return (NGX_CONF_ERROR);
     /* LCOV_EXCL_STOP */
   }
+
+  if (ngx_http_naxsi_push_loc_conf(cf, alcf) != NGX_OK)
+    return NGX_CONF_ERROR;
+
   return (NGX_CONF_OK);
 }
 
@@ -859,21 +773,12 @@ ngx_http_naxsi_cr_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
 static char*
 ngx_http_naxsi_ud_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
 {
-  ngx_http_naxsi_loc_conf_t * alcf = conf, **bar;
-  ngx_http_naxsi_main_conf_t* main_cf;
+  ngx_http_naxsi_loc_conf_t * alcf = conf;
   ngx_str_t*                  value;
 
   if (!alcf || !cf)
-    return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
+    return (NGX_CONF_ERROR);
   value   = cf->args->elts;
-  main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_naxsi_module);
-  if (!alcf->pushed) {
-    bar = ngx_array_push(main_cf->locations);
-    if (!bar)
-      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
-    *bar         = alcf;
-    alcf->pushed = 1;
-  }
 
   /* store denied URL for location */
   if ((!ngx_strcmp(value[0].data, TOP_DENIED_URL_N) ||
@@ -881,16 +786,187 @@ ngx_http_naxsi_ud_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
       value[1].len) {
     alcf->denied_url = ngx_pcalloc(cf->pool, sizeof(ngx_str_t));
     if (!alcf->denied_url)
-      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
+      return (NGX_CONF_ERROR);
     alcf->denied_url->data = ngx_pcalloc(cf->pool, value[1].len + 1);
     if (!alcf->denied_url->data)
-      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
+      return (NGX_CONF_ERROR);
     memcpy(alcf->denied_url->data, value[1].data, value[1].len);
     alcf->denied_url->len = value[1].len;
+
+    if (ngx_http_naxsi_push_loc_conf(cf, alcf) != NGX_OK)
+      return NGX_CONF_ERROR;
+
     return (NGX_CONF_OK);
   }
 
+  ngx_http_naxsi_line_conf_error(cf, value);
   return NGX_CONF_ERROR;
+}
+
+/* Add IP to Ignore IP list location configuration */
+static ngx_int_t
+ngx_http_naxsi_add_ii_loc_conf(ngx_conf_t* cf, ngx_http_naxsi_loc_conf_t* conf, char* ip_str)
+{
+    ngx_str_t key;
+
+    key.len  = strlen(ip_str);
+    key.data = (unsigned char*)ngx_pcalloc(cf->pool, key.len);
+    if (!key.data) {
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "cannot allocate memory");
+      return (NGX_ERROR);
+    }
+    memcpy(key.data, ip_str, key.len);
+
+    if (!conf->ignore_ips) {
+      conf->ignore_ips = (ngx_hash_t*)ngx_pcalloc(cf->pool, sizeof(ngx_hash_t));
+      if (!conf->ignore_ips) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "IPs hashtable alloc failed");
+        return (NGX_ERROR);
+      }
+      conf->ignore_ips_ha.pool      = cf->pool;
+      conf->ignore_ips_ha.temp_pool = cf->temp_pool;
+      if (ngx_hash_keys_array_init(&conf->ignore_ips_ha, NGX_HASH_SMALL) != NGX_OK) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "IPs hash keys init failed");
+        return (NGX_ERROR);
+      }
+    }
+    if (ngx_hash_add_key(&conf->ignore_ips_ha, &key, (void*)1234, NGX_HASH_READONLY_KEY) !=
+        NGX_OK) {
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "cannot add hash value");
+      return (NGX_ERROR);
+    }
+    return (NGX_OK);
+}
+
+/*
+** Ignore IP
+*/
+static char*
+ngx_http_naxsi_ii_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
+{
+  ngx_http_naxsi_loc_conf_t * alcf = conf;
+  ngx_str_t*                  value;
+
+  if (!alcf || !cf)
+    return (NGX_CONF_ERROR);
+
+  value   = cf->args->elts;
+
+  if (!ngx_strcmp(value[0].data, TOP_IGNORE_IP_T) ||
+      !ngx_strcmp(value[0].data, TOP_IGNORE_IP_N)) {
+
+    char ip_str[INET6_ADDRSTRLEN] = { 0 };
+    int  is_ipv6                  = strchr((const char*)value[1].data, ':') != NULL;
+    if (is_ipv6 && !parse_ipv6((const char*)value[1].data, NULL, ip_str)) {
+      ngx_conf_log_error(
+        NGX_LOG_EMERG, cf, 0, "invalid IPv6: %s", value[1].data); /* LCOV_EXCL_LINE */
+      return (NGX_CONF_ERROR);                                    /* LCOV_EXCL_LINE */
+    } else if (!is_ipv6 && !parse_ipv4((const char*)value[1].data, NULL, ip_str)) {
+      ngx_conf_log_error(
+        NGX_LOG_EMERG, cf, 0, "invalid IPv4: %s", value[1].data); /* LCOV_EXCL_LINE */
+      return (NGX_CONF_ERROR);                                    /* LCOV_EXCL_LINE */
+    }
+
+    if (ngx_http_naxsi_add_ii_loc_conf(cf, alcf, ip_str) != NGX_OK)
+      return (NGX_CONF_ERROR);
+
+    if (ngx_http_naxsi_push_loc_conf(cf, alcf) != NGX_OK)
+      return NGX_CONF_ERROR;
+
+    return (NGX_CONF_OK);
+  }
+  ngx_http_naxsi_line_conf_error(cf, value);
+  return NGX_CONF_ERROR;
+}
+
+/*
+** Ignore CIDR
+*/
+static char*
+ngx_http_naxsi_ic_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
+{
+  ngx_http_naxsi_loc_conf_t * alcf = conf;
+  ngx_str_t*                  value;
+
+  if (!alcf || !cf)
+    return (NGX_CONF_ERROR);
+
+  value   = cf->args->elts;
+
+  if (!ngx_strcmp(value[0].data, TOP_IGNORE_CIDR_T) ||
+      !ngx_strcmp(value[0].data, TOP_IGNORE_CIDR_N)) {
+
+    char* smask = strchr((char*)value[1].data, '/');
+    if (!smask) {
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "invalid CIDR: missing mask)"); /* LCOV_EXCL_LINE */
+      return (NGX_CONF_ERROR);                                                 /* LCOV_EXCL_LINE */
+    }
+
+    ip_t ip                       = { { 0 } };
+    char ip_str[INET6_ADDRSTRLEN] = { 0 };
+    int  is_ipv6                  = strchr((const char*)value[1].data, ':') != NULL;
+    smask[0]                      = 0;
+    if (is_ipv6 && !parse_ipv6((const char*)value[1].data, &ip, ip_str)) {
+      ngx_conf_log_error(
+        NGX_LOG_EMERG, cf, 0, "invalid IPv6 net: %s", value[1].data); /* LCOV_EXCL_LINE */
+      return (NGX_CONF_ERROR);                                        /* LCOV_EXCL_LINE */
+    } else if (!is_ipv6 && !parse_ipv4((const char*)value[1].data, &ip, ip_str)) {
+      ngx_conf_log_error(
+        NGX_LOG_EMERG, cf, 0, "invalid IPv4 net: %s", value[1].data); /* LCOV_EXCL_LINE */
+      return (NGX_CONF_ERROR);                                        /* LCOV_EXCL_LINE */
+    }
+    smask[0] = '/';
+
+    unsigned int mask = atoi(smask + 1);
+    if ((is_ipv6 && mask > 128) || (!is_ipv6 && mask > 32) || mask == 0) {
+      ngx_conf_log_error(NGX_LOG_EMERG,
+                         cf,
+                         0,
+                         "invalid CIDR: mask %d > %d",
+                         mask,
+                         (is_ipv6 ? 128 : 32)); /* LCOV_EXCL_LINE */
+      return (NGX_CONF_ERROR);                  /* LCOV_EXCL_LINE */
+    }
+    if ((is_ipv6 && mask == 128) || (!is_ipv6 && mask == 32)) {
+      // add it directly to IgnoreIP list
+      if (ngx_http_naxsi_add_ii_loc_conf(cf, alcf, ip_str) != NGX_OK)
+        return (NGX_CONF_ERROR);
+    } else {
+      if (!alcf->ignore_cidrs) {
+        alcf->ignore_cidrs = ngx_array_create(cf->pool, 1, sizeof(cidr_t));
+        if (!alcf->ignore_cidrs) {
+          ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "CIDRs array alloc failed"); /* LCOV_EXCL_LINE */
+          return (NGX_CONF_ERROR);                                              /* LCOV_EXCL_LINE */
+        }
+      }
+      cidr_t* tmp = (cidr_t*)ngx_array_push(alcf->ignore_cidrs);
+      if (!tmp) {
+        ngx_conf_log_error(
+          NGX_LOG_EMERG, cf, 0, "cannot allocate array value"); /* LCOV_EXCL_LINE */
+        return (NGX_CONF_ERROR);                                /* LCOV_EXCL_LINE */
+      }
+      tmp->version = is_ipv6 ? IPv6 : IPv4;
+      tmp->subnet  = ip;
+      /* Generate IPv[46] mask (optimized) */
+      if (is_ipv6) {
+        if (mask > 63) {
+          tmp->mask.v6[0] = 0xffffffffffffffff;
+          tmp->mask.v6[1] = 0xffffffffffffffff << (128 - mask);
+        } else {
+          tmp->mask.v6[0] = 0xffffffffffffffff << (64 - mask);
+          tmp->mask.v6[1] = 0;
+        }
+      } else {
+        tmp->mask.v4 = 0xffffffff << (32 - mask);
+      }
+    }
+    if (ngx_http_naxsi_push_loc_conf(cf, alcf) != NGX_OK)
+      return NGX_CONF_ERROR;
+
+    return (NGX_CONF_OK);
+  }
+  ngx_http_naxsi_line_conf_error(cf, value);
+  return (NGX_CONF_ERROR);
 }
 
 /*
@@ -899,21 +975,16 @@ ngx_http_naxsi_ud_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
 static char*
 ngx_http_naxsi_flags_loc_conf(ngx_conf_t* cf, ngx_command_t* cmd, void* conf)
 {
-  ngx_http_naxsi_loc_conf_t * alcf = conf, **bar;
-  ngx_http_naxsi_main_conf_t* main_cf;
+  ngx_http_naxsi_loc_conf_t * alcf = conf;
   ngx_str_t*                  value;
 
   if (!alcf || !cf)
     return (NGX_CONF_ERROR);
+
+  if (ngx_http_naxsi_push_loc_conf(cf, alcf) != NGX_OK)
+    return NGX_CONF_ERROR;
+
   value   = cf->args->elts;
-  main_cf = ngx_http_conf_get_module_main_conf(cf, ngx_http_naxsi_module);
-  if (!alcf->pushed) {
-    bar = ngx_array_push(main_cf->locations);
-    if (!bar)
-      return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
-    *bar         = alcf;
-    alcf->pushed = 1;
-  }
 
   /* it's a flagrule, just a hack to enable/disable mod */
   if (!ngx_strcmp(value[0].data, TOP_ENABLED_FLAG_T) ||
